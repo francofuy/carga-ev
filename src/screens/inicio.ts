@@ -1,6 +1,5 @@
 import type { Screen } from './types';
-import { getDb } from '../lib/db/client';
-import { getStatsSince } from '../lib/db/charges';
+import { getStatsSince } from '../lib/db/api';
 
 function startOfMonthIso(): string {
   const d = new Date();
@@ -23,8 +22,7 @@ export const inicioScreen: Screen = {
     const spendEl = root.querySelector<HTMLElement>('#homeSpend')!;
     const countEl = root.querySelector<HTMLElement>('#homeCount')!;
     try {
-      const db = await getDb();
-      const stats = getStatsSince(db, startOfMonthIso());
+      const stats = await getStatsSince(startOfMonthIso());
       spendEl.textContent = '$ ' + Math.round(stats.totalCost).toLocaleString('es-UY');
       countEl.textContent =
         stats.count === 0

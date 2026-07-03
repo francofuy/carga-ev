@@ -1,5 +1,5 @@
 import type { OpfsSAHPoolDatabase } from '@sqlite.org/sqlite-wasm';
-import { queryRows } from './client';
+import { queryRows } from './query-helper';
 
 export interface Vehicle {
   name: string;

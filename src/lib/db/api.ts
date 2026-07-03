@@ -1,0 +1,37 @@
+/** API de datos para el resto de la app — habla con el Worker de SQLite por mensajes, sin que las pantallas tengan que saberlo. */
+import { callDb } from './rpc';
+import type { Charge, NewCharge, PeriodStats } from './charges';
+import type { Vehicle } from './vehicle';
+import type { AppSettings } from './settings';
+
+export function getStatsSince(sinceIso: string): Promise<PeriodStats> {
+  return callDb('getStatsSince', { sinceIso });
+}
+
+export function listCharges(limit?: number): Promise<Charge[]> {
+  return callDb('listCharges', { limit });
+}
+
+export function insertCharge(input: NewCharge): Promise<Charge> {
+  return callDb('insertCharge', { input });
+}
+
+export function deleteCharge(id: number): Promise<void> {
+  return callDb('deleteCharge', { id });
+}
+
+export function getVehicle(): Promise<Vehicle | null> {
+  return callDb('getVehicle');
+}
+
+export function upsertVehicle(vehicle: Vehicle): Promise<void> {
+  return callDb('upsertVehicle', { vehicle });
+}
+
+export function getSettings(): Promise<AppSettings> {
+  return callDb('getSettings');
+}
+
+export function setSetting(key: string, value: string): Promise<void> {
+  return callDb('setSetting', { key, value });
+}

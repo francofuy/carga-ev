@@ -1,5 +1,5 @@
 import type { OpfsSAHPoolDatabase } from '@sqlite.org/sqlite-wasm';
-import { queryRows } from './client';
+import { queryRows } from './query-helper';
 import { computeHomeChargeCost, computePublicChargeCost, type TariffRates } from '../tariff';
 
 export type ChargeLocation = 'home' | 'public';
