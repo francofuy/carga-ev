@@ -12,6 +12,7 @@ const SETTING_KEY_MAP: Record<keyof AppSettings, string> = {
   puntaStartHour: 'punta_start_hour',
   notifBackupEnabled: 'notif_backup_enabled',
   theme: 'theme',
+  evApiKey: 'ev_api_key',
 };
 
 function bodyHtml(): string {
@@ -49,6 +50,18 @@ function bodyHtml(): string {
         </select>
       </div>
     </div>
+
+    <div class="section-title">Integraciones</div>
+    <div class="settings-group">
+      <div class="settings-row">
+        <span class="lbl">API key de vehículos</span>
+        <input class="val-input" id="setEvKey" type="text" placeholder="Pegar acá" style="width:140px;">
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin:0 0 18px;">
+      Usada para buscar specs de vehículos en la pantalla Vehículo. Conseguí una gratis en
+      <a href="https://api-ninjas.com/register" target="_blank" rel="noopener" style="color:var(--accent);">api-ninjas.com</a> — se guarda solo en este dispositivo.
+    </p>
 
     <div class="section-title">Datos</div>
     <div class="alert-banner" id="dataMsg"></div>
@@ -94,6 +107,7 @@ export const ajustesScreen: Screen = {
     const themeSelect = body.querySelector<HTMLSelectElement>('#setTheme')!;
     const dataMsg = body.querySelector<HTMLElement>('#dataMsg')!;
     const importFile = body.querySelector<HTMLInputElement>('#importFile')!;
+    const evKeyInput = body.querySelector<HTMLInputElement>('#setEvKey')!;
 
     valleInput.value = String(settings.tariffValle);
     llanoInput.value = String(settings.tariffLlano);
@@ -101,6 +115,7 @@ export const ajustesScreen: Screen = {
     puntaHourSelect.value = String(settings.puntaStartHour);
     notifSwitch.classList.toggle('on', settings.notifBackupEnabled);
     themeSelect.value = settings.theme;
+    evKeyInput.value = settings.evApiKey;
 
     body.querySelector('#saveTariffs')!.addEventListener('click', () => {
       void (async () => {
@@ -126,6 +141,10 @@ export const ajustesScreen: Screen = {
         applyTheme(value);
         await setSetting(SETTING_KEY_MAP.theme, value);
       })();
+    });
+
+    evKeyInput.addEventListener('change', () => {
+      void setSetting(SETTING_KEY_MAP.evApiKey, evKeyInput.value.trim());
     });
 
     body.querySelector('#rowExport')!.addEventListener('click', () => {

@@ -47,6 +47,7 @@ function seedDefaultSettings(db: OpfsSAHPoolDatabase): void {
     [SETTINGS_KEYS.puntaStartHour]: String(DEFAULT_PUNTA_START_HOUR),
     [SETTINGS_KEYS.notifBackupEnabled]: '1',
     [SETTINGS_KEYS.theme]: 'auto',
+    [SETTINGS_KEYS.evApiKey]: '',
   };
   for (const [key, value] of Object.entries(defaults)) {
     db.exec('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', { bind: [key, value] });
@@ -143,6 +144,7 @@ function keyToSettingName(camelKey: string): string {
     puntaStartHour: 'punta_start_hour',
     notifBackupEnabled: 'notif_backup_enabled',
     theme: 'theme',
+    evApiKey: 'ev_api_key',
   };
   return map[camelKey] ?? camelKey;
 }
