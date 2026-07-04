@@ -10,7 +10,7 @@ import { SCHEMA_SQL, SETTINGS_KEYS } from './schema';
 import { UTE_2026_RATES, DEFAULT_PUNTA_START_HOUR } from '../tariff';
 import { getVehicle, upsertVehicle, deleteVehicle } from './vehicle';
 import {
-  insertCharge, listCharges, deleteCharge, deleteAllCharges, restoreCharge, getStatsSince,
+  insertCharge, listCharges, deleteCharge, deleteAllCharges, restoreCharge, getStatsSince, getMonthlyTotals,
   type NewCharge, type Charge,
 } from './charges';
 import { getSettings, getTariffRates, setSetting } from './settings';
@@ -61,6 +61,10 @@ const handlers: Record<string, (args: never) => Promise<unknown>> = {
   async listCharges(args: { limit?: number }) {
     const db = await getDb();
     return listCharges(db, args.limit);
+  },
+  async getMonthlyTotals(args: { monthsBack: number }) {
+    const db = await getDb();
+    return getMonthlyTotals(db, args.monthsBack);
   },
   async insertCharge(args: { input: NewCharge }) {
     const db = await getDb();

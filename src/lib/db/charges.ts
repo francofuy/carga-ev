@@ -143,6 +143,8 @@ export interface PeriodStats {
   valleSharePct: number;
   llanoSharePct: number;
   puntaSharePct: number;
+  /** null si hay menos de 2 lecturas de odómetro en el período — no se puede estimar. */
+  costPerKm: number | null;
 }
 
 /** Estadísticas para el dashboard, sobre las cargas desde `sinceIso` (inclusive). */
@@ -154,6 +156,9 @@ export function getStatsSince(db: OpfsSAHPoolDatabase, sinceIso: string): Period
     valle: number | null;
     llano: number | null;
     punta: number | null;
+    min_odo: number | null;
+    max_odo: number | null;
+    odo_count: number;
   }>(
     db,
     `SELECT
@@ -162,7 +167,10 @@ export function getStatsSince(db: OpfsSAHPoolDatabase, sinceIso: string): Period
        SUM(kwh) AS total_kwh,
        SUM(breakdown_valle_kwh) AS valle,
        SUM(breakdown_llano_kwh) AS llano,
-       SUM(breakdown_punta_kwh) AS punta
+       SUM(breakdown_punta_kwh) AS punta,
+       MIN(odometer_km) AS min_odo,
+       MAX(odometer_km) AS max_odo,
+       COUNT(odometer_km) AS odo_count
      FROM charges
      WHERE COALESCE(start_at, created_at) >= ?`,
     [sinceIso],
@@ -171,6 +179,7 @@ export function getStatsSince(db: OpfsSAHPoolDatabase, sinceIso: string): Period
   const totalCost = r?.total_cost ?? 0;
   const totalKwh = r?.total_kwh ?? 0;
   const homeKwh = (r?.valle ?? 0) + (r?.llano ?? 0) + (r?.punta ?? 0);
+  const km = (r?.odo_count ?? 0) >= 2 && r?.max_odo != null && r?.min_odo != null ? r.max_odo - r.min_odo : 0;
   return {
     totalCost,
     count: r?.count ?? 0,
@@ -178,5 +187,30 @@ export function getStatsSince(db: OpfsSAHPoolDatabase, sinceIso: string): Period
     valleSharePct: homeKwh > 0 ? ((r?.valle ?? 0) / homeKwh) * 100 : 0,
     llanoSharePct: homeKwh > 0 ? ((r?.llano ?? 0) / homeKwh) * 100 : 0,
     puntaSharePct: homeKwh > 0 ? ((r?.punta ?? 0) / homeKwh) * 100 : 0,
+    costPerKm: km > 0 ? totalCost / km : null,
   };
+}
+
+export interface MonthlyTotal {
+  monthLabel: string;
+  total: number;
+}
+
+/** Gasto total por mes, para el gráfico de tendencia — de más viejo a más nuevo. */
+export function getMonthlyTotals(db: OpfsSAHPoolDatabase, monthsBack: number): MonthlyTotal[] {
+  const now = new Date();
+  const out: MonthlyTotal[] = [];
+  for (let i = monthsBack - 1; i >= 0; i--) {
+    const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const start = monthDate.toISOString();
+    const end = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1).toISOString();
+    const rows = queryRows<{ total: number | null }>(
+      db,
+      `SELECT SUM(cost) AS total FROM charges
+       WHERE COALESCE(start_at, created_at) >= ? AND COALESCE(start_at, created_at) < ?`,
+      [start, end],
+    );
+    out.push({ monthLabel: monthDate.toLocaleDateString('es-UY', { month: 'short' }), total: rows[0]?.total ?? 0 });
+  }
+  return out;
 }

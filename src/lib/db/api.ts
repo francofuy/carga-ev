@@ -1,6 +1,6 @@
 /** API de datos para el resto de la app — habla con el Worker de SQLite por mensajes, sin que las pantallas tengan que saberlo. */
 import { callDb } from './rpc';
-import type { Charge, NewCharge, PeriodStats } from './charges';
+import type { Charge, NewCharge, PeriodStats, MonthlyTotal } from './charges';
 import type { Vehicle } from './vehicle';
 import type { AppSettings } from './settings';
 import type { BackupData } from './backup';
@@ -11,6 +11,10 @@ export function getStatsSince(sinceIso: string): Promise<PeriodStats> {
 
 export function listCharges(limit?: number): Promise<Charge[]> {
   return callDb('listCharges', { limit });
+}
+
+export function getMonthlyTotals(monthsBack: number): Promise<MonthlyTotal[]> {
+  return callDb('getMonthlyTotals', { monthsBack });
 }
 
 export function insertCharge(input: NewCharge): Promise<Charge> {
