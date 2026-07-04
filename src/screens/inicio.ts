@@ -1,5 +1,6 @@
 import type { Screen } from './types';
 import { getStatsSince } from '../lib/db/api';
+import { bus, CHARGES_UPDATED } from '../lib/bus';
 
 function startOfMonthIso(): string {
   const d = new Date();
@@ -21,19 +22,26 @@ export const inicioScreen: Screen = {
   async mount(root) {
     const spendEl = root.querySelector<HTMLElement>('#homeSpend')!;
     const countEl = root.querySelector<HTMLElement>('#homeCount')!;
-    try {
-      const stats = await getStatsSince(startOfMonthIso());
-      spendEl.textContent = '$ ' + Math.round(stats.totalCost).toLocaleString('es-UY');
-      countEl.textContent =
-        stats.count === 0
-          ? 'Sin cargas todavía este mes'
-          : `${stats.count} carga${stats.count === 1 ? '' : 's'} registrada${stats.count === 1 ? '' : 's'}`;
-    } catch (err) {
-      console.error('No se pudo inicializar la base de datos local:', err);
-      const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
-      spendEl.textContent = '—';
-      countEl.textContent = `Error de base de datos — ${detail}`;
-      countEl.style.color = 'var(--critical)';
+
+    async function refresh() {
+      try {
+        const stats = await getStatsSince(startOfMonthIso());
+        spendEl.textContent = '$ ' + Math.round(stats.totalCost).toLocaleString('es-UY');
+        countEl.style.color = '';
+        countEl.textContent =
+          stats.count === 0
+            ? 'Sin cargas todavía este mes'
+            : `${stats.count} carga${stats.count === 1 ? '' : 's'} registrada${stats.count === 1 ? '' : 's'}`;
+      } catch (err) {
+        console.error('No se pudo inicializar la base de datos local:', err);
+        const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+        spendEl.textContent = '—';
+        countEl.textContent = `Error de base de datos — ${detail}`;
+        countEl.style.color = 'var(--critical)';
+      }
     }
+
+    bus.addEventListener(CHARGES_UPDATED, () => void refresh());
+    await refresh();
   },
 };

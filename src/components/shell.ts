@@ -1,4 +1,5 @@
 import type { Screen, ScreenId } from '../screens/types';
+import { nuevaCargaMarkup, mountNuevaCarga } from './nueva-carga';
 
 const TAB_ICON: Record<ScreenId, string> = {
   inicio: 'i-home',
@@ -31,6 +32,7 @@ export function mountShell(root: HTMLElement, screens: Screen[]): void {
   root.innerHTML = `
     ${screensHtml}
     <div class="tabbar">${tabsHtml}</div>
+    ${nuevaCargaMarkup()}
   `;
 
   const screenEls = root.querySelectorAll<HTMLElement>('.screen');
@@ -49,6 +51,8 @@ export function mountShell(root: HTMLElement, screens: Screen[]): void {
     const el = root.querySelector<HTMLElement>(`.screen[data-screen="${s.id}"]`);
     if (el && s.mount) s.mount(el);
   });
+
+  mountNuevaCarga(root);
 
   activate(screens[0].id);
 }
