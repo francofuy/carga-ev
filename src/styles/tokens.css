@@ -66,6 +66,11 @@
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
+html {
+  /* Permite scroll normal en ambos ejes pero excluye los gestos de zoom (pinch y doble-tap).
+     El viewport meta solo no alcanza: iOS ignora user-scalable=no fuera del modo PWA instalada. */
+  touch-action: pan-x pan-y;
+}
 body {
   margin: 0;
   background: var(--bg);
