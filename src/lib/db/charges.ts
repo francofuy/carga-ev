@@ -112,6 +112,30 @@ export function deleteCharge(db: OpfsSAHPoolDatabase, id: number): void {
   db.exec('DELETE FROM charges WHERE id = ?', { bind: [id] });
 }
 
+export function deleteAllCharges(db: OpfsSAHPoolDatabase): void {
+  db.exec('DELETE FROM charges');
+}
+
+/**
+ * Inserta una carga ya calculada tal cual, sin recalcular el costo con el motor de tarifas.
+ * Solo para restaurar un backup: preserva el costo histórico real, que pudo haberse calculado
+ * con tarifas UTE distintas a las vigentes hoy.
+ */
+export function restoreCharge(db: OpfsSAHPoolDatabase, c: Omit<Charge, 'id'>): void {
+  db.exec(
+    `INSERT INTO charges
+       (location, start_at, end_at, kwh, odometer_km, price_per_kwh, cost,
+        breakdown_valle_kwh, breakdown_llano_kwh, breakdown_punta_kwh, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    {
+      bind: [
+        c.location, c.startAt, c.endAt, c.kwh, c.odometerKm, c.pricePerKwh, c.cost,
+        c.valleKwh, c.llanoKwh, c.puntaKwh, c.createdAt,
+      ],
+    },
+  );
+}
+
 export interface PeriodStats {
   totalCost: number;
   count: number;

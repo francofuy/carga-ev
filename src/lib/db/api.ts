@@ -3,6 +3,7 @@ import { callDb } from './rpc';
 import type { Charge, NewCharge, PeriodStats } from './charges';
 import type { Vehicle } from './vehicle';
 import type { AppSettings } from './settings';
+import type { BackupData } from './backup';
 
 export function getStatsSince(sinceIso: string): Promise<PeriodStats> {
   return callDb('getStatsSince', { sinceIso });
@@ -34,4 +35,16 @@ export function getSettings(): Promise<AppSettings> {
 
 export function setSetting(key: string, value: string): Promise<void> {
   return callDb('setSetting', { key, value });
+}
+
+export function exportBackup(): Promise<BackupData> {
+  return callDb('exportBackup');
+}
+
+export function restoreBackup(backup: BackupData): Promise<void> {
+  return callDb('restoreBackup', { backup });
+}
+
+export function wipeData(): Promise<void> {
+  return callDb('wipeData');
 }

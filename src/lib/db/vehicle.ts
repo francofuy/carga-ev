@@ -43,3 +43,7 @@ export function upsertVehicle(db: OpfsSAHPoolDatabase, v: Vehicle): void {
     { bind: [v.name, v.batteryKwh, v.consumptionWhKm, v.realConsumptionWhKm, v.source] },
   );
 }
+
+export function deleteVehicle(db: OpfsSAHPoolDatabase): void {
+  db.exec('DELETE FROM vehicle WHERE id = 1');
+}

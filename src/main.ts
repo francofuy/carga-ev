@@ -6,8 +6,16 @@ import { inicioScreen } from './screens/inicio';
 import { cargasScreen } from './screens/cargas';
 import { vehiculoScreen } from './screens/vehiculo';
 import { ajustesScreen } from './screens/ajustes';
+import { getSettings } from './lib/db/api';
+import { applyTheme } from './lib/theme';
 
 injectIconSprite();
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
 mountShell(app, [inicioScreen, cargasScreen, vehiculoScreen, ajustesScreen]);
+
+void getSettings()
+  .then((s) => applyTheme(s.theme))
+  .catch(() => {
+    /* si falla, se queda en automático (comportamiento por defecto de tokens.css) */
+  });

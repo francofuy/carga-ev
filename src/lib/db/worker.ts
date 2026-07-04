@@ -8,9 +8,13 @@ import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 import type { OpfsSAHPoolDatabase } from '@sqlite.org/sqlite-wasm';
 import { SCHEMA_SQL, SETTINGS_KEYS } from './schema';
 import { UTE_2026_RATES, DEFAULT_PUNTA_START_HOUR } from '../tariff';
-import { getVehicle, upsertVehicle } from './vehicle';
-import { insertCharge, listCharges, deleteCharge, getStatsSince, type NewCharge } from './charges';
+import { getVehicle, upsertVehicle, deleteVehicle } from './vehicle';
+import {
+  insertCharge, listCharges, deleteCharge, deleteAllCharges, restoreCharge, getStatsSince,
+  type NewCharge, type Charge,
+} from './charges';
 import { getSettings, getTariffRates, setSetting } from './settings';
+import { BACKUP_VERSION, type BackupData } from './backup';
 
 const ctx = self as unknown as {
   postMessage(msg: unknown): void;
@@ -92,7 +96,52 @@ const handlers: Record<string, (args: never) => Promise<unknown>> = {
     setSetting(db, args.key, args.value);
     return true;
   },
+  async exportBackup(): Promise<BackupData> {
+    const db = await getDb();
+    return {
+      version: BACKUP_VERSION,
+      exportedAt: new Date().toISOString(),
+      vehicle: getVehicle(db),
+      settings: getSettings(db),
+      charges: listCharges(db, Number.MAX_SAFE_INTEGER),
+    };
+  },
+  async restoreBackup(args: { backup: BackupData }) {
+    const db = await getDb();
+    const { backup } = args;
+    deleteAllCharges(db);
+    deleteVehicle(db);
+    if (backup.vehicle) upsertVehicle(db, backup.vehicle);
+    for (const [key, value] of Object.entries(backup.settings)) {
+      setSetting(db, keyToSettingName(key), String(value));
+    }
+    // Se restauran de la más vieja a la más nueva para que los ids nuevos respeten el orden original.
+    const ordered = [...backup.charges].reverse();
+    for (const c of ordered) {
+      const { id: _id, ...rest } = c;
+      restoreCharge(db, rest as Omit<Charge, 'id'>);
+    }
+    return true;
+  },
+  async wipeData() {
+    const db = await getDb();
+    deleteAllCharges(db);
+    deleteVehicle(db);
+    return true;
+  },
 };
+
+function keyToSettingName(camelKey: string): string {
+  const map: Record<string, string> = {
+    tariffValle: 'tariff_valle',
+    tariffLlano: 'tariff_llano',
+    tariffPunta: 'tariff_punta',
+    puntaStartHour: 'punta_start_hour',
+    notifBackupEnabled: 'notif_backup_enabled',
+    theme: 'theme',
+  };
+  return map[camelKey] ?? camelKey;
+}
 
 ctx.onmessage = async (ev: MessageEvent<{ id: number; method: string; args: never }>) => {
   const { id, method, args } = ev.data;
