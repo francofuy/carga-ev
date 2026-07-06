@@ -1,6 +1,8 @@
 import type { Screen } from './types';
-import { getVehicle, upsertVehicle } from '../lib/db/api';
+import { getVehicle, upsertVehicle, getRealConsumption } from '../lib/db/api';
 import type { Vehicle } from '../lib/db/vehicle';
+import type { RealConsumption } from '../lib/db/charges';
+import { bus, CHARGES_UPDATED } from '../lib/bus';
 
 /**
  * Valores por defecto para el primer alta — specs reales del GAC Aion UT Max (60 kWh) según
@@ -10,8 +12,19 @@ import type { Vehicle } from '../lib/db/vehicle';
  */
 const DEFAULT_VEHICLE = { name: 'GAC Aion UT Max', batteryKwh: 60, consumptionWhKm: 135 };
 
-function viewHtml(v: Vehicle): string {
-  const autonomyKm = v.batteryKwh > 0 ? Math.round((v.batteryKwh / (v.consumptionWhKm / 1000)) * 100) / 100 : 0;
+function viewHtml(v: Vehicle, real: RealConsumption | null): string {
+  const effectiveWhKm = real?.whKm ?? v.consumptionWhKm;
+  const autonomyKm = effectiveWhKm > 0 ? Math.round((v.batteryKwh / (effectiveWhKm / 1000)) * 100) / 100 : 0;
+
+  let realRow: string;
+  if (real) {
+    const deltaPct = Math.round(((real.whKm - v.consumptionWhKm) / v.consumptionWhKm) * 100);
+    const sign = deltaPct > 0 ? '+' : '';
+    realRow = `<div class="spec-row new"><span>Consumo real (${real.sampleCount} tramo${real.sampleCount === 1 ? '' : 's'})</span><span class="v">${real.whKm.toFixed(0)} Wh/km <span class="delta">${sign}${deltaPct}%</span></span></div>`;
+  } else {
+    realRow = `<div class="spec-row new"><span>Consumo real</span><span class="v" style="color:var(--text-muted);font-weight:400;font-size:12px;">— cargá el odómetro en 2 cargas seguidas para verlo</span></div>`;
+  }
+
   return `
     <div class="vehicle-card">
       <div class="vehicle-photo"><svg viewBox="0 0 24 24"><use href="#i-car"/></svg></div>
@@ -19,6 +32,7 @@ function viewHtml(v: Vehicle): string {
       <div class="vehicle-sub">Cargado manualmente</div>
       <div class="spec-row"><span>Batería</span><span class="v">${v.batteryKwh} kWh</span></div>
       <div class="spec-row"><span>Consumo homologado</span><span class="v">${v.consumptionWhKm} Wh/km</span></div>
+      ${realRow}
       <div class="spec-row"><span>Autonomía estimada</span><span class="v">≈ ${autonomyKm} km</span></div>
     </div>
     <button class="link-btn" id="vehEdit">Editar vehículo</button>
@@ -49,12 +63,15 @@ export const vehiculoScreen: Screen = {
   async mount(root) {
     const body = root.querySelector<HTMLElement>('#vehBody')!;
     let current: Vehicle | null = null;
+    let real: RealConsumption | null = null;
 
-    function renderView() {
-      body.innerHTML = current ? viewHtml(current) : formHtml(null);
+    async function renderView() {
       if (current) {
+        real = await getRealConsumption().catch(() => null);
+        body.innerHTML = viewHtml(current, real);
         body.querySelector('#vehEdit')!.addEventListener('click', renderForm);
       } else {
+        body.innerHTML = formHtml(null);
         wireForm();
       }
     }
@@ -71,7 +88,7 @@ export const vehiculoScreen: Screen = {
       const errorEl = body.querySelector<HTMLElement>('#vError')!;
       const saveBtn = body.querySelector<HTMLButtonElement>('#vSave')!;
       const cancelBtn = body.querySelector<HTMLButtonElement>('#vCancel');
-      cancelBtn?.addEventListener('click', renderView);
+      cancelBtn?.addEventListener('click', () => void renderView());
       saveBtn.addEventListener('click', () => {
         void (async () => {
           const name = nameInput.value.trim();
@@ -90,14 +107,18 @@ export const vehiculoScreen: Screen = {
           };
           await upsertVehicle(vehicle);
           current = vehicle;
-          renderView();
+          await renderView();
         })();
       });
     }
 
+    bus.addEventListener(CHARGES_UPDATED, () => {
+      if (current) void renderView();
+    });
+
     try {
       current = await getVehicle();
-      renderView();
+      await renderView();
     } catch (err) {
       body.innerHTML = `<p style="color:var(--critical);font-size:14px;">Error cargando el vehículo — ${err instanceof Error ? err.message : String(err)}</p>`;
     }

@@ -99,6 +99,44 @@ export function insertCharge(
   return fromRow(rows[0]);
 }
 
+/**
+ * Actualiza una carga existente, recalculando el costo con las tarifas de HOY — no con las que
+ * regían cuando se registró originalmente (no guardamos qué tarifa estaba vigente en cada
+ * momento, solo el resultado). Es la misma decisión documentada en el wireframe de este agregado.
+ */
+export function updateCharge(
+  db: OpfsSAHPoolDatabase,
+  id: number,
+  input: NewCharge,
+  rates: TariffRates,
+  puntaStartHour: number,
+): Charge {
+  let cost: number, valleKwh: number, llanoKwh: number, puntaKwh: number;
+  let startAt: string | null = null, endAt: string | null = null, pricePerKwh: number | null = null;
+
+  if (input.location === 'home') {
+    const b = computeHomeChargeCost(input.startAt, input.endAt, input.kwh, rates, puntaStartHour);
+    cost = b.total; valleKwh = b.valleKwh; llanoKwh = b.llanoKwh; puntaKwh = b.puntaKwh;
+    startAt = input.startAt.toISOString();
+    endAt = input.endAt.toISOString();
+  } else {
+    cost = computePublicChargeCost(input.pricePerKwh, input.kwh);
+    valleKwh = 0; llanoKwh = 0; puntaKwh = 0;
+    pricePerKwh = input.pricePerKwh;
+  }
+
+  db.exec(
+    `UPDATE charges SET
+       location = ?, start_at = ?, end_at = ?, kwh = ?, odometer_km = ?, price_per_kwh = ?, cost = ?,
+       breakdown_valle_kwh = ?, breakdown_llano_kwh = ?, breakdown_punta_kwh = ?
+     WHERE id = ?`,
+    { bind: [input.location, startAt, endAt, input.kwh, input.odometerKm, pricePerKwh, cost, valleKwh, llanoKwh, puntaKwh, id] },
+  );
+
+  const rows = queryRows<ChargeRow>(db, 'SELECT * FROM charges WHERE id = ?', [id]);
+  return fromRow(rows[0]);
+}
+
 export function listCharges(db: OpfsSAHPoolDatabase, limit = 100): Charge[] {
   const rows = queryRows<ChargeRow>(
     db,
@@ -213,4 +251,39 @@ export function getMonthlyTotals(db: OpfsSAHPoolDatabase, monthsBack: number): M
     out.push({ monthLabel: monthDate.toLocaleDateString('es-UY', { month: 'short' }), total: rows[0]?.total ?? 0 });
   }
   return out;
+}
+
+export interface RealConsumption {
+  whKm: number;
+  sampleCount: number;
+}
+
+/**
+ * Consumo real estimado, "de carga a carga" con odómetro — misma lógica que medir el consumo de
+ * nafta entre tanque y tanque: los kWh cargados en la carga B ≈ energía consumida manejando entre
+ * el odómetro de A y el de B. Se promedian todos los tramos válidos disponibles.
+ *
+ * Aproximación conocida: no separa pérdidas de carga ni autoconsumo en reposo — alcanza para una
+ * estimación personal, no es un dato de laboratorio.
+ */
+export function getRealConsumption(db: OpfsSAHPoolDatabase): RealConsumption | null {
+  const rows = queryRows<{ odometer_km: number; kwh: number }>(
+    db,
+    `SELECT odometer_km, kwh FROM charges
+     WHERE odometer_km IS NOT NULL
+     ORDER BY COALESCE(start_at, created_at) ASC`,
+  );
+  if (rows.length < 2) return null;
+
+  const perKmSamples: number[] = [];
+  for (let i = 1; i < rows.length; i++) {
+    const kmDelta = rows[i].odometer_km - rows[i - 1].odometer_km;
+    if (kmDelta > 0) {
+      perKmSamples.push((rows[i].kwh / kmDelta) * 1000);
+    }
+  }
+  if (perKmSamples.length === 0) return null;
+
+  const whKm = perKmSamples.reduce((a, b) => a + b, 0) / perKmSamples.length;
+  return { whKm, sampleCount: perKmSamples.length };
 }

@@ -1,6 +1,6 @@
 import type { Screen } from './types';
 import { getStatsSince, getMonthlyTotals, listCharges } from '../lib/db/api';
-import { bus, CHARGES_UPDATED } from '../lib/bus';
+import { bus, CHARGES_UPDATED, requestEditCharge } from '../lib/bus';
 import { chargeRowHtml } from '../components/charge-row';
 
 function startOfMonthIso(): string {
@@ -55,6 +55,14 @@ export const inicioScreen: Screen = {
       document.querySelector<HTMLButtonElement>('.tab[data-tab="cargas"]')?.click();
     });
 
+    let recentCharges: Awaited<ReturnType<typeof listCharges>> = [];
+    listEl.addEventListener('click', (e) => {
+      const row = (e.target as HTMLElement).closest<HTMLElement>('.row[data-id]');
+      if (!row) return;
+      const charge = recentCharges.find((c) => c.id === Number(row.dataset.id));
+      if (charge) requestEditCharge(charge);
+    });
+
     async function refresh() {
       try {
         const [stats, monthly, recent] = await Promise.all([
@@ -100,6 +108,7 @@ export const inicioScreen: Screen = {
           compBody.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);margin:0;">Sin cargas en casa todavía.</p>';
         }
 
+        recentCharges = recent;
         listEl.innerHTML = recent.length
           ? recent.map((c) => chargeRowHtml(c)).join('')
           : '<div class="list-empty">Sin cargas todavía.</div>';

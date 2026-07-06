@@ -1,7 +1,7 @@
 import type { Screen } from './types';
 import { listCharges, deleteCharge } from '../lib/db/api';
 import type { Charge } from '../lib/db/charges';
-import { bus, CHARGES_UPDATED, notifyChargesUpdated } from '../lib/bus';
+import { bus, CHARGES_UPDATED, notifyChargesUpdated, requestEditCharge } from '../lib/bus';
 import { chargeRowHtml } from '../components/charge-row';
 
 type Filter = 'all' | 'home' | 'public';
@@ -51,13 +51,19 @@ export const cargasScreen: Screen = {
     });
 
     listEl.addEventListener('click', (e) => {
-      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-del]');
-      if (!btn) return;
-      const id = Number(btn.dataset.del);
-      if (!confirm('¿Eliminar esta carga? No se puede deshacer.')) return;
-      void deleteCharge(id).then(() => {
-        notifyChargesUpdated();
-      });
+      const target = e.target as HTMLElement;
+      const delBtn = target.closest<HTMLButtonElement>('[data-del]');
+      if (delBtn) {
+        const id = Number(delBtn.dataset.del);
+        if (!confirm('¿Eliminar esta carga? No se puede deshacer.')) return;
+        void deleteCharge(id).then(() => notifyChargesUpdated());
+        return;
+      }
+      const row = target.closest<HTMLElement>('.row[data-id]');
+      if (row) {
+        const charge = all.find((c) => c.id === Number(row.dataset.id));
+        if (charge) requestEditCharge(charge);
+      }
     });
 
     bus.addEventListener(CHARGES_UPDATED, () => void refresh());

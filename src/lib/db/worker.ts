@@ -10,7 +10,8 @@ import { SCHEMA_SQL, SETTINGS_KEYS } from './schema';
 import { UTE_2026_RATES, DEFAULT_PUNTA_START_HOUR } from '../tariff';
 import { getVehicle, upsertVehicle, deleteVehicle } from './vehicle';
 import {
-  insertCharge, listCharges, deleteCharge, deleteAllCharges, restoreCharge, getStatsSince, getMonthlyTotals,
+  insertCharge, updateCharge, listCharges, deleteCharge, deleteAllCharges, restoreCharge, getStatsSince,
+  getMonthlyTotals, getRealConsumption,
   type NewCharge, type Charge,
 } from './charges';
 import { getSettings, getTariffRates, setSetting } from './settings';
@@ -77,10 +78,25 @@ const handlers: Record<string, (args: never) => Promise<unknown>> = {
         : input;
     return insertCharge(db, revived, rates, settings.puntaStartHour);
   },
+  async updateCharge(args: { id: number; input: NewCharge }) {
+    const db = await getDb();
+    const rates = getTariffRates(db);
+    const settings = getSettings(db);
+    const input = args.input;
+    const revived: NewCharge =
+      input.location === 'home'
+        ? { ...input, startAt: new Date(input.startAt), endAt: new Date(input.endAt) }
+        : input;
+    return updateCharge(db, args.id, revived, rates, settings.puntaStartHour);
+  },
   async deleteCharge(args: { id: number }) {
     const db = await getDb();
     deleteCharge(db, args.id);
     return true;
+  },
+  async getRealConsumption() {
+    const db = await getDb();
+    return getRealConsumption(db);
   },
   async getVehicle() {
     const db = await getDb();

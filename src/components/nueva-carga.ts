@@ -1,6 +1,7 @@
 import { computeHomeChargeCost, computePublicChargeCost, type TariffRates } from '../lib/tariff';
-import { getSettings, insertCharge, getVehicle } from '../lib/db/api';
-import { notifyChargesUpdated } from '../lib/bus';
+import { getSettings, insertCharge, updateCharge, deleteCharge, getVehicle } from '../lib/db/api';
+import type { Charge, NewCharge } from '../lib/db/charges';
+import { bus, OPEN_EDIT_CHARGE, notifyChargesUpdated } from '../lib/bus';
 
 type ChargeMode = 'kwh' | 'pct';
 
@@ -10,7 +11,7 @@ export function nuevaCargaMarkup(): string {
     <div class="sheet-overlay" id="ncOverlay">
       <div class="sheet">
         <div class="sheet-head">
-          <div class="sheet-title">Nueva carga</div>
+          <div class="sheet-title" id="ncTitle">Nueva carga</div>
           <button class="sheet-cancel" id="ncCancel">Cancelar</button>
         </div>
         <div class="segmented" id="ncSeg">
@@ -67,6 +68,7 @@ export function nuevaCargaMarkup(): string {
           <div class="breakdown" id="ncBreakdown"></div>
         </div>
         <button class="primary-btn" id="ncSave">Guardar carga</button>
+        <button class="delete-link" id="ncDelete" style="display:none;">Eliminar esta carga</button>
       </div>
     </div>
     <div class="toast-zone"><div class="toast" id="toast"><svg><use href="#i-check"/></svg><span id="toastText">Carga registrada</span></div></div>
@@ -90,10 +92,16 @@ function resolveChargeWindow(startTime: string, endTime: string, now: Date): { s
   return { start, end };
 }
 
+function isoToTimeInput(iso: string): string {
+  return new Date(iso).toTimeString().slice(0, 5);
+}
+
 export function mountNuevaCarga(root: ParentNode): void {
   const fab = root.querySelector<HTMLButtonElement>('#fab')!;
   const overlay = root.querySelector<HTMLElement>('#ncOverlay')!;
   const cancelBtn = root.querySelector<HTMLButtonElement>('#ncCancel')!;
+  const titleEl = root.querySelector<HTMLElement>('#ncTitle')!;
+  const deleteBtn = root.querySelector<HTMLButtonElement>('#ncDelete')!;
   const seg = root.querySelector<HTMLElement>('#ncSeg')!;
   const modeSeg = root.querySelector<HTMLElement>('#ncModeSeg')!;
   const modePctBtn = root.querySelector<HTMLButtonElement>('#ncModePctBtn')!;
@@ -135,6 +143,7 @@ export function mountNuevaCarga(root: ParentNode): void {
   let puntaStartHour = 19;
   let batteryKwh: number | null = null;
   let mode: ChargeMode = 'kwh';
+  let editingId: number | null = null;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
   function origin(): 'home' | 'public' {
@@ -246,6 +255,13 @@ export function mountNuevaCarga(root: ParentNode): void {
   }
 
   function resetForm(): void {
+    editingId = null;
+    titleEl.textContent = 'Nueva carga';
+    saveBtn.textContent = 'Guardar carga';
+    deleteBtn.style.display = 'none';
+    seg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-origin') === 'home'));
+    startInput.value = '22:00';
+    endInput.value = '06:00';
     kwhHomeInput.value = '';
     odoHomeInput.value = '';
     priceInput.value = '';
@@ -263,9 +279,7 @@ export function mountNuevaCarga(root: ParentNode): void {
     syncVisibility();
   }
 
-  async function open(): Promise<void> {
-    resetForm();
-    overlay.classList.add('open');
+  async function loadContext(): Promise<void> {
     try {
       const [settings, vehicle] = await Promise.all([getSettings(), getVehicle()]);
       rates = { valle: settings.tariffValle, llano: settings.tariffLlano, punta: settings.tariffPunta };
@@ -278,6 +292,39 @@ export function mountNuevaCarga(root: ParentNode): void {
     }
   }
 
+  async function open(): Promise<void> {
+    resetForm();
+    overlay.classList.add('open');
+    await loadContext();
+  }
+
+  async function openEdit(charge: Charge): Promise<void> {
+    resetForm();
+    editingId = charge.id;
+    titleEl.textContent = 'Editar carga';
+    saveBtn.textContent = 'Guardar cambios';
+    deleteBtn.style.display = 'block';
+
+    const isHome = charge.location === 'home';
+    seg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-origin') === charge.location));
+
+    if (isHome && charge.startAt && charge.endAt) {
+      startInput.value = isoToTimeInput(charge.startAt);
+      endInput.value = isoToTimeInput(charge.endAt);
+      kwhHomeInput.value = String(charge.kwh);
+      odoHomeInput.value = charge.odometerKm != null ? String(charge.odometerKm) : '';
+    } else {
+      priceInput.value = charge.pricePerKwh != null ? String(charge.pricePerKwh) : '';
+      kwhPublicInput.value = String(charge.kwh);
+      odoPublicInput.value = charge.odometerKm != null ? String(charge.odometerKm) : '';
+    }
+
+    syncVisibility();
+    overlay.classList.add('open');
+    await loadContext();
+    recalcPreview();
+  }
+
   function close(): void {
     overlay.classList.remove('open');
   }
@@ -286,6 +333,21 @@ export function mountNuevaCarga(root: ParentNode): void {
   cancelBtn.addEventListener('click', close);
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) close();
+  });
+  bus.addEventListener(OPEN_EDIT_CHARGE, (e) => void openEdit((e as CustomEvent<Charge>).detail));
+
+  deleteBtn.addEventListener('click', () => {
+    void (async () => {
+      if (editingId == null) return;
+      if (!confirm('¿Eliminar esta carga? No se puede deshacer.')) return;
+      await deleteCharge(editingId);
+      close();
+      notifyChargesUpdated();
+      toastText.textContent = 'Carga eliminada';
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+    })();
   });
 
   seg.querySelectorAll('button').forEach((btn) => {
@@ -329,18 +391,19 @@ export function mountNuevaCarga(root: ParentNode): void {
     saveBtn.disabled = true;
     try {
       if (!kwh || kwh <= 0) throw new Error(mode === 'pct' ? 'Ingresá el % de desde y hasta.' : 'Ingresá los kWh cargados.');
+      let input: NewCharge;
       if (origin() === 'home') {
         const { start, end } = resolveChargeWindow(startInput.value, endInput.value, new Date());
         const odo = odoHomeInput.value ? parseFloat(odoHomeInput.value) : null;
-        const charge = await insertCharge({ location: 'home', startAt: start, endAt: end, kwh, odometerKm: odo });
-        toastText.textContent = 'Carga registrada — $' + Math.round(charge.cost).toLocaleString('es-UY');
+        input = { location: 'home', startAt: start, endAt: end, kwh, odometerKm: odo };
       } else {
         const price = parseFloat(priceInput.value);
         if (!price || price <= 0) throw new Error('Ingresá el precio por kWh.');
         const odo = odoPublicInput.value ? parseFloat(odoPublicInput.value) : null;
-        const charge = await insertCharge({ location: 'public', kwh, pricePerKwh: price, odometerKm: odo });
-        toastText.textContent = 'Carga registrada — $' + Math.round(charge.cost).toLocaleString('es-UY');
+        input = { location: 'public', kwh, pricePerKwh: price, odometerKm: odo };
       }
+      const charge = editingId != null ? await updateCharge(editingId, input) : await insertCharge(input);
+      toastText.textContent = (editingId != null ? 'Carga actualizada — $' : 'Carga registrada — $') + Math.round(charge.cost).toLocaleString('es-UY');
       close();
       notifyChargesUpdated();
       toast.classList.add('show');
