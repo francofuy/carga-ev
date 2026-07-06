@@ -2,6 +2,7 @@ import type { Screen } from './types';
 import { getStatsSince, getMonthlyTotals, listCharges } from '../lib/db/api';
 import { bus, CHARGES_UPDATED, requestEditCharge } from '../lib/bus';
 import { chargeRowHtml } from '../components/charge-row';
+import { renderOdometer } from '../lib/odometer';
 
 function startOfMonthIso(): string {
   const d = new Date();
@@ -16,27 +17,31 @@ export const inicioScreen: Screen = {
   id: 'inicio',
   render() {
     return `
-      <div class="nav-title">Inicio</div>
-      <div class="card">
-        <div class="label">Gasto este mes</div>
-        <div class="big-number" id="homeSpend">—</div>
-        <div class="sub" id="homeCount">Cargando…</div>
+      <div class="aurora-bg" aria-hidden="true"></div>
+      <div class="sparkle-bg" id="sparkleBg" aria-hidden="true"></div>
+      <div style="position:relative;z-index:1;">
+        <div class="nav-title">Inicio</div>
+        <div class="card">
+          <div class="label">Gasto este mes</div>
+          <div class="big-number" id="homeSpend">—</div>
+          <div class="sub" id="homeCount">Cargando…</div>
+        </div>
+        <div class="tile-row">
+          <div class="tile"><div class="label">$/kWh prom.</div><div class="value" id="tileAvgKwh">—</div></div>
+          <div class="tile"><div class="label">% en Valle</div><div class="value" id="tileValle">—</div></div>
+          <div class="tile"><div class="label">$/km</div><div class="value" id="tileKm">—</div></div>
+        </div>
+        <div class="chart-card">
+          <div class="chead"><span class="t">Tendencia</span><span class="p">últimos 6 meses</span></div>
+          <div class="bar-chart" id="homeChart"></div>
+        </div>
+        <div class="chart-card" id="compCard">
+          <div class="chead"><span class="t">Franja horaria</span><span class="p">este mes</span></div>
+          <div id="compBody"><p style="font-size:12.5px;color:var(--text-muted);margin:0;">Sin cargas en casa todavía.</p></div>
+        </div>
+        <div class="section-title">Últimas cargas <a href="#" id="homeSeeAll">Ver todas →</a></div>
+        <div class="list-group" id="homeList"></div>
       </div>
-      <div class="tile-row">
-        <div class="tile"><div class="label">$/kWh prom.</div><div class="value" id="tileAvgKwh">—</div></div>
-        <div class="tile"><div class="label">% en Valle</div><div class="value" id="tileValle">—</div></div>
-        <div class="tile"><div class="label">$/km</div><div class="value" id="tileKm">—</div></div>
-      </div>
-      <div class="chart-card">
-        <div class="chead"><span class="t">Tendencia</span><span class="p">últimos 6 meses</span></div>
-        <div class="bar-chart" id="homeChart"></div>
-      </div>
-      <div class="chart-card" id="compCard">
-        <div class="chead"><span class="t">Franja horaria</span><span class="p">este mes</span></div>
-        <div id="compBody"><p style="font-size:12.5px;color:var(--text-muted);margin:0;">Sin cargas en casa todavía.</p></div>
-      </div>
-      <div class="section-title">Últimas cargas <a href="#" id="homeSeeAll">Ver todas →</a></div>
-      <div class="list-group" id="homeList"></div>
     `;
   },
   async mount(root) {
@@ -49,10 +54,27 @@ export const inicioScreen: Screen = {
     const compBody = root.querySelector<HTMLElement>('#compBody')!;
     const listEl = root.querySelector<HTMLElement>('#homeList')!;
     const seeAll = root.querySelector<HTMLAnchorElement>('#homeSeeAll')!;
+    const sparkleBg = root.querySelector<HTMLElement>('#sparkleBg')!;
+
+    for (let i = 0; i < 10; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'spark-dot';
+      dot.style.left = Math.random() * 100 + '%';
+      dot.style.top = Math.random() * 100 + '%';
+      dot.style.animationDelay = Math.random() * 2.6 + 's';
+      sparkleBg.appendChild(dot);
+    }
 
     seeAll.addEventListener('click', (e) => {
       e.preventDefault();
       document.querySelector<HTMLButtonElement>('.tab[data-tab="cargas"]')?.click();
+    });
+
+    chartEl.addEventListener('click', (e) => {
+      const col = (e.target as HTMLElement).closest<HTMLElement>('.bar-col');
+      if (!col) return;
+      chartEl.querySelectorAll('.bar-col').forEach((c) => c.classList.remove('show'));
+      col.classList.add('show');
     });
 
     let recentCharges: Awaited<ReturnType<typeof listCharges>> = [];
@@ -71,7 +93,7 @@ export const inicioScreen: Screen = {
           listCharges(3),
         ]);
 
-        spendEl.textContent = fmtMoney(stats.totalCost);
+        renderOdometer(spendEl, fmtMoney(stats.totalCost));
         countEl.style.color = '';
         countEl.textContent =
           stats.count === 0
@@ -87,23 +109,33 @@ export const inicioScreen: Screen = {
           .map((m) => {
             const isPeak = m.total === maxTotal && m.total > 0;
             const heightPct = Math.max(4, Math.round((m.total / maxTotal) * 100));
-            return `<div class="bar-col"><div class="bar${isPeak ? ' peak' : ''}" style="height:${heightPct}%"></div><div class="m">${m.monthLabel}</div></div>`;
+            return `<div class="bar-col" data-h="${heightPct}"><div class="bar${isPeak ? ' peak' : ''}"></div><span class="bar-tooltip">${fmtMoney(m.total)}</span><div class="m">${m.monthLabel}</div></div>`;
           })
           .join('');
+        requestAnimationFrame(() => {
+          chartEl.querySelectorAll<HTMLElement>('.bar-col').forEach((col) => {
+            col.querySelector<HTMLElement>('.bar')!.style.height = col.dataset.h + '%';
+          });
+        });
 
         const homeShareTotal = stats.valleSharePct + stats.llanoSharePct + stats.puntaSharePct;
         if (homeShareTotal > 0) {
           compBody.innerHTML = `
             <div class="comp-bar">
-              <span style="width:${stats.valleSharePct}%;background:var(--good)"></span>
-              <span style="width:${stats.llanoSharePct}%;background:var(--warning-fill)"></span>
-              <span style="width:${stats.puntaSharePct}%;background:var(--critical)"></span>
+              <span data-w="${stats.valleSharePct}" style="background:var(--good)"></span>
+              <span data-w="${stats.llanoSharePct}" style="background:var(--warning-fill)"></span>
+              <span data-w="${stats.puntaSharePct}" style="background:var(--critical)"></span>
             </div>
             <div class="comp-legend">
               <div class="li"><span class="dot" style="background:var(--good)"></span>Valle <b>${Math.round(stats.valleSharePct)}%</b></div>
               <div class="li"><span class="dot" style="background:var(--warning-fill)"></span>Llano <b>${Math.round(stats.llanoSharePct)}%</b></div>
               <div class="li"><span class="dot" style="background:var(--critical)"></span>Punta <b>${Math.round(stats.puntaSharePct)}%</b></div>
             </div>`;
+          requestAnimationFrame(() => {
+            compBody.querySelectorAll<HTMLElement>('.comp-bar span').forEach((s) => {
+              s.style.width = s.dataset.w + '%';
+            });
+          });
         } else {
           compBody.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);margin:0;">Sin cargas en casa todavía.</p>';
         }

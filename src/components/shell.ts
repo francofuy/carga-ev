@@ -21,8 +21,8 @@ export function mountShell(root: HTMLElement, screens: Screen[]): void {
 
   const tabsHtml = screens
     .map(
-      (s) => `
-      <button class="tab" data-tab="${s.id}">
+      (s, i) => `
+      <button class="tab" data-tab="${s.id}" data-i="${i}">
         <svg><use href="#${TAB_ICON[s.id]}"/></svg>
         ${TAB_LABEL[s.id]}
       </button>`
@@ -31,16 +31,19 @@ export function mountShell(root: HTMLElement, screens: Screen[]): void {
 
   root.innerHTML = `
     ${screensHtml}
-    <div class="tabbar">${tabsHtml}</div>
+    <div class="tabbar"><div class="tab-slider" id="tabSlider"></div>${tabsHtml}</div>
     ${nuevaCargaMarkup()}
   `;
 
   const screenEls = root.querySelectorAll<HTMLElement>('.screen');
   const tabEls = root.querySelectorAll<HTMLButtonElement>('.tab');
+  const tabSlider = root.querySelector<HTMLElement>('#tabSlider')!;
 
   function activate(id: ScreenId) {
     screenEls.forEach((el) => el.classList.toggle('active', el.dataset.screen === id));
     tabEls.forEach((el) => el.classList.toggle('active', el.dataset.tab === id));
+    const activeTab = [...tabEls].find((el) => el.dataset.tab === id);
+    if (activeTab) tabSlider.style.transform = `translateX(${Number(activeTab.dataset.i) * 100}%)`;
   }
 
   tabEls.forEach((btn) => {

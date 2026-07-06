@@ -10,8 +10,8 @@
   --text-muted: #8A93A0;
   --accent: #1F8FE0;
   --accent-ink: #ffffff;
-  --accent-pressed: #17709D;
-  --accent-soft: #E4F1FC;
+  --accent-pressed: color-mix(in srgb, var(--accent) 78%, black);
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
   --good: #0ca30c;
   --good-soft: #E4F7E4;
   --warning: #C77E00;
@@ -35,7 +35,9 @@
   :root {
     --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34;
     --border: #2A2F38; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #6B7480;
-    --accent: #4FB0F5; --accent-ink: #04121C; --accent-pressed: #7AC4F7; --accent-soft: #12293A;
+    --accent: #4FB0F5; --accent-ink: #04121C;
+    --accent-pressed: color-mix(in srgb, var(--accent) 75%, white);
+    --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
     --good: #21C05E; --good-soft: #0F2A16; --warning: #FAB219; --warning-fill: #fab219; --warning-soft: #3A2C0E;
     --critical: #FF6259; --critical-soft: #3A1613; --overlay: rgba(0, 0, 0, 0.65);
     --shadow-1: 0 0 0 1px var(--border);
@@ -46,7 +48,9 @@
 :root[data-theme="dark"] {
   --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34;
   --border: #2A2F38; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #6B7480;
-  --accent: #4FB0F5; --accent-ink: #04121C; --accent-pressed: #7AC4F7; --accent-soft: #12293A;
+  --accent: #4FB0F5; --accent-ink: #04121C;
+  --accent-pressed: color-mix(in srgb, var(--accent) 75%, white);
+  --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
   --good: #21C05E; --good-soft: #0F2A16; --warning: #FAB219; --warning-fill: #fab219; --warning-soft: #3A2C0E;
   --critical: #FF6259; --critical-soft: #3A1613; --overlay: rgba(0, 0, 0, 0.65);
   --shadow-1: 0 0 0 1px var(--border);
@@ -56,7 +60,9 @@
 :root[data-theme="light"] {
   --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB;
   --border: #DCE1E8; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #8A93A0;
-  --accent: #1F8FE0; --accent-ink: #ffffff; --accent-pressed: #17709D; --accent-soft: #E4F1FC;
+  --accent: #1F8FE0; --accent-ink: #ffffff;
+  --accent-pressed: color-mix(in srgb, var(--accent) 78%, black);
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
   --good: #0ca30c; --good-soft: #E4F7E4; --warning: #C77E00; --warning-fill: #fab219; --warning-soft: #FEF3DC;
   --critical: #d03b3b; --critical-soft: #FBE4E3; --overlay: rgba(14, 17, 22, 0.45);
   --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);

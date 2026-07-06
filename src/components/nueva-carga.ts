@@ -2,6 +2,7 @@ import { computeHomeChargeCost, computePublicChargeCost, type TariffRates } from
 import { getSettings, insertCharge, updateCharge, deleteCharge, getVehicle } from '../lib/db/api';
 import type { Charge, NewCharge } from '../lib/db/charges';
 import { bus, OPEN_EDIT_CHARGE, notifyChargesUpdated } from '../lib/bus';
+import { sparkBurst } from '../lib/spark-burst';
 
 type ChargeMode = 'kwh' | 'pct';
 
@@ -71,6 +72,7 @@ export function nuevaCargaMarkup(): string {
         <button class="delete-link" id="ncDelete" style="display:none;">Eliminar esta carga</button>
       </div>
     </div>
+    <canvas id="sparkFx" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:29;"></canvas>
     <div class="toast-zone"><div class="toast" id="toast"><svg><use href="#i-check"/></svg><span id="toastText">Carga registrada</span></div></div>
   `;
 }
@@ -114,6 +116,12 @@ export function mountNuevaCarga(root: ParentNode): void {
   const saveBtn = root.querySelector<HTMLButtonElement>('#ncSave')!;
   const toast = root.querySelector<HTMLElement>('#toast')!;
   const toastText = root.querySelector<HTMLElement>('#toastText')!;
+  const sparkCanvas = root.querySelector<HTMLCanvasElement>('#sparkFx')!;
+
+  function fireSpark(): void {
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    sparkBurst(sparkCanvas, window.innerWidth / 2, window.innerHeight - 100, accent || '#1F8FE0');
+  }
 
   const startInput = root.querySelector<HTMLInputElement>('#ncStart')!;
   const endInput = root.querySelector<HTMLInputElement>('#ncEnd')!;
@@ -402,11 +410,13 @@ export function mountNuevaCarga(root: ParentNode): void {
         const odo = odoPublicInput.value ? parseFloat(odoPublicInput.value) : null;
         input = { location: 'public', kwh, pricePerKwh: price, odometerKm: odo };
       }
-      const charge = editingId != null ? await updateCharge(editingId, input) : await insertCharge(input);
-      toastText.textContent = (editingId != null ? 'Carga actualizada — $' : 'Carga registrada — $') + Math.round(charge.cost).toLocaleString('es-UY');
+      const isNew = editingId == null;
+      const charge = editingId == null ? await insertCharge(input) : await updateCharge(editingId, input);
+      toastText.textContent = (isNew ? 'Carga registrada — $' : 'Carga actualizada — $') + Math.round(charge.cost).toLocaleString('es-UY');
       close();
       notifyChargesUpdated();
       toast.classList.add('show');
+      if (isNew) fireSpark();
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
     } catch (err) {

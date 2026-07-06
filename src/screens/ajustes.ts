@@ -3,7 +3,7 @@ import { getSettings, setSetting, exportBackup, restoreBackup, wipeData } from '
 import type { AppSettings } from '../lib/db/settings';
 import type { BackupData } from '../lib/db/backup';
 import { notifyChargesUpdated } from '../lib/bus';
-import { applyTheme } from '../lib/theme';
+import { applyTheme, applyAccentColor, ACCENT_PRESETS } from '../lib/theme';
 
 const SETTING_KEY_MAP: Record<keyof AppSettings, string> = {
   tariffValle: 'tariff_valle',
@@ -12,6 +12,7 @@ const SETTING_KEY_MAP: Record<keyof AppSettings, string> = {
   puntaStartHour: 'punta_start_hour',
   notifBackupEnabled: 'notif_backup_enabled',
   theme: 'theme',
+  accentColor: 'accent_color',
 };
 
 function bodyHtml(): string {
@@ -47,6 +48,12 @@ function bodyHtml(): string {
           <option value="light">Claro</option>
           <option value="dark">Oscuro</option>
         </select>
+      </div>
+      <div class="settings-row">
+        <span class="lbl">Color de acento</span>
+        <div class="accent-row" id="accentRow">
+          ${ACCENT_PRESETS.map((a) => `<button class="accent-swatch" data-c="${a.hex}" style="background:${a.hex};" aria-label="${a.name}"></button>`).join('')}
+        </div>
       </div>
     </div>
 
@@ -94,6 +101,7 @@ export const ajustesScreen: Screen = {
     const themeSelect = body.querySelector<HTMLSelectElement>('#setTheme')!;
     const dataMsg = body.querySelector<HTMLElement>('#dataMsg')!;
     const importFile = body.querySelector<HTMLInputElement>('#importFile')!;
+    const accentRow = body.querySelector<HTMLElement>('#accentRow')!;
 
     valleInput.value = String(settings.tariffValle);
     llanoInput.value = String(settings.tariffLlano);
@@ -101,6 +109,9 @@ export const ajustesScreen: Screen = {
     puntaHourSelect.value = String(settings.puntaStartHour);
     notifSwitch.classList.toggle('on', settings.notifBackupEnabled);
     themeSelect.value = settings.theme;
+    accentRow.querySelectorAll<HTMLButtonElement>('.accent-swatch').forEach((btn) => {
+      btn.classList.toggle('sel', btn.dataset.c?.toLowerCase() === settings.accentColor.toLowerCase());
+    });
 
     body.querySelector('#saveTariffs')!.addEventListener('click', () => {
       void (async () => {
@@ -126,6 +137,18 @@ export const ajustesScreen: Screen = {
         applyTheme(value);
         await setSetting(SETTING_KEY_MAP.theme, value);
       })();
+    });
+
+    accentRow.querySelectorAll<HTMLButtonElement>('.accent-swatch').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        void (async () => {
+          const hex = btn.dataset.c!;
+          accentRow.querySelectorAll('.accent-swatch').forEach((b) => b.classList.remove('sel'));
+          btn.classList.add('sel');
+          applyAccentColor(hex);
+          await setSetting(SETTING_KEY_MAP.accentColor, hex);
+        })();
+      });
     });
 
     body.querySelector('#rowExport')!.addEventListener('click', () => {
@@ -170,6 +193,12 @@ export const ajustesScreen: Screen = {
           llanoInput.value = String(settings.tariffLlano);
           puntaInput.value = String(settings.tariffPunta);
           puntaHourSelect.value = String(settings.puntaStartHour);
+          themeSelect.value = settings.theme;
+          applyTheme(settings.theme);
+          applyAccentColor(settings.accentColor);
+          accentRow.querySelectorAll<HTMLButtonElement>('.accent-swatch').forEach((btn) => {
+            btn.classList.toggle('sel', btn.dataset.c?.toLowerCase() === settings.accentColor.toLowerCase());
+          });
         } catch (err) {
           showBanner(dataMsg, 'No se pudo importar: ' + (err instanceof Error ? err.message : String(err)), 'error');
         }

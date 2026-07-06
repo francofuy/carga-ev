@@ -38,4 +38,5 @@ export const SETTINGS_KEYS = {
   puntaStartHour: 'punta_start_hour',
   notifBackupEnabled: 'notif_backup_enabled',
   theme: 'theme',
+  accentColor: 'accent_color',
 } as const;

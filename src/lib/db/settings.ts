@@ -10,6 +10,7 @@ export interface AppSettings {
   puntaStartHour: number;
   notifBackupEnabled: boolean;
   theme: 'auto' | 'light' | 'dark';
+  accentColor: string;
 }
 
 export function getSettings(db: OpfsSAHPoolDatabase): AppSettings {
@@ -22,6 +23,7 @@ export function getSettings(db: OpfsSAHPoolDatabase): AppSettings {
     puntaStartHour: Number(map[SETTINGS_KEYS.puntaStartHour]),
     notifBackupEnabled: map[SETTINGS_KEYS.notifBackupEnabled] === '1',
     theme: (map[SETTINGS_KEYS.theme] as AppSettings['theme']) ?? 'auto',
+    accentColor: map[SETTINGS_KEYS.accentColor] || '#1F8FE0',
   };
 }
 
