@@ -163,6 +163,18 @@
 .segmented { display: flex; background: var(--surface-2); border-radius: var(--r-sm); padding: 3px; margin-bottom: 18px; }
 .segmented button { flex: 1; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 600; padding: 10px 4px; border-radius: 8px; color: var(--text-secondary); min-height: 38px; }
 .segmented button.sel { background: var(--surface); color: var(--text); box-shadow: var(--shadow-1); }
+.segmented.sub { margin-bottom: 14px; }
+.segmented.sub button { font-size: 12.5px; padding: 8px 4px; min-height: 34px; }
+.segmented button:disabled { opacity: 0.4; }
+
+.form-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  padding: 9px 11px;
+  margin-bottom: 12px;
+}
 
 .field { margin-bottom: 12px; }
 .field label { font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 5px; }
@@ -186,6 +198,33 @@
   font-variant-numeric: tabular-nums;
 }
 .field .input .unit { color: var(--text-muted); }
+
+.pct-row { display: flex; gap: 10px; }
+.pct-row .field { flex: 1; }
+
+.battery-strip {
+  height: 14px;
+  border-radius: 7px;
+  background: var(--surface-3);
+  overflow: hidden;
+  position: relative;
+  margin: 4px 0 10px;
+}
+.battery-strip .fill-before { position: absolute; top: 0; bottom: 0; left: 0; background: var(--surface-2); }
+.battery-strip .fill-delta { position: absolute; top: 0; bottom: 0; background: var(--accent); }
+
+.computed-kwh {
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.computed-kwh b { color: var(--text); font-size: 15px; font-variant-numeric: tabular-nums; }
 
 .cost-preview { background: var(--accent-soft); border-radius: var(--r-md); padding: 14px 16px; margin: 16px 0; }
 .cost-preview .label { font-size: 12px; color: var(--accent); font-weight: 700; }
