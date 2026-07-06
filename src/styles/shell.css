@@ -9,6 +9,7 @@
 .screen {
   flex: 1 1 auto;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: calc(env(safe-area-inset-top) + 8px) 18px 100px;
   display: none;
 }
@@ -17,7 +18,7 @@
 
 .aurora-bg {
   position: absolute; z-index: 0; pointer-events: none;
-  top: 0; left: -20%; right: -20%; height: 340px;
+  top: 0; left: 0; right: 0; height: 340px;
   background:
     radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 60%),
     radial-gradient(circle at 70% 60%, color-mix(in srgb, var(--good) 18%, transparent), transparent 55%);

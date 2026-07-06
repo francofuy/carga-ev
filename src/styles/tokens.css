@@ -76,7 +76,12 @@ html {
   /* Permite scroll normal en ambos ejes pero excluye los gestos de zoom (pinch y doble-tap).
      El viewport meta solo no alcanza: iOS ignora user-scalable=no fuera del modo PWA instalada. */
   touch-action: pan-x pan-y;
+  overflow-x: hidden;
 }
+/* Safari dibuja un recuadro de foco + un flash gris nativo sobre cualquier <button> al tocarlo —
+   nunca lo desactivamos, así que aparecía superpuesto a nuestros propios estados (ripple, isla). */
+* { -webkit-tap-highlight-color: transparent; }
+button:focus-visible { outline: none; }
 body {
   margin: 0;
   background: var(--bg);
