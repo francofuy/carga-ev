@@ -37,17 +37,35 @@ export function mountShell(root: HTMLElement, screens: Screen[]): void {
 
   const screenEls = root.querySelectorAll<HTMLElement>('.screen');
   const tabEls = root.querySelectorAll<HTMLButtonElement>('.tab');
+  const tabbarEl = root.querySelector<HTMLElement>('.tabbar')!;
   const tabSlider = root.querySelector<HTMLElement>('#tabSlider')!;
+
+  /**
+   * Posición en píxeles reales, no en porcentaje: `translateX(N%)` se resuelve contra el ancho
+   * del propio slider (que mide `25% - 6px`, no un cuarto exacto del tabbar), así que un
+   * porcentaje arrastraba un error acumulado — más notorio cuanto más a la derecha el tab.
+   */
+  function positionSlider(tabEl: HTMLElement) {
+    const barRect = tabbarEl.getBoundingClientRect();
+    const tabRect = tabEl.getBoundingClientRect();
+    tabSlider.style.width = `${tabRect.width}px`;
+    tabSlider.style.transform = `translateX(${tabRect.left - barRect.left}px)`;
+  }
 
   function activate(id: ScreenId) {
     screenEls.forEach((el) => el.classList.toggle('active', el.dataset.screen === id));
     tabEls.forEach((el) => el.classList.toggle('active', el.dataset.tab === id));
     const activeTab = [...tabEls].find((el) => el.dataset.tab === id);
-    if (activeTab) tabSlider.style.transform = `translateX(${Number(activeTab.dataset.i) * 100}%)`;
+    if (activeTab) positionSlider(activeTab);
   }
 
   tabEls.forEach((btn) => {
     btn.addEventListener('click', () => activate(btn.dataset.tab as ScreenId));
+  });
+
+  window.addEventListener('resize', () => {
+    const current = [...tabEls].find((el) => el.classList.contains('active'));
+    if (current) positionSlider(current);
   });
 
   screens.forEach((s) => {

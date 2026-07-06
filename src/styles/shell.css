@@ -138,11 +138,11 @@
 }
 .tab-slider {
   position: absolute;
-  top: 6px; bottom: 6px; left: 6px;
-  width: calc(25% - 6px);
+  top: 6px; bottom: 6px; left: 0;
+  width: calc(25% - 6px); /* fallback antes de que el JS mida el tab real; se pisa en cada activate() */
   background: var(--accent);
   border-radius: 16px;
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 0;
 }
 @media (prefers-reduced-motion: reduce) { .tab-slider { transition: none; } }
