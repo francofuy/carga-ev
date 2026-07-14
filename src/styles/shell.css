@@ -82,9 +82,9 @@
 
 /* Dashboard (Inicio) */
 .tile-row { display: flex; gap: 10px; margin-bottom: 14px; }
-.tile { flex: 1; background: var(--surface); border-radius: var(--r-md); padding: 12px; box-shadow: var(--shadow-1); }
+.tile { flex: 1; min-width: 0; background: var(--surface); border-radius: var(--r-md); padding: 12px; box-shadow: var(--shadow-1); }
 .tile .label { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tile .value { font-size: 18px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.tile .value { font-size: 18px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile.accented { background: var(--accent-soft); box-shadow: none; }
 .tile.accented .label { color: var(--accent); }
 .tile.accented .value { color: var(--accent); }
