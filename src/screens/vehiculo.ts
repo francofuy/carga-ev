@@ -3,6 +3,7 @@ import { getVehicle, upsertVehicle, getRealConsumption } from '../lib/db/api';
 import type { Vehicle } from '../lib/db/vehicle';
 import type { RealConsumption } from '../lib/db/charges';
 import { bus, CHARGES_UPDATED } from '../lib/bus';
+import { whKmToKwh100, estimatedAutonomyKm } from '../lib/consumption';
 
 /**
  * Valores por defecto para el primer alta — specs reales del GAC Aion UT Max (60 kWh) según
@@ -13,14 +14,11 @@ import { bus, CHARGES_UPDATED } from '../lib/bus';
 const DEFAULT_VEHICLE = { name: 'GAC Aion UT Max', batteryKwh: 60, consumptionWhKm: 135 };
 
 function viewHtml(v: Vehicle, real: RealConsumption | null): string {
-  const effectiveWhKm = real?.whKm ?? v.consumptionWhKm;
-  const autonomyKm = effectiveWhKm > 0 ? Math.round((v.batteryKwh / (effectiveWhKm / 1000)) * 100) / 100 : 0;
-
   let realRow: string;
   if (real) {
     const deltaPct = Math.round(((real.whKm - v.consumptionWhKm) / v.consumptionWhKm) * 100);
     const sign = deltaPct > 0 ? '+' : '';
-    realRow = `<div class="spec-row new"><span>Consumo real (${real.sampleCount} tramo${real.sampleCount === 1 ? '' : 's'})</span><span class="v">${real.whKm.toFixed(0)} Wh/km <span class="delta">${sign}${deltaPct}%</span></span></div>`;
+    realRow = `<div class="spec-row new"><span>Consumo real (${real.sampleCount} tramo${real.sampleCount === 1 ? '' : 's'})</span><span class="v">${whKmToKwh100(real.whKm)} kWh/100km <span class="delta">${sign}${deltaPct}%</span></span></div>`;
   } else {
     realRow = `<div class="spec-row new"><span>Consumo real</span><span class="v" style="color:var(--text-muted);font-weight:400;font-size:12px;">— cargá el odómetro en 2 cargas seguidas para verlo</span></div>`;
   }
@@ -31,9 +29,9 @@ function viewHtml(v: Vehicle, real: RealConsumption | null): string {
       <div class="vehicle-name">${v.name}</div>
       <div class="vehicle-sub">Cargado manualmente</div>
       <div class="spec-row"><span>Batería</span><span class="v">${v.batteryKwh} kWh</span></div>
-      <div class="spec-row"><span>Consumo homologado</span><span class="v">${v.consumptionWhKm} Wh/km</span></div>
+      <div class="spec-row"><span>Consumo homologado</span><span class="v">${whKmToKwh100(v.consumptionWhKm)} kWh/100km</span></div>
       ${realRow}
-      <div class="spec-row"><span>Autonomía estimada</span><span class="v">≈ ${autonomyKm} km</span></div>
+      <div class="spec-row"><span>Autonomía estimada</span><span class="v">≈ ${estimatedAutonomyKm(v, real)} km</span></div>
     </div>
     <button class="link-btn" id="vehEdit">Editar vehículo</button>
   `;

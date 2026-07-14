@@ -80,9 +80,13 @@ export function computeHomeChargeCost(
   return { valleKwh, llanoKwh, puntaKwh, total };
 }
 
-/** Costo de una carga pública: tarifa manual del proveedor × kWh cargados. */
-export function computePublicChargeCost(pricePerKwh: number, kwh: number): number {
+/**
+ * Costo de una carga pública: tarifa manual del proveedor × kWh cargados, más un cargo fijo
+ * opcional por sesión. En Uruguay UTE (estatal) cobra cargo fijo; eOne, DMC y Evergo (privados) no.
+ */
+export function computePublicChargeCost(pricePerKwh: number, kwh: number, fixedFee = 0): number {
   if (kwh <= 0) throw new Error('Los kWh cargados deben ser mayores a cero.');
   if (pricePerKwh <= 0) throw new Error('El precio por kWh debe ser mayor a cero.');
-  return pricePerKwh * kwh;
+  if (fixedFee < 0) throw new Error('El cargo fijo no puede ser negativo.');
+  return pricePerKwh * kwh + fixedFee;
 }

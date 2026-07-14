@@ -1,8 +1,10 @@
 import type { Screen } from './types';
-import { getStatsSince, getMonthlyTotals, listCharges } from '../lib/db/api';
-import { bus, CHARGES_UPDATED, requestEditCharge } from '../lib/bus';
+import { getStatsSince, getMonthlyTotals, listCharges, getVehicle, getRealConsumption } from '../lib/db/api';
+import { bus, CHARGES_UPDATED, DRAFT_UPDATED, requestEditCharge, requestResumeDraft, notifyDraftUpdated } from '../lib/bus';
 import { chargeRowHtml } from '../components/charge-row';
 import { renderOdometer } from '../lib/odometer';
+import { loadDraft, clearDraft, timeAgoLabel } from '../lib/draft';
+import { estimatedAutonomyKm } from '../lib/consumption';
 
 function startOfMonthIso(): string {
   const d = new Date();
@@ -21,6 +23,7 @@ export const inicioScreen: Screen = {
       <div class="sparkle-bg" id="sparkleBg" aria-hidden="true"></div>
       <div style="position:relative;z-index:1;">
         <div class="nav-title">Inicio</div>
+        <div id="draftCard"></div>
         <div class="card">
           <div class="label">Gasto este mes</div>
           <div class="big-number" id="homeSpend">—</div>
@@ -30,6 +33,7 @@ export const inicioScreen: Screen = {
           <div class="tile"><div class="label">$/kWh prom.</div><div class="value" id="tileAvgKwh">—</div></div>
           <div class="tile"><div class="label">% en Valle</div><div class="value" id="tileValle">—</div></div>
           <div class="tile"><div class="label">$/km</div><div class="value" id="tileKm">—</div></div>
+          <div class="tile accented"><div class="label">Autonomía</div><div class="value" id="tileAutonomy">—</div></div>
         </div>
         <div class="chart-card">
           <div class="chead"><span class="t">Tendencia</span><span class="p">últimos 6 meses</span></div>
@@ -45,11 +49,13 @@ export const inicioScreen: Screen = {
     `;
   },
   async mount(root) {
+    const draftCardEl = root.querySelector<HTMLElement>('#draftCard')!;
     const spendEl = root.querySelector<HTMLElement>('#homeSpend')!;
     const countEl = root.querySelector<HTMLElement>('#homeCount')!;
     const tileAvgKwh = root.querySelector<HTMLElement>('#tileAvgKwh')!;
     const tileValle = root.querySelector<HTMLElement>('#tileValle')!;
     const tileKm = root.querySelector<HTMLElement>('#tileKm')!;
+    const tileAutonomy = root.querySelector<HTMLElement>('#tileAutonomy')!;
     const chartEl = root.querySelector<HTMLElement>('#homeChart')!;
     const compBody = root.querySelector<HTMLElement>('#compBody')!;
     const listEl = root.querySelector<HTMLElement>('#homeList')!;
@@ -87,10 +93,12 @@ export const inicioScreen: Screen = {
 
     async function refresh() {
       try {
-        const [stats, monthly, recent] = await Promise.all([
+        const [stats, monthly, recent, vehicle, realConsumption] = await Promise.all([
           getStatsSince(startOfMonthIso()),
           getMonthlyTotals(6),
           listCharges(3),
+          getVehicle(),
+          getRealConsumption(),
         ]);
 
         renderOdometer(spendEl, fmtMoney(stats.totalCost));
@@ -103,6 +111,7 @@ export const inicioScreen: Screen = {
         tileAvgKwh.textContent = stats.avgCostPerKwh > 0 ? '$' + stats.avgCostPerKwh.toFixed(2) : '—';
         tileValle.textContent = stats.valleSharePct > 0 || stats.count > 0 ? Math.round(stats.valleSharePct) + '%' : '—';
         tileKm.textContent = stats.costPerKm != null ? '$' + stats.costPerKm.toFixed(2) : '—';
+        tileAutonomy.textContent = vehicle ? estimatedAutonomyKm(vehicle, realConsumption) + ' km' : '—';
 
         const maxTotal = Math.max(1, ...monthly.map((m) => m.total));
         chartEl.innerHTML = monthly
@@ -153,7 +162,34 @@ export const inicioScreen: Screen = {
       }
     }
 
+    function renderDraftCard() {
+      const draft = loadDraft();
+      if (!draft) {
+        draftCardEl.innerHTML = '';
+        return;
+      }
+      draftCardEl.innerHTML = `
+        <div class="draft-card">
+          <div class="tag">Borrador sin guardar · ${timeAgoLabel(draft.savedAt)}</div>
+          <div class="row1">
+            <span class="ic"><svg><use href="#i-bolt"/></svg></span>
+            <span class="meta"><div class="m1">${draft.line1}</div><div class="m2">${draft.line2}</div></span>
+          </div>
+          <div class="btnrow">
+            <button class="go" id="draftResume">Continuar</button>
+            <button class="del" id="draftDiscard">Eliminar</button>
+          </div>
+        </div>`;
+      draftCardEl.querySelector<HTMLButtonElement>('#draftResume')!.addEventListener('click', () => requestResumeDraft(draft));
+      draftCardEl.querySelector<HTMLButtonElement>('#draftDiscard')!.addEventListener('click', () => {
+        clearDraft();
+        notifyDraftUpdated();
+      });
+    }
+
     bus.addEventListener(CHARGES_UPDATED, () => void refresh());
+    bus.addEventListener(DRAFT_UPDATED, renderDraftCard);
+    renderDraftCard();
     await refresh();
   },
 };

@@ -14,7 +14,7 @@ function formatWhen(c: Charge): string {
 }
 
 function locationBadge(c: Charge): string {
-  if (c.location !== 'home') return '<span class="badge badge-neutral">Manual</span>';
+  if (c.location !== 'home') return `<span class="badge badge-neutral">${c.network ?? 'Manual'}</span>`;
   const max = Math.max(c.valleKwh, c.llanoKwh, c.puntaKwh);
   if (max <= 0) return '';
   if (c.puntaKwh === max) return '<span class="badge badge-critical">Punta</span>';

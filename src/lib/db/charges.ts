@@ -4,6 +4,9 @@ import { computeHomeChargeCost, computePublicChargeCost, type TariffRates } from
 
 export type ChargeLocation = 'home' | 'public';
 
+/** UTE es estatal y cobra cargo fijo por sesión; eOne, DMC y Evergo son privados y no. */
+export type PublicNetwork = 'UTE' | 'eOne' | 'DMC' | 'Evergo' | 'Otro';
+
 export interface NewHomeCharge {
   location: 'home';
   startAt: Date;
@@ -16,6 +19,8 @@ export interface NewPublicCharge {
   kwh: number;
   pricePerKwh: number;
   odometerKm: number | null;
+  fixedFee: number | null;
+  network: PublicNetwork | null;
 }
 export type NewCharge = NewHomeCharge | NewPublicCharge;
 
@@ -27,6 +32,8 @@ export interface Charge {
   kwh: number;
   odometerKm: number | null;
   pricePerKwh: number | null;
+  fixedFee: number | null;
+  network: string | null;
   cost: number;
   valleKwh: number;
   llanoKwh: number;
@@ -42,6 +49,8 @@ interface ChargeRow {
   kwh: number;
   odometer_km: number | null;
   price_per_kwh: number | null;
+  fixed_fee: number | null;
+  network: string | null;
   cost: number;
   breakdown_valle_kwh: number;
   breakdown_llano_kwh: number;
@@ -58,6 +67,8 @@ function fromRow(row: ChargeRow): Charge {
     kwh: row.kwh,
     odometerKm: row.odometer_km,
     pricePerKwh: row.price_per_kwh,
+    fixedFee: row.fixed_fee,
+    network: row.network,
     cost: row.cost,
     valleKwh: row.breakdown_valle_kwh,
     llanoKwh: row.breakdown_llano_kwh,
@@ -75,6 +86,7 @@ export function insertCharge(
 ): Charge {
   let cost: number, valleKwh: number, llanoKwh: number, puntaKwh: number;
   let startAt: string | null = null, endAt: string | null = null, pricePerKwh: number | null = null;
+  let fixedFee: number | null = null, network: string | null = null;
 
   if (input.location === 'home') {
     const b = computeHomeChargeCost(input.startAt, input.endAt, input.kwh, rates, puntaStartHour);
@@ -82,17 +94,19 @@ export function insertCharge(
     startAt = input.startAt.toISOString();
     endAt = input.endAt.toISOString();
   } else {
-    cost = computePublicChargeCost(input.pricePerKwh, input.kwh);
+    cost = computePublicChargeCost(input.pricePerKwh, input.kwh, input.fixedFee ?? 0);
     valleKwh = 0; llanoKwh = 0; puntaKwh = 0;
     pricePerKwh = input.pricePerKwh;
+    fixedFee = input.fixedFee;
+    network = input.network;
   }
 
   db.exec(
     `INSERT INTO charges
-       (location, start_at, end_at, kwh, odometer_km, price_per_kwh, cost,
+       (location, start_at, end_at, kwh, odometer_km, price_per_kwh, fixed_fee, network, cost,
         breakdown_valle_kwh, breakdown_llano_kwh, breakdown_punta_kwh)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    { bind: [input.location, startAt, endAt, input.kwh, input.odometerKm, pricePerKwh, cost, valleKwh, llanoKwh, puntaKwh] },
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    { bind: [input.location, startAt, endAt, input.kwh, input.odometerKm, pricePerKwh, fixedFee, network, cost, valleKwh, llanoKwh, puntaKwh] },
   );
 
   const rows = queryRows<ChargeRow>(db, 'SELECT * FROM charges WHERE id = last_insert_rowid()');
@@ -113,6 +127,7 @@ export function updateCharge(
 ): Charge {
   let cost: number, valleKwh: number, llanoKwh: number, puntaKwh: number;
   let startAt: string | null = null, endAt: string | null = null, pricePerKwh: number | null = null;
+  let fixedFee: number | null = null, network: string | null = null;
 
   if (input.location === 'home') {
     const b = computeHomeChargeCost(input.startAt, input.endAt, input.kwh, rates, puntaStartHour);
@@ -120,17 +135,19 @@ export function updateCharge(
     startAt = input.startAt.toISOString();
     endAt = input.endAt.toISOString();
   } else {
-    cost = computePublicChargeCost(input.pricePerKwh, input.kwh);
+    cost = computePublicChargeCost(input.pricePerKwh, input.kwh, input.fixedFee ?? 0);
     valleKwh = 0; llanoKwh = 0; puntaKwh = 0;
     pricePerKwh = input.pricePerKwh;
+    fixedFee = input.fixedFee;
+    network = input.network;
   }
 
   db.exec(
     `UPDATE charges SET
-       location = ?, start_at = ?, end_at = ?, kwh = ?, odometer_km = ?, price_per_kwh = ?, cost = ?,
+       location = ?, start_at = ?, end_at = ?, kwh = ?, odometer_km = ?, price_per_kwh = ?, fixed_fee = ?, network = ?, cost = ?,
        breakdown_valle_kwh = ?, breakdown_llano_kwh = ?, breakdown_punta_kwh = ?
      WHERE id = ?`,
-    { bind: [input.location, startAt, endAt, input.kwh, input.odometerKm, pricePerKwh, cost, valleKwh, llanoKwh, puntaKwh, id] },
+    { bind: [input.location, startAt, endAt, input.kwh, input.odometerKm, pricePerKwh, fixedFee, network, cost, valleKwh, llanoKwh, puntaKwh, id] },
   );
 
   const rows = queryRows<ChargeRow>(db, 'SELECT * FROM charges WHERE id = ?', [id]);
@@ -162,12 +179,12 @@ export function deleteAllCharges(db: OpfsSAHPoolDatabase): void {
 export function restoreCharge(db: OpfsSAHPoolDatabase, c: Omit<Charge, 'id'>): void {
   db.exec(
     `INSERT INTO charges
-       (location, start_at, end_at, kwh, odometer_km, price_per_kwh, cost,
+       (location, start_at, end_at, kwh, odometer_km, price_per_kwh, fixed_fee, network, cost,
         breakdown_valle_kwh, breakdown_llano_kwh, breakdown_punta_kwh, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     {
       bind: [
-        c.location, c.startAt, c.endAt, c.kwh, c.odometerKm, c.pricePerKwh, c.cost,
+        c.location, c.startAt, c.endAt, c.kwh, c.odometerKm, c.pricePerKwh, c.fixedFee, c.network, c.cost,
         c.valleKwh, c.llanoKwh, c.puntaKwh, c.createdAt,
       ],
     },

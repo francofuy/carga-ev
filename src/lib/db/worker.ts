@@ -35,9 +35,21 @@ async function initDb(): Promise<OpfsSAHPoolDatabase> {
   const poolUtil = await sqlite3.installOpfsSAHPoolVfs({ name: 'carga-ev' });
   const db = new poolUtil.OpfsSAHPoolDb('/carga-ev.sqlite3');
   db.exec(SCHEMA_SQL);
+  migrateSchema(db);
   seedDefaultSettings(db);
   void ctx.navigator.storage?.persist?.();
   return db;
+}
+
+/** `CREATE TABLE IF NOT EXISTS` no agrega columnas a una tabla que ya existe en el dispositivo — así que las columnas nuevas se agregan acá, ignorando el error si ya estaban. */
+function migrateSchema(db: OpfsSAHPoolDatabase): void {
+  for (const stmt of ['ALTER TABLE charges ADD COLUMN fixed_fee REAL', 'ALTER TABLE charges ADD COLUMN network TEXT']) {
+    try {
+      db.exec(stmt);
+    } catch {
+      // la columna ya existe
+    }
+  }
 }
 
 function seedDefaultSettings(db: OpfsSAHPoolDatabase): void {

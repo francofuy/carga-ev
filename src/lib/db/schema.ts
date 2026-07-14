@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS charges (
   kwh REAL NOT NULL,
   odometer_km REAL,
   price_per_kwh REAL,
+  fixed_fee REAL,
+  network TEXT,
   cost REAL NOT NULL,
   breakdown_valle_kwh REAL NOT NULL DEFAULT 0,
   breakdown_llano_kwh REAL NOT NULL DEFAULT 0,

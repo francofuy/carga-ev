@@ -1,8 +1,9 @@
 import { computeHomeChargeCost, computePublicChargeCost, type TariffRates } from '../lib/tariff';
 import { getSettings, insertCharge, updateCharge, deleteCharge, getVehicle } from '../lib/db/api';
-import type { Charge, NewCharge } from '../lib/db/charges';
-import { bus, OPEN_EDIT_CHARGE, notifyChargesUpdated } from '../lib/bus';
+import type { Charge, NewCharge, PublicNetwork } from '../lib/db/charges';
+import { bus, OPEN_EDIT_CHARGE, RESUME_DRAFT, notifyChargesUpdated, notifyDraftUpdated } from '../lib/bus';
 import { sparkBurst } from '../lib/spark-burst';
+import { saveDraft, clearDraft, type ChargeDraft } from '../lib/draft';
 
 type ChargeMode = 'kwh' | 'pct';
 
@@ -46,7 +47,20 @@ export function nuevaCargaMarkup(): string {
         </div>
 
         <div id="ncFieldsPublic" style="display:none;">
+          <div class="field">
+            <label>Red</label>
+            <div class="chip-row" id="ncNetworkRow" style="margin-bottom:0;">
+              <button class="chip" type="button" data-network="UTE">UTE</button>
+              <button class="chip" type="button" data-network="eOne">eOne</button>
+              <button class="chip" type="button" data-network="DMC">DMC</button>
+              <button class="chip" type="button" data-network="Evergo">Evergo</button>
+              <button class="chip" type="button" data-network="Otro">Otro</button>
+            </div>
+          </div>
           <div class="field"><label>Precio por kWh</label><div class="input"><span class="unit">$</span><input type="number" step="0.01" min="0" id="ncPrice" placeholder="0.00"></div></div>
+
+          <div class="field" id="ncFixedFeeField" style="display:none;"><label>Cargo fijo</label><div class="input"><span class="unit">$</span><input type="number" step="0.01" min="0" id="ncFixedFee" placeholder="0.00"></div></div>
+          <button class="field-toggle-link" type="button" id="ncFixedFeeToggle" style="display:none;">+ Agregar cargo fijo</button>
 
           <div id="ncKwhBlockPublic">
             <div class="field"><label>kWh cargados</label><div class="input"><input type="number" step="0.1" min="0" id="ncKwhPublic" placeholder="0.0"><span class="unit">kWh</span></div></div>
@@ -128,6 +142,10 @@ export function mountNuevaCarga(root: ParentNode): void {
   const odoHomeInput = root.querySelector<HTMLInputElement>('#ncOdoHome')!;
   const priceInput = root.querySelector<HTMLInputElement>('#ncPrice')!;
   const odoPublicInput = root.querySelector<HTMLInputElement>('#ncOdoPublic')!;
+  const networkRow = root.querySelector<HTMLElement>('#ncNetworkRow')!;
+  const fixedFeeField = root.querySelector<HTMLElement>('#ncFixedFeeField')!;
+  const fixedFeeToggle = root.querySelector<HTMLButtonElement>('#ncFixedFeeToggle')!;
+  const fixedFeeInput = root.querySelector<HTMLInputElement>('#ncFixedFee')!;
 
   const kwhBlockHome = root.querySelector<HTMLElement>('#ncKwhBlockHome')!;
   const pctBlockHome = root.querySelector<HTMLElement>('#ncPctBlockHome')!;
@@ -153,9 +171,26 @@ export function mountNuevaCarga(root: ParentNode): void {
   let mode: ChargeMode = 'kwh';
   let editingId: number | null = null;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
+  let selectedNetwork: PublicNetwork | null = null;
+  let fixedFeeManualOpen = false;
 
   function origin(): 'home' | 'public' {
     return seg.querySelector('.sel')?.getAttribute('data-origin') === 'public' ? 'public' : 'home';
+  }
+
+  /** UTE abre el campo solo (cobra cargo fijo por sesión); en el resto queda como sugerencia manual vía el link "+ agregar". */
+  function isFixedFeeVisible(): boolean {
+    return selectedNetwork === 'UTE' || fixedFeeManualOpen;
+  }
+
+  function syncFixedFeeVisibility(): void {
+    const show = isFixedFeeVisible();
+    fixedFeeField.style.display = show ? 'block' : 'none';
+    fixedFeeToggle.style.display = !show ? 'block' : 'none';
+  }
+
+  function getFixedFee(): number {
+    return isFixedFeeVisible() ? parseFloat(fixedFeeInput.value) || 0 : 0;
   }
 
   function showError(msg: string | null): void {
@@ -252,9 +287,13 @@ export function mountNuevaCarga(root: ParentNode): void {
           breakdownEl.innerHTML = '';
           return;
         }
-        const total = computePublicChargeCost(price, kwh);
+        const fixedFee = getFixedFee();
+        const total = computePublicChargeCost(price, kwh, fixedFee);
         amountEl.textContent = '$' + Math.round(total).toLocaleString('es-UY');
-        breakdownEl.innerHTML = `<span class="badge badge-neutral">${kwh.toFixed(1)} kWh × $${price.toFixed(2)}/kWh</span>`;
+        const parts: string[] = [];
+        if (fixedFee > 0) parts.push(`<span class="badge badge-neutral">$${fixedFee.toFixed(0)} cargo fijo</span>`);
+        parts.push(`<span class="badge badge-neutral">${kwh.toFixed(1)} kWh × $${price.toFixed(2)}/kWh</span>`);
+        breakdownEl.innerHTML = parts.join('');
       }
     } catch {
       amountEl.textContent = '$0';
@@ -281,6 +320,11 @@ export function mountNuevaCarga(root: ParentNode): void {
     pctToPublic.value = '';
     mode = 'kwh';
     modeSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-mode') === 'kwh'));
+    selectedNetwork = null;
+    fixedFeeManualOpen = false;
+    fixedFeeInput.value = '';
+    networkRow.querySelectorAll('button').forEach((b) => b.classList.remove('sel'));
+    syncFixedFeeVisibility();
     showError(null);
     amountEl.textContent = '$0';
     breakdownEl.innerHTML = '';
@@ -325,6 +369,11 @@ export function mountNuevaCarga(root: ParentNode): void {
       priceInput.value = charge.pricePerKwh != null ? String(charge.pricePerKwh) : '';
       kwhPublicInput.value = String(charge.kwh);
       odoPublicInput.value = charge.odometerKm != null ? String(charge.odometerKm) : '';
+      selectedNetwork = (charge.network as PublicNetwork | null) ?? null;
+      networkRow.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-network') === selectedNetwork));
+      fixedFeeInput.value = charge.fixedFee != null ? String(charge.fixedFee) : '';
+      fixedFeeManualOpen = selectedNetwork !== 'UTE' && !!charge.fixedFee && charge.fixedFee > 0;
+      syncFixedFeeVisibility();
     }
 
     syncVisibility();
@@ -337,12 +386,95 @@ export function mountNuevaCarga(root: ParentNode): void {
     overlay.classList.remove('open');
   }
 
+  /** Snapshot del formulario en curso, o null si no hay nada real que valga la pena guardar (ver criterio de "meaningful content" en getKwh/price). */
+  function currentDraftSnapshot(): ChargeDraft | null {
+    const kwh = getKwh();
+    if (!kwh || kwh <= 0) return null;
+    const o = origin();
+    if (o === 'public' && !(parseFloat(priceInput.value) > 0)) return null;
+    return {
+      savedAt: Date.now(),
+      origin: o,
+      mode,
+      fields: {
+        start: startInput.value,
+        end: endInput.value,
+        kwhHome: kwhHomeInput.value,
+        pctFromHome: pctFromHome.value,
+        pctToHome: pctToHome.value,
+        odoHome: odoHomeInput.value,
+        price: priceInput.value,
+        kwhPublic: kwhPublicInput.value,
+        pctFromPublic: pctFromPublic.value,
+        pctToPublic: pctToPublic.value,
+        odoPublic: odoPublicInput.value,
+        network: selectedNetwork ?? '',
+        fixedFee: isFixedFeeVisible() ? fixedFeeInput.value : '',
+      },
+      line1: o === 'home' ? `Casa · ${startInput.value}–${endInput.value}` : 'Público o trabajo',
+      line2: `${kwh.toFixed(1)} kWh · ${amountEl.textContent} estimado`,
+    };
+  }
+
+  /** Autoguardado: solo para cargas nuevas (no ediciones) — se dispara al tocar afuera del sheet o al minimizar la app. */
+  function persistDraftIfPossible(): void {
+    if (editingId != null) return;
+    const snapshot = currentDraftSnapshot();
+    if (!snapshot) return;
+    saveDraft(snapshot);
+    notifyDraftUpdated();
+  }
+
+  function discardDraft(): void {
+    clearDraft();
+    notifyDraftUpdated();
+  }
+
+  async function openDraft(draft: ChargeDraft): Promise<void> {
+    resetForm();
+    seg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-origin') === draft.origin));
+    mode = draft.mode;
+    modeSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-mode') === draft.mode));
+    startInput.value = draft.fields.start ?? startInput.value;
+    endInput.value = draft.fields.end ?? endInput.value;
+    kwhHomeInput.value = draft.fields.kwhHome ?? '';
+    pctFromHome.value = draft.fields.pctFromHome ?? '';
+    pctToHome.value = draft.fields.pctToHome ?? '';
+    odoHomeInput.value = draft.fields.odoHome ?? '';
+    priceInput.value = draft.fields.price ?? '';
+    kwhPublicInput.value = draft.fields.kwhPublic ?? '';
+    pctFromPublic.value = draft.fields.pctFromPublic ?? '';
+    pctToPublic.value = draft.fields.pctToPublic ?? '';
+    odoPublicInput.value = draft.fields.odoPublic ?? '';
+    selectedNetwork = (draft.fields.network as PublicNetwork) || null;
+    networkRow.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-network') === selectedNetwork));
+    fixedFeeInput.value = draft.fields.fixedFee ?? '';
+    fixedFeeManualOpen = selectedNetwork !== 'UTE' && !!draft.fields.fixedFee;
+    syncFixedFeeVisibility();
+    syncVisibility();
+    overlay.classList.add('open');
+    await loadContext();
+    recalcPreview();
+  }
+
   fab.addEventListener('click', () => void open());
-  cancelBtn.addEventListener('click', close);
+  cancelBtn.addEventListener('click', () => {
+    if (editingId == null) discardDraft();
+    close();
+  });
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) close();
+    if (e.target !== overlay) return;
+    persistDraftIfPossible();
+    close();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && overlay.classList.contains('open')) persistDraftIfPossible();
+  });
+  window.addEventListener('pagehide', () => {
+    if (overlay.classList.contains('open')) persistDraftIfPossible();
   });
   bus.addEventListener(OPEN_EDIT_CHARGE, (e) => void openEdit((e as CustomEvent<Charge>).detail));
+  bus.addEventListener(RESUME_DRAFT, (e) => void openDraft((e as CustomEvent<ChargeDraft>).detail));
 
   deleteBtn.addEventListener('click', () => {
     void (async () => {
@@ -378,9 +510,27 @@ export function mountNuevaCarga(root: ParentNode): void {
     });
   });
 
+  networkRow.querySelectorAll<HTMLButtonElement>('button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const network = btn.getAttribute('data-network') as PublicNetwork;
+      const wasSelected = btn.classList.contains('sel');
+      networkRow.querySelectorAll('button').forEach((b) => b.classList.remove('sel'));
+      selectedNetwork = wasSelected ? null : network;
+      if (!wasSelected) btn.classList.add('sel');
+      syncFixedFeeVisibility();
+      recalcPreview();
+    });
+  });
+
+  fixedFeeToggle.addEventListener('click', () => {
+    fixedFeeManualOpen = true;
+    syncFixedFeeVisibility();
+    recalcPreview();
+  });
+
   [
     startInput, endInput, kwhHomeInput, priceInput, kwhPublicInput,
-    pctFromHome, pctToHome, pctFromPublic, pctToPublic,
+    pctFromHome, pctToHome, pctFromPublic, pctToPublic, fixedFeeInput,
   ].forEach((el) => el.addEventListener('input', recalcPreview));
 
   saveBtn.addEventListener('click', () => void handleSave());
@@ -408,10 +558,12 @@ export function mountNuevaCarga(root: ParentNode): void {
         const price = parseFloat(priceInput.value);
         if (!price || price <= 0) throw new Error('Ingresá el precio por kWh.');
         const odo = odoPublicInput.value ? parseFloat(odoPublicInput.value) : null;
-        input = { location: 'public', kwh, pricePerKwh: price, odometerKm: odo };
+        const fixedFee = getFixedFee();
+        input = { location: 'public', kwh, pricePerKwh: price, odometerKm: odo, fixedFee: fixedFee > 0 ? fixedFee : null, network: selectedNetwork };
       }
       const isNew = editingId == null;
       const charge = editingId == null ? await insertCharge(input) : await updateCharge(editingId, input);
+      if (isNew) discardDraft();
       toastText.textContent = (isNew ? 'Carga registrada — $' : 'Carga actualizada — $') + Math.round(charge.cost).toLocaleString('es-UY');
       close();
       notifyChargesUpdated();

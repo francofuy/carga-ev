@@ -87,6 +87,18 @@ siempre ni ser accesibles desde otra cuenta):
 
 - Registro de carga en Casa (con motor de tarifas) o Público (tarifa manual), por **kWh directo o
   por % de batería** (usa la capacidad del vehículo guardado).
+- **Carga pública con red y cargo fijo**: se elige la red (UTE, eOne, DMC, Evergo, Otro); con UTE
+  se abre solo el campo "Cargo fijo" (estatal, cobra fijo por sesión), en el resto queda disponible
+  vía "+ Agregar cargo fijo" por si algún día cambia. La red se guarda con la carga y reemplaza el
+  genérico "Manual" en las listas. Columnas `fixed_fee`/`network` agregadas con migración
+  (`ALTER TABLE ... ADD COLUMN`) para no perder datos ya guardados en el dispositivo.
+- **Consumo en kWh/100km**: Vehículo muestra consumo homologado y real en kWh/100km (antes Wh/km) —
+  la unidad estándar EV, comparable a simple vista. "Autonomía estimada" sigue siendo una sola fila
+  (usa el consumo real cuando hay 2+ tramos con odómetro, si no cae al homologado) — se probó
+  separarla en "homologada"/"real" y se revirtió por pedido explícito del usuario, ya alcanzaba con
+  corregir la unidad. Fórmulas compartidas en `src/lib/consumption.ts` (`whKmToKwh100`,
+  `autonomyKmFrom`, `estimatedAutonomyKm`). Inicio suma un 4º tile "Autonomía" (acentado) junto a
+  $/kWh, % Valle y $/km, con el mismo valor de "Autonomía estimada"; muestra "—" sin vehículo cargado.
 - Editar y eliminar una carga existente (mismo sheet, reutilizado).
 - Dashboard con gasto del mes, $/kWh promedio, % en Valle, $/km, tendencia de 6 meses, composición
   por franja horaria.
@@ -94,6 +106,12 @@ siempre ni ser accesibles desde otra cuenta):
 - Ajustes: tarifas editables, franja Punta propia, notificaciones, tema (claro/oscuro/automático),
   **color de acento personalizable** (5 presets), exportar/importar backup (JSON), borrar datos.
 - PWA: bloqueo de zoom táctil (pinch y doble-tap), instalable, offline-first.
+- **Recuperación de borrador**: si estás creando una carga nueva y tocás afuera del sheet o
+  minimizás la app, el formulario se guarda en `localStorage` (`src/lib/draft.ts`) y aparece una
+  tarjeta punteada arriba de la hero card en Inicio con "Continuar"/"Eliminar". Alcance deliberado:
+  solo cargas nuevas, no ediciones — el botón "Cancelar" explícito descarta directo, no guarda
+  (decisión del usuario). Disparadores: `visibilitychange` + `pagehide`, además del click fuera del
+  overlay. Wireframe elegido: `825f36d7-f09a-4ca3-82c8-cb8398413abf` (versión 3, tarjeta de dashboard).
 - Microinteracciones aplicadas: ripple global en botones, tab bar en isla flotante con pastilla
   deslizante, reveal animado del gráfico y la composición horaria, número "Gasto este mes" que
   rueda como odómetro, chispas sutiles al guardar una carga nueva, fondo aurora + chispitas fijas
