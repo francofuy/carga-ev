@@ -97,8 +97,14 @@ siempre ni ser accesibles desde otra cuenta):
   (usa el consumo real cuando hay 2+ tramos con odómetro, si no cae al homologado) — se probó
   separarla en "homologada"/"real" y se revirtió por pedido explícito del usuario, ya alcanzaba con
   corregir la unidad. Fórmulas compartidas en `src/lib/consumption.ts` (`whKmToKwh100`,
-  `autonomyKmFrom`, `estimatedAutonomyKm`). Inicio suma un 4º tile "Autonomía" (acentado) junto a
-  $/kWh, % Valle y $/km, con el mismo valor de "Autonomía estimada"; muestra "—" sin vehículo cargado.
+  `autonomyKmFrom`, `estimatedAutonomyKm`).
+- **Autonomía en Inicio**: primero se probó como 4º tile en la fila de $/kWh, % Valle y $/km, pero
+  con 4 columnas los tiles no encogían parejo (flex `min-width:auto` por defecto) y la fila se salía
+  de pantalla — fix real fue `min-width:0` en `.tile`, documentado por si vuelve a pasar en otra
+  fila de tiles. Después, por pedido del usuario, se sacó de ahí: ahora "Gasto este mes" y
+  "Autonomía" viven en una `.split-card` (una sola tarjeta, dividida por una línea interna en dos
+  mitades) arriba de la fila de tiles, que volvió a tener 3 columnas cómodas. El gasto ya no ocupa
+  todo el ancho para un número chico, y la fila de tiles no vuelve a apretarse.
 - Editar y eliminar una carga existente (mismo sheet, reutilizado).
 - Dashboard con gasto del mes, $/kWh promedio, % en Valle, $/km, tendencia de 6 meses, composición
   por franja horaria.

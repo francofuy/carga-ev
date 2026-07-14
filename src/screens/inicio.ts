@@ -24,16 +24,22 @@ export const inicioScreen: Screen = {
       <div style="position:relative;z-index:1;">
         <div class="nav-title">Inicio</div>
         <div id="draftCard"></div>
-        <div class="card">
-          <div class="label">Gasto este mes</div>
-          <div class="big-number" id="homeSpend">—</div>
-          <div class="sub" id="homeCount">Cargando…</div>
+        <div class="split-card">
+          <div class="half">
+            <div class="label">Gasto este mes</div>
+            <div class="big-number" id="homeSpend">—</div>
+            <div class="sub" id="homeCount">Cargando…</div>
+          </div>
+          <div class="half accented">
+            <div class="label">Autonomía</div>
+            <div class="big-number" id="homeAutonomy">—</div>
+            <div class="sub">estimada</div>
+          </div>
         </div>
         <div class="tile-row">
           <div class="tile"><div class="label">$/kWh prom.</div><div class="value" id="tileAvgKwh">—</div></div>
           <div class="tile"><div class="label">% en Valle</div><div class="value" id="tileValle">—</div></div>
           <div class="tile"><div class="label">$/km</div><div class="value" id="tileKm">—</div></div>
-          <div class="tile accented"><div class="label">Autonomía</div><div class="value" id="tileAutonomy">—</div></div>
         </div>
         <div class="chart-card">
           <div class="chead"><span class="t">Tendencia</span><span class="p">últimos 6 meses</span></div>
@@ -55,7 +61,7 @@ export const inicioScreen: Screen = {
     const tileAvgKwh = root.querySelector<HTMLElement>('#tileAvgKwh')!;
     const tileValle = root.querySelector<HTMLElement>('#tileValle')!;
     const tileKm = root.querySelector<HTMLElement>('#tileKm')!;
-    const tileAutonomy = root.querySelector<HTMLElement>('#tileAutonomy')!;
+    const autonomyEl = root.querySelector<HTMLElement>('#homeAutonomy')!;
     const chartEl = root.querySelector<HTMLElement>('#homeChart')!;
     const compBody = root.querySelector<HTMLElement>('#compBody')!;
     const listEl = root.querySelector<HTMLElement>('#homeList')!;
@@ -111,7 +117,7 @@ export const inicioScreen: Screen = {
         tileAvgKwh.textContent = stats.avgCostPerKwh > 0 ? '$' + stats.avgCostPerKwh.toFixed(2) : '—';
         tileValle.textContent = stats.valleSharePct > 0 || stats.count > 0 ? Math.round(stats.valleSharePct) + '%' : '—';
         tileKm.textContent = stats.costPerKm != null ? '$' + stats.costPerKm.toFixed(2) : '—';
-        tileAutonomy.textContent = vehicle ? estimatedAutonomyKm(vehicle, realConsumption) + ' km' : '—';
+        autonomyEl.textContent = vehicle ? estimatedAutonomyKm(vehicle, realConsumption) + ' km' : '—';
 
         const maxTotal = Math.max(1, ...monthly.map((m) => m.total));
         chartEl.innerHTML = monthly
