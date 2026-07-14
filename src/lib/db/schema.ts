@@ -41,4 +41,5 @@ export const SETTINGS_KEYS = {
   notifBackupEnabled: 'notif_backup_enabled',
   theme: 'theme',
   accentColor: 'accent_color',
+  personalizacion: 'personalizacion',
 } as const;

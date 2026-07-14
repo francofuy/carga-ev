@@ -3,7 +3,16 @@ import { getSettings, setSetting, exportBackup, restoreBackup, wipeData } from '
 import type { AppSettings } from '../lib/db/settings';
 import type { BackupData } from '../lib/db/backup';
 import { notifyChargesUpdated } from '../lib/bus';
-import { applyTheme, applyAccentColor, ACCENT_PRESETS } from '../lib/theme';
+import { applyTheme } from '../lib/theme';
+import {
+  applyPersonalizacion,
+  reapplyAccentInkForTheme,
+  pickTextOnAccent,
+  getCurrentAccentSL,
+  PRESETS,
+  ALERT_COLOR_CHOICES,
+  type PersonalizacionConfig,
+} from '../lib/personalizacion';
 
 const SETTING_KEY_MAP: Record<keyof AppSettings, string> = {
   tariffValle: 'tariff_valle',
@@ -13,6 +22,7 @@ const SETTING_KEY_MAP: Record<keyof AppSettings, string> = {
   notifBackupEnabled: 'notif_backup_enabled',
   theme: 'theme',
   accentColor: 'accent_color',
+  personalizacion: 'personalizacion',
 };
 
 function bodyHtml(): string {
@@ -49,11 +59,10 @@ function bodyHtml(): string {
           <option value="dark">Oscuro</option>
         </select>
       </div>
-      <div class="settings-row">
-        <span class="lbl">Color de acento</span>
-        <div class="accent-row" id="accentRow">
-          ${ACCENT_PRESETS.map((a) => `<button class="accent-swatch" data-c="${a.hex}" style="background:${a.hex};" aria-label="${a.name}"></button>`).join('')}
-        </div>
+      <div class="settings-row" id="rowPersonalizacion" style="cursor:pointer;">
+        <span class="lbl">Personalización</span>
+        <span class="setrow-dot" id="pznDot" style="width:18px;height:18px;border-radius:50%;flex:0 0 auto;"></span>
+        <span style="color:var(--text-muted);margin-left:6px;">›</span>
       </div>
     </div>
 
@@ -65,6 +74,36 @@ function bodyHtml(): string {
       <div class="settings-row destructive" id="rowWipe"><span class="lbl">Borrar todos los datos</span></div>
     </div>
     <input type="file" id="importFile" accept="application/json" style="display:none;">
+
+    <div class="sheet-overlay" id="pznOverlay">
+      <div class="sheet">
+        <div class="sheet-head">
+          <div class="sheet-title" id="pznTitle">Personalización</div>
+          <button class="sheet-cancel" id="pznClose">Cerrar</button>
+        </div>
+        <div id="pznListStep">
+          <div class="pzn-preview">
+            <span class="num" id="pznPreviewNum">$330</span>
+            <span class="btn">+ Carga</span>
+            <span class="dot" id="pznPreviewDot"></span>
+          </div>
+          <button class="pzn-catrow" data-cat="color"><span><span class="name">Color</span><span class="hint" style="display:block;">Acento libre, no solo 5 fijos</span></span><span class="chev">›</span></button>
+          <button class="pzn-catrow" data-cat="tipografia"><span><span class="name">Tipografía</span><span class="hint" style="display:block;">Escala y peso de los números</span></span><span class="chev">›</span></button>
+          <button class="pzn-catrow" data-cat="forma"><span><span class="name">Forma y contenedores</span><span class="hint" style="display:block;">Botones, tarjetas, esquinas</span></span><span class="chev">›</span></button>
+          <button class="pzn-catrow" data-cat="fondo"><span><span class="name">Fondo animado</span><span class="hint" style="display:block;">Aurora: intensidad y velocidad</span></span><span class="chev">›</span></button>
+          <button class="pzn-catrow" data-cat="pantallas"><span><span class="name">Íconos y alerta</span><span class="hint" style="display:block;">Estilo de ícono, color crítico</span></span><span class="chev">›</span></button>
+        </div>
+        <div id="pznDetailStep" style="display:none;">
+          <button class="pzn-back" id="pznBack">‹ Volver</button>
+          <div class="pzn-preview">
+            <span class="num" id="pznPreviewNum2">$330</span>
+            <span class="btn">+ Carga</span>
+            <span class="dot" id="pznPreviewDot2"></span>
+          </div>
+          <div id="pznDetailBody"></div>
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -72,6 +111,26 @@ function showBanner(el: HTMLElement, msg: string, kind: 'success' | 'error'): vo
   el.textContent = msg;
   el.className = `alert-banner show ${kind}`;
   setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+/** Fila de chips reutilizable — mismo `.chip` que ya usa la app en Cargas/Nueva carga. */
+function chipRowHtml<T extends string>(id: string, options: { value: T; label: string }[]): string {
+  return `<div class="chip-row" id="${id}" style="margin-bottom:16px;">${options
+    .map((o) => `<button class="chip" type="button" data-value="${o.value}">${o.label}</button>`)
+    .join('')}</div>`;
+}
+function wireChipRow<T extends string>(root: ParentNode, id: string, getActive: () => T, onSelect: (v: T) => void): { sync: () => void } {
+  const row = root.querySelector<HTMLElement>(`#${id}`)!;
+  row.querySelectorAll<HTMLButtonElement>('button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      onSelect(btn.dataset.value as T);
+      sync();
+    });
+  });
+  function sync(): void {
+    row.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-value') === getActive()));
+  }
+  return { sync };
 }
 
 export const ajustesScreen: Screen = {
@@ -101,7 +160,7 @@ export const ajustesScreen: Screen = {
     const themeSelect = body.querySelector<HTMLSelectElement>('#setTheme')!;
     const dataMsg = body.querySelector<HTMLElement>('#dataMsg')!;
     const importFile = body.querySelector<HTMLInputElement>('#importFile')!;
-    const accentRow = body.querySelector<HTMLElement>('#accentRow')!;
+    const pznDot = body.querySelector<HTMLElement>('#pznDot')!;
 
     valleInput.value = String(settings.tariffValle);
     llanoInput.value = String(settings.tariffLlano);
@@ -109,9 +168,6 @@ export const ajustesScreen: Screen = {
     puntaHourSelect.value = String(settings.puntaStartHour);
     notifSwitch.classList.toggle('on', settings.notifBackupEnabled);
     themeSelect.value = settings.theme;
-    accentRow.querySelectorAll<HTMLButtonElement>('.accent-swatch').forEach((btn) => {
-      btn.classList.toggle('sel', btn.dataset.c?.toLowerCase() === settings.accentColor.toLowerCase());
-    });
 
     body.querySelector('#saveTariffs')!.addEventListener('click', () => {
       void (async () => {
@@ -135,22 +191,295 @@ export const ajustesScreen: Screen = {
       void (async () => {
         const value = themeSelect.value as AppSettings['theme'];
         applyTheme(value);
+        reapplyAccentInkForTheme(pznConfig);
         await setSetting(SETTING_KEY_MAP.theme, value);
       })();
     });
 
-    accentRow.querySelectorAll<HTMLButtonElement>('.accent-swatch').forEach((btn) => {
+    // ---- Personalización ----
+    let pznConfig: PersonalizacionConfig = { ...settings.personalizacion };
+
+    function updatePreviewDots(): void {
+      [body.querySelector<HTMLElement>('#pznPreviewDot'), body.querySelector<HTMLElement>('#pznPreviewDot2')].forEach((dot) => {
+        if (dot) dot.style.background = `linear-gradient(135deg, hsl(${pznConfig.hue} 70% 50%), hsl(${pznConfig.hue2} 70% 50%))`;
+      });
+      pznDot.style.background = `linear-gradient(135deg, hsl(${pznConfig.hue} 70% 50%), hsl(${pznConfig.hue2} 70% 50%))`;
+    }
+
+    async function applyAndPersist(): Promise<void> {
+      applyPersonalizacion(pznConfig);
+      updatePreviewDots();
+      await setSetting(SETTING_KEY_MAP.personalizacion, JSON.stringify(pznConfig));
+    }
+
+    // Aplica lo que ya estaba guardado (o migrado desde accentColor) al arrancar esta pantalla.
+    updatePreviewDots();
+
+    const pznOverlay = body.querySelector<HTMLElement>('#pznOverlay')!;
+    const pznListStep = body.querySelector<HTMLElement>('#pznListStep')!;
+    const pznDetailStep = body.querySelector<HTMLElement>('#pznDetailStep')!;
+    const pznDetailBody = body.querySelector<HTMLElement>('#pznDetailBody')!;
+    const pznTitle = body.querySelector<HTMLElement>('#pznTitle')!;
+
+    body.querySelector('#rowPersonalizacion')!.addEventListener('click', () => {
+      pznListStep.style.display = 'block';
+      pznDetailStep.style.display = 'none';
+      pznTitle.textContent = 'Personalización';
+      pznOverlay.classList.add('open');
+    });
+    body.querySelector('#pznClose')!.addEventListener('click', () => pznOverlay.classList.remove('open'));
+    pznOverlay.addEventListener('click', (e) => {
+      if (e.target === pznOverlay) pznOverlay.classList.remove('open');
+    });
+    body.querySelector('#pznBack')!.addEventListener('click', () => {
+      pznListStep.style.display = 'block';
+      pznDetailStep.style.display = 'none';
+      pznTitle.textContent = 'Personalización';
+    });
+
+    function openDetail(name: string, html: string, wire: () => void): void {
+      pznTitle.textContent = name;
+      pznDetailBody.innerHTML = html;
+      wire();
+      pznListStep.style.display = 'none';
+      pznDetailStep.style.display = 'block';
+    }
+
+    body.querySelectorAll<HTMLButtonElement>('.pzn-catrow').forEach((btn) => {
       btn.addEventListener('click', () => {
-        void (async () => {
-          const hex = btn.dataset.c!;
-          accentRow.querySelectorAll('.accent-swatch').forEach((b) => b.classList.remove('sel'));
-          btn.classList.add('sel');
-          applyAccentColor(hex);
-          await setSetting(SETTING_KEY_MAP.accentColor, hex);
-        })();
+        const cat = btn.dataset.cat;
+        if (cat === 'color') openColorDetail();
+        else if (cat === 'tipografia') openTipografiaDetail();
+        else if (cat === 'forma') openFormaDetail();
+        else if (cat === 'fondo') openFondoDetail();
+        else if (cat === 'pantallas') openPantallasDetail();
       });
     });
 
+    // ---- Color ----
+    function openColorDetail(): void {
+      const presetsHtml = PRESETS.map(
+        (p) =>
+          `<button class="chip" type="button" data-preset="${p.id}"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:linear-gradient(135deg, hsl(${p.hue} 70% 50%), hsl(${p.hue2} 70% 50%));"></span>${p.name}</button>`
+      ).join('');
+      const html = `
+        <p class="pzn-sectlabel">Presets rápidos</p>
+        <div class="chip-row" id="pznPresetRow" style="margin-bottom:16px;">${presetsHtml}</div>
+        <p class="pzn-sectlabel">Acento principal (botones, tab, FAB)</p>
+        <div class="pzn-swatchrow"><div class="pzn-swatch" id="pznHueSwatch"></div><input class="pzn-slider" id="pznHueSlider" type="range" min="0" max="359"></div>
+        <div class="settings-row" style="padding:0 0 12px;"><span class="lbl">Vincular color secundario</span><button class="switch" id="pznLinkToggle"></button></div>
+        ${chipRowHtml('pznHarmonyRow', [
+          { value: '180', label: 'Complementario' },
+          { value: '40', label: 'Análogo' },
+          { value: '120', label: 'Triádico' },
+        ])}
+        <p class="pzn-sectlabel">Acento secundario (aurora)</p>
+        <div class="pzn-swatchrow"><div class="pzn-swatch" id="pznHue2Swatch"></div><input class="pzn-slider" id="pznHue2Slider" type="range" min="0" max="359"></div>
+        <div class="pzn-contrast" id="pznContrastBadge"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12l5 5L20 6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="pznContrastText"></span></div>
+      `;
+      openDetail('Color', html, () => {
+        const hueSlider = pznDetailBody.querySelector<HTMLInputElement>('#pznHueSlider')!;
+        const hue2Slider = pznDetailBody.querySelector<HTMLInputElement>('#pznHue2Slider')!;
+        const hueSwatch = pznDetailBody.querySelector<HTMLElement>('#pznHueSwatch')!;
+        const hue2Swatch = pznDetailBody.querySelector<HTMLElement>('#pznHue2Swatch')!;
+        const linkToggle = pznDetailBody.querySelector<HTMLButtonElement>('#pznLinkToggle')!;
+        const contrastText = pznDetailBody.querySelector<HTMLElement>('#pznContrastText')!;
+        const harmonyRow = wireChipRow(pznDetailBody, 'pznHarmonyRow', () => String(pznConfig.harmony), (v) => {
+          pznConfig.harmony = Number(v) as PersonalizacionConfig['harmony'];
+          if (pznConfig.linked) {
+            pznConfig.hue2 = (pznConfig.hue + pznConfig.harmony) % 360;
+            void applyAndPersist();
+            syncColor();
+          }
+        });
+
+        function syncColor(): void {
+          hueSlider.value = String(pznConfig.hue);
+          hueSwatch.style.background = `hsl(${pznConfig.hue} 76% 50%)`;
+          hue2Slider.value = String(pznConfig.hue2);
+          hue2Swatch.style.background = `hsl(${pznConfig.hue2} 76% 50%)`;
+          hue2Slider.disabled = pznConfig.linked;
+          hue2Slider.style.opacity = pznConfig.linked ? '0.4' : '1';
+          linkToggle.classList.toggle('on', pznConfig.linked);
+          harmonyRow.sync();
+          pznDetailBody.querySelectorAll('#pznPresetRow button').forEach((b) => {
+            const p = PRESETS.find((pr) => pr.id === b.getAttribute('data-preset'));
+            b.classList.toggle('sel', !!p && p.hue === pznConfig.hue && p.hue2 === pznConfig.hue2);
+          });
+          const { s, l } = getCurrentAccentSL();
+          const c = pickTextOnAccent(pznConfig.hue, s, l);
+          contrastText.textContent = `Contraste seguro (${c.ratio.toFixed(1)}:1) — texto ${c.isDark ? 'oscuro' : 'claro'} sobre el acento`;
+        }
+
+        hueSlider.addEventListener('input', () => {
+          pznConfig.hue = Number(hueSlider.value);
+          if (pznConfig.linked) pznConfig.hue2 = (pznConfig.hue + pznConfig.harmony) % 360;
+          void applyAndPersist();
+          syncColor();
+        });
+        hue2Slider.addEventListener('input', () => {
+          pznConfig.hue2 = Number(hue2Slider.value);
+          void applyAndPersist();
+          syncColor();
+        });
+        linkToggle.addEventListener('click', () => {
+          pznConfig.linked = !pznConfig.linked;
+          if (pznConfig.linked) pznConfig.hue2 = (pznConfig.hue + pznConfig.harmony) % 360;
+          void applyAndPersist();
+          syncColor();
+        });
+        pznDetailBody.querySelectorAll<HTMLButtonElement>('#pznPresetRow button').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const p = PRESETS.find((pr) => pr.id === btn.dataset.preset)!;
+            pznConfig.hue = p.hue;
+            pznConfig.hue2 = p.hue2;
+            pznConfig.linked = false;
+            void applyAndPersist();
+            syncColor();
+          });
+        });
+        syncColor();
+      });
+    }
+
+    // ---- Tipografía ----
+    function openTipografiaDetail(): void {
+      const html = `
+        <p class="pzn-sectlabel">Escala de tamaño</p>
+        ${chipRowHtml('pznScaleRow', [
+          { value: 'compacta', label: 'Compacta' },
+          { value: 'estandar', label: 'Estándar' },
+          { value: 'grande', label: 'Grande' },
+        ])}
+        <p class="pzn-sectlabel">Peso de los números grandes</p>
+        ${chipRowHtml('pznWeightRow', [
+          { value: 'regular', label: 'Regular' },
+          { value: 'semibold', label: 'Semibold' },
+        ])}
+      `;
+      openDetail('Tipografía', html, () => {
+        const scaleRow = wireChipRow(pznDetailBody, 'pznScaleRow', () => pznConfig.fontScale, (v) => {
+          pznConfig.fontScale = v as PersonalizacionConfig['fontScale'];
+          void applyAndPersist();
+        });
+        const weightRow = wireChipRow(pznDetailBody, 'pznWeightRow', () => pznConfig.numberWeight, (v) => {
+          pznConfig.numberWeight = v as PersonalizacionConfig['numberWeight'];
+          void applyAndPersist();
+        });
+        scaleRow.sync();
+        weightRow.sync();
+      });
+    }
+
+    // ---- Forma y contenedores ----
+    function openFormaDetail(): void {
+      const html = `
+        <p class="pzn-sectlabel">Forma del botón principal</p>
+        ${chipRowHtml('pznFormaRow', [
+          { value: 'plano', label: 'Plano' },
+          { value: 'suave', label: 'Suave' },
+          { value: 'profundo', label: 'Profundo' },
+          { value: 'vivo', label: 'Vivo' },
+        ])}
+        <p class="pzn-sectlabel">Contenedores</p>
+        ${chipRowHtml('pznContenedoresRow', [
+          { value: 'solido', label: 'Sólido' },
+          { value: 'sin', label: 'Sin bordes' },
+          { value: 'contorno', label: 'Contorno' },
+        ])}
+        <p class="pzn-sectlabel">Esquinas</p>
+        <div class="pzn-slider-row"><div class="top"><span>Rectas ↔ redondeadas</span><span id="pznRadiusVal"></span></div><input class="pzn-slider" id="pznRadiusSlider" type="range" min="50" max="150"></div>
+      `;
+      openDetail('Forma y contenedores', html, () => {
+        const formaRow = wireChipRow(pznDetailBody, 'pznFormaRow', () => pznConfig.forma, (v) => {
+          pznConfig.forma = v as PersonalizacionConfig['forma'];
+          void applyAndPersist();
+        });
+        const contRow = wireChipRow(pznDetailBody, 'pznContenedoresRow', () => pznConfig.contenedores, (v) => {
+          pznConfig.contenedores = v as PersonalizacionConfig['contenedores'];
+          void applyAndPersist();
+        });
+        const radiusSlider = pznDetailBody.querySelector<HTMLInputElement>('#pznRadiusSlider')!;
+        const radiusVal = pznDetailBody.querySelector<HTMLElement>('#pznRadiusVal')!;
+        radiusSlider.addEventListener('input', () => {
+          pznConfig.radiusScale = Number(radiusSlider.value) / 100;
+          radiusVal.textContent = `${radiusSlider.value}%`;
+          void applyAndPersist();
+        });
+        radiusSlider.value = String(Math.round(pznConfig.radiusScale * 100));
+        radiusVal.textContent = `${radiusSlider.value}%`;
+        formaRow.sync();
+        contRow.sync();
+      });
+    }
+
+    // ---- Fondo animado ----
+    function openFondoDetail(): void {
+      const html = `
+        <p class="pzn-sectlabel">Intensidad de la aurora</p>
+        <div class="pzn-slider-row"><div class="top"><span>Opacidad de los blobs</span><span id="pznAuroraVal"></span></div><input class="pzn-slider" id="pznAuroraSlider" type="range" min="0" max="70"></div>
+        <p class="pzn-sectlabel">Velocidad</p>
+        ${chipRowHtml('pznSpeedRow', [
+          { value: 'rapido', label: 'Vivo' },
+          { value: 'normal', label: 'Normal' },
+          { value: 'apagado', label: 'Apagado' },
+        ])}
+      `;
+      openDetail('Fondo animado', html, () => {
+        const auroraSlider = pznDetailBody.querySelector<HTMLInputElement>('#pznAuroraSlider')!;
+        const auroraVal = pznDetailBody.querySelector<HTMLElement>('#pznAuroraVal')!;
+        auroraSlider.addEventListener('input', () => {
+          pznConfig.auroraIntensidad = Number(auroraSlider.value);
+          auroraVal.textContent = `${pznConfig.auroraIntensidad}%`;
+          void applyAndPersist();
+        });
+        auroraSlider.value = String(pznConfig.auroraIntensidad);
+        auroraVal.textContent = `${pznConfig.auroraIntensidad}%`;
+        const speedRow = wireChipRow(pznDetailBody, 'pznSpeedRow', () => pznConfig.auroraVelocidad, (v) => {
+          pznConfig.auroraVelocidad = v as PersonalizacionConfig['auroraVelocidad'];
+          void applyAndPersist();
+        });
+        speedRow.sync();
+      });
+    }
+
+    // ---- Íconos y alerta ----
+    function openPantallasDetail(): void {
+      const alertChips = ALERT_COLOR_CHOICES.map(
+        (a) => `<button class="chip" type="button" data-value="${a.hex}"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:${a.hex};"></span>${a.name}</button>`
+      ).join('');
+      const html = `
+        <p class="pzn-sectlabel">Íconos</p>
+        ${chipRowHtml('pznIconsRow', [
+          { value: 'contorno', label: 'Contorno' },
+          { value: 'relleno', label: 'Con relleno' },
+        ])}
+        <p class="pzn-sectlabel">Color de alerta</p>
+        <p class="empty-hint" style="font-size:calc(12px * var(--font-scale));color:var(--text-muted);margin:0 0 10px;">Curado, no libre — tiene que seguir leyéndose como alerta.</p>
+        <div class="chip-row" id="pznAlertRow" style="margin-bottom:16px;">${alertChips}</div>
+      `;
+      openDetail('Íconos y alerta', html, () => {
+        const iconsRow = wireChipRow(pznDetailBody, 'pznIconsRow', () => pznConfig.iconos, (v) => {
+          pznConfig.iconos = v as PersonalizacionConfig['iconos'];
+          void applyAndPersist();
+        });
+        const alertRow = body.querySelector<HTMLElement>('#pznAlertRow')!;
+        alertRow.querySelectorAll<HTMLButtonElement>('button').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            pznConfig.alertColor = btn.dataset.value!;
+            void applyAndPersist();
+            syncAlert();
+          });
+        });
+        function syncAlert(): void {
+          alertRow.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-value')?.toLowerCase() === pznConfig.alertColor.toLowerCase()));
+        }
+        iconsRow.sync();
+        syncAlert();
+      });
+    }
+
+    // ---- Sheet: Exportar / Importar backup ----
     body.querySelector('#rowExport')!.addEventListener('click', () => {
       void (async () => {
         try {
@@ -195,10 +524,9 @@ export const ajustesScreen: Screen = {
           puntaHourSelect.value = String(settings.puntaStartHour);
           themeSelect.value = settings.theme;
           applyTheme(settings.theme);
-          applyAccentColor(settings.accentColor);
-          accentRow.querySelectorAll<HTMLButtonElement>('.accent-swatch').forEach((btn) => {
-            btn.classList.toggle('sel', btn.dataset.c?.toLowerCase() === settings.accentColor.toLowerCase());
-          });
+          pznConfig = { ...settings.personalizacion };
+          applyPersonalizacion(pznConfig);
+          updatePreviewDots();
         } catch (err) {
           showBanner(dataMsg, 'No se pudo importar: ' + (err instanceof Error ? err.message : String(err)), 'error');
         }
@@ -207,7 +535,7 @@ export const ajustesScreen: Screen = {
 
     body.querySelector('#rowWipe')!.addEventListener('click', () => {
       void (async () => {
-        if (!confirm('¿Borrar todas las cargas y el vehículo guardado? Esta acción no se puede deshacer. Las tarifas configuradas no se tocan.')) return;
+        if (!confirm('¿Borrar todos los datos cargados? Esta acción no se puede deshacer. Las tarifas y la personalización no se tocan.')) return;
         await wipeData();
         notifyChargesUpdated();
         showBanner(dataMsg, 'Datos borrados.', 'success');

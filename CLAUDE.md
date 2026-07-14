@@ -83,6 +83,43 @@ siempre ni ser accesibles desde otra cuenta):
   `color-mix()` en `tokens.css`, así que cambiar un solo valor (el setting `accent_color`) repinta
   toda la paleta derivada sin tocar el resto de los tokens.
 
+## Personalización completa (portada y mejorada desde "Surtido y Cuentas")
+
+El viejo selector de 5 acentos fijos (`ACCENT_PRESETS`/`applyAccentColor` en `theme.ts`) se
+reemplazó por un motor completo en `src/lib/personalizacion.ts`, portado del proyecto hermano
+"Surtido y Cuentas" (`apps-celular/Surtido y Cuentas/surtido-y-cuentas/src/domain/personalizacion.ts`)
+y ampliado para cerrar gaps reales que tenía el original — ver auditoría completa en el historial
+de conversación si hace falta el detalle exacto de cada gap encontrado.
+
+- **Color**: `hue`/`hue2` libres (0–359°) en vez de 5 hex fijos, con armonía (Complementario/
+  Análogo/Triádico) para derivar `hue2` de `hue` cuando están vinculados, 5 presets rápidos
+  (mapeo de los acentos viejos), y contraste WCAG calculado en vivo para `--accent-ink` (nunca
+  hardcodeado — sigue siendo legible sin importar qué matiz se elija). A diferencia de Surtido
+  (siempre oscura), acá la saturación/luminosidad del acento están calibradas por tema (claro/oscuro)
+  para que el mismo matiz se vea bien en ambos.
+- **Tipografía** (gap que Surtido tampoco tenía): escala de tamaño (Compacta/Estándar/Grande) vía
+  `--font-scale`, aplicada a los ~60 `font-size` de `shell.css` (convertidos a `calc(Npx * var(--font-scale))`),
+  y peso de los números grandes (Regular/Semibold) vía `--number-weight`.
+  - **Cobertura de color ampliada** más allá de lo que hacía Surtido: texto secundario/apagado,
+    superficies de tarjeta y bordes ahora llevan un matiz sutil derivado de `--hue` vía
+    `color-mix()` (Surtido los deja completamente fijos, sin importar el color elegido).
+- **Forma y contenedores**: forma del botón principal/FAB (Plano/Suave/Profundo/Vivo — "Vivo" es un
+  glow pulsante, no shimmer, por el feedback ya dado de que las animaciones en loop cansan en botones
+  de uso diario), contenedores de TODA la app (Sólido/Sin bordes/Contorno — en Surtido esto solo
+  pega en una pantalla), radio de esquina con slider (conectado también al sheet modal, que en
+  Surtido quedó con un bug de radio fijo sin conectar).
+- **Fondo animado**: intensidad y velocidad de la aurora (`--aurora-opacity`/`--aurora-duration`),
+  con el segundo blob ahora en `--accent2` (matiz secundario personalizable) en vez de `--good`
+  (que queda liberado para su uso semántico real, Valle/badges).
+- **Íconos**: contorno/con relleno sutil (`fill-opacity`).
+- **Alerta**: 3 colores curados para `--critical` (no libre — tiene que seguir leyéndose como alerta).
+- Persistencia: una sola clave `personalizacion` (JSON) en `settings`, con migración automática de
+  una instalación existente (deriva `hue` del `accentColor` hex viejo, `hue2` por armonía — no
+  monocromático) — ver `src/lib/db/settings.ts`.
+- UI: sheet dedicado en Ajustes → Apariencia → Personalización, navegación lista → categoría
+  (6 categorías), aplicado al toque sin botón de confirmar (mismo criterio que el viejo selector
+  de tema).
+
 ## Funcionalidades implementadas (real, en producción)
 
 - Registro de carga en Casa (con motor de tarifas) o Público (tarifa manual), por **kWh directo o

@@ -7,7 +7,8 @@ import { cargasScreen } from './screens/cargas';
 import { vehiculoScreen } from './screens/vehiculo';
 import { ajustesScreen } from './screens/ajustes';
 import { getSettings } from './lib/db/api';
-import { applyTheme, applyAccentColor } from './lib/theme';
+import { applyTheme } from './lib/theme';
+import { applyPersonalizacion } from './lib/personalizacion';
 import { preventZoomGestures } from './lib/no-zoom';
 import { initGlobalRipple } from './lib/ripple';
 
@@ -21,7 +22,7 @@ initGlobalRipple(app);
 void getSettings()
   .then((s) => {
     applyTheme(s.theme);
-    applyAccentColor(s.accentColor);
+    applyPersonalizacion(s.personalizacion);
   })
   .catch(() => {
     /* si falla, se queda en automático (comportamiento por defecto de tokens.css) */

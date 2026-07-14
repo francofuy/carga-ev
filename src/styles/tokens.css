@@ -1,14 +1,27 @@
-/* Fase 9 — tokens del sistema de diseño. Fuente de verdad: no redefinir estos valores en otro lado. */
+/* Fase 9 — tokens del sistema de diseño. Fuente de verdad: no redefinir estos valores en otro lado.
+   --hue/--hue2 y las variables de Personalización (--radius-scale, --font-scale, --number-weight,
+   --aurora-*) las pisa src/lib/personalizacion.ts en vivo — acá solo quedan sus defaults, calibrados
+   para reproducir el celeste histórico (#1F8FE0/#4FB0F5, hue≈205°) sin ninguna regresión visual en
+   una instalación que nunca abrió Ajustes → Personalización. */
 :root {
+  --hue: 205;
+  --hue2: 25;
+  --radius-scale: 1;
+  --font-scale: 1;
+  --number-weight: 700;
+  --aurora-opacity: 0.3;
+  --aurora-duration: 16s;
+
   --bg: #F3F5F8;
   --surface: #FFFFFF;
-  --surface-2: #EAEEF3;
-  --surface-3: #DEE4EB;
-  --border: #DCE1E8;
+  --surface-2: color-mix(in srgb, hsl(var(--hue) 35% 45%) 3%, #EAEEF3);
+  --surface-3: color-mix(in srgb, hsl(var(--hue) 35% 45%) 5%, #DEE4EB);
+  --border: color-mix(in srgb, hsl(var(--hue) 35% 45%) 6%, #DCE1E8);
   --text: #0E1116;
-  --text-secondary: #5B6472;
-  --text-muted: #8A93A0;
-  --accent: #1F8FE0;
+  --text-secondary: color-mix(in srgb, hsl(var(--hue) 40% 45%) 10%, #5B6472);
+  --text-muted: color-mix(in srgb, hsl(var(--hue) 40% 45%) 10%, #798090);
+  --accent: hsl(var(--hue) 76% 50%);
+  --accent2: hsl(var(--hue2) 76% 50%);
   --accent-ink: #ffffff;
   --accent-pressed: color-mix(in srgb, var(--accent) 78%, black);
   --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
@@ -18,7 +31,7 @@
   --warning-fill: #fab219;
   --warning-soft: #FEF3DC;
   --critical: #d03b3b;
-  --critical-soft: #FBE4E3;
+  --critical-soft: color-mix(in srgb, var(--critical) 14%, var(--surface));
   --overlay: rgba(14, 17, 22, 0.45);
 
   --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
@@ -28,43 +41,60 @@
   --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px;
   --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px;
 
-  --r-xs: 6px; --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-xl: 22px; --r-pill: 999px;
+  --r-xs: calc(6px * var(--radius-scale)); --r-sm: calc(10px * var(--radius-scale));
+  --r-md: calc(14px * var(--radius-scale)); --r-lg: calc(18px * var(--radius-scale));
+  --r-xl: calc(22px * var(--radius-scale)); --r-pill: 999px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34;
-    --border: #2A2F38; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #6B7480;
-    --accent: #4FB0F5; --accent-ink: #04121C;
+    --bg: #06080B; --surface: #14171C;
+    --surface-2: color-mix(in srgb, hsl(var(--hue) 35% 55%) 5%, #1E222A);
+    --surface-3: color-mix(in srgb, hsl(var(--hue) 35% 55%) 7%, #262B34);
+    --border: color-mix(in srgb, hsl(var(--hue) 35% 55%) 9%, #2A2F38);
+    --text: #F4F6F8;
+    --text-secondary: color-mix(in srgb, hsl(var(--hue) 45% 65%) 12%, #96A0AC);
+    --text-muted: color-mix(in srgb, hsl(var(--hue) 45% 65%) 12%, #798090);
+    --accent: hsl(var(--hue) 89% 64%); --accent2: hsl(var(--hue2) 89% 64%); --accent-ink: #04121C;
     --accent-pressed: color-mix(in srgb, var(--accent) 75%, white);
     --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
     --good: #21C05E; --good-soft: #0F2A16; --warning: #FAB219; --warning-fill: #fab219; --warning-soft: #3A2C0E;
-    --critical: #FF6259; --critical-soft: #3A1613; --overlay: rgba(0, 0, 0, 0.65);
+    --critical: #FF6259; --critical-soft: color-mix(in srgb, var(--critical) 20%, var(--surface)); --overlay: rgba(0, 0, 0, 0.65);
     --shadow-1: 0 0 0 1px var(--border);
     --shadow-2: 0 14px 30px -10px rgba(0, 0, 0, 0.55);
     --shadow-3: 0 -8px 40px -8px rgba(0, 0, 0, 0.6);
   }
 }
 :root[data-theme="dark"] {
-  --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34;
-  --border: #2A2F38; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #6B7480;
-  --accent: #4FB0F5; --accent-ink: #04121C;
+  --bg: #06080B; --surface: #14171C;
+  --surface-2: color-mix(in srgb, hsl(var(--hue) 35% 55%) 5%, #1E222A);
+  --surface-3: color-mix(in srgb, hsl(var(--hue) 35% 55%) 7%, #262B34);
+  --border: color-mix(in srgb, hsl(var(--hue) 35% 55%) 9%, #2A2F38);
+  --text: #F4F6F8;
+  --text-secondary: color-mix(in srgb, hsl(var(--hue) 45% 65%) 12%, #96A0AC);
+  --text-muted: color-mix(in srgb, hsl(var(--hue) 45% 65%) 12%, #798090);
+  --accent: hsl(var(--hue) 89% 64%); --accent2: hsl(var(--hue2) 89% 64%); --accent-ink: #04121C;
   --accent-pressed: color-mix(in srgb, var(--accent) 75%, white);
   --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
   --good: #21C05E; --good-soft: #0F2A16; --warning: #FAB219; --warning-fill: #fab219; --warning-soft: #3A2C0E;
-  --critical: #FF6259; --critical-soft: #3A1613; --overlay: rgba(0, 0, 0, 0.65);
+  --critical: #FF6259; --critical-soft: color-mix(in srgb, var(--critical) 20%, var(--surface)); --overlay: rgba(0, 0, 0, 0.65);
   --shadow-1: 0 0 0 1px var(--border);
   --shadow-2: 0 14px 30px -10px rgba(0, 0, 0, 0.55);
   --shadow-3: 0 -8px 40px -8px rgba(0, 0, 0, 0.6);
 }
 :root[data-theme="light"] {
-  --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB;
-  --border: #DCE1E8; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #8A93A0;
-  --accent: #1F8FE0; --accent-ink: #ffffff;
+  --bg: #F3F5F8; --surface: #FFFFFF;
+  --surface-2: color-mix(in srgb, hsl(var(--hue) 35% 45%) 3%, #EAEEF3);
+  --surface-3: color-mix(in srgb, hsl(var(--hue) 35% 45%) 5%, #DEE4EB);
+  --border: color-mix(in srgb, hsl(var(--hue) 35% 45%) 6%, #DCE1E8);
+  --text: #0E1116;
+  --text-secondary: color-mix(in srgb, hsl(var(--hue) 40% 45%) 10%, #5B6472);
+  --text-muted: color-mix(in srgb, hsl(var(--hue) 40% 45%) 10%, #798090);
+  --accent: hsl(var(--hue) 76% 50%); --accent2: hsl(var(--hue2) 76% 50%); --accent-ink: #ffffff;
   --accent-pressed: color-mix(in srgb, var(--accent) 78%, black);
   --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
   --good: #0ca30c; --good-soft: #E4F7E4; --warning: #C77E00; --warning-fill: #fab219; --warning-soft: #FEF3DC;
-  --critical: #d03b3b; --critical-soft: #FBE4E3; --overlay: rgba(14, 17, 22, 0.45);
+  --critical: #d03b3b; --critical-soft: color-mix(in srgb, var(--critical) 14%, var(--surface)); --overlay: rgba(14, 17, 22, 0.45);
   --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
   --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
   --shadow-3: 0 -6px 34px -8px rgba(14, 17, 22, 0.28);
@@ -72,9 +102,9 @@
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
+/* Permite scroll normal en ambos ejes pero excluye los gestos de zoom (pinch y doble-tap).
+   El viewport meta solo no alcanza: iOS ignora user-scalable=no fuera del modo PWA instalada. */
 html {
-  /* Permite scroll normal en ambos ejes pero excluye los gestos de zoom (pinch y doble-tap).
-     El viewport meta solo no alcanza: iOS ignora user-scalable=no fuera del modo PWA instalada. */
   touch-action: pan-x pan-y;
   overflow-x: hidden;
 }

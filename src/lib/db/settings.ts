@@ -2,6 +2,7 @@ import type { OpfsSAHPoolDatabase } from '@sqlite.org/sqlite-wasm';
 import { queryRows } from './query-helper';
 import { SETTINGS_KEYS } from './schema';
 import type { TariffRates } from '../tariff';
+import { DEFAULT_PERSONALIZACION, hexToHue, type PersonalizacionConfig } from '../personalizacion';
 
 export interface AppSettings {
   tariffValle: number;
@@ -11,11 +12,29 @@ export interface AppSettings {
   notifBackupEnabled: boolean;
   theme: 'auto' | 'light' | 'dark';
   accentColor: string;
+  personalizacion: PersonalizacionConfig;
+}
+
+/** Si ya existe `personalizacion` guardada, se usa tal cual (con merge de defaults por si se agregó un campo nuevo). Si no, se migra una única vez desde el `accentColor` hex del viejo sistema de 5 swatches, para no perder el color elegido. */
+function resolvePersonalizacion(raw: string | undefined, accentColor: string): PersonalizacionConfig {
+  if (raw) {
+    try {
+      return { ...DEFAULT_PERSONALIZACION, ...(JSON.parse(raw) as Partial<PersonalizacionConfig>) };
+    } catch {
+      // JSON corrupto — cae al default/migración de abajo
+    }
+  }
+  // hue2 se deriva por armonía (complementario, el default de `linked`), no igual a hue — si no,
+  // la aurora de todo usuario migrado quedaría monocromática en vez de a dos tonos.
+  const hue = hexToHue(accentColor);
+  const hue2 = (hue + DEFAULT_PERSONALIZACION.harmony) % 360;
+  return { ...DEFAULT_PERSONALIZACION, hue, hue2 };
 }
 
 export function getSettings(db: OpfsSAHPoolDatabase): AppSettings {
   const rows = queryRows<{ key: string; value: string }>(db, 'SELECT key, value FROM settings');
   const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+  const accentColor = map[SETTINGS_KEYS.accentColor] || '#1F8FE0';
   return {
     tariffValle: Number(map[SETTINGS_KEYS.tariffValle]),
     tariffLlano: Number(map[SETTINGS_KEYS.tariffLlano]),
@@ -23,7 +42,8 @@ export function getSettings(db: OpfsSAHPoolDatabase): AppSettings {
     puntaStartHour: Number(map[SETTINGS_KEYS.puntaStartHour]),
     notifBackupEnabled: map[SETTINGS_KEYS.notifBackupEnabled] === '1',
     theme: (map[SETTINGS_KEYS.theme] as AppSettings['theme']) ?? 'auto',
-    accentColor: map[SETTINGS_KEYS.accentColor] || '#1F8FE0',
+    accentColor,
+    personalizacion: resolvePersonalizacion(map[SETTINGS_KEYS.personalizacion], accentColor),
   };
 }
 
