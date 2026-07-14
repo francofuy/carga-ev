@@ -282,6 +282,19 @@
   margin-bottom: 12px;
 }
 
+.suggest-box { background: var(--accent-soft); border-radius: var(--r-sm); padding: 10px 12px; margin-bottom: 8px; }
+.suggest-box .row1 { display: flex; justify-content: space-between; align-items: center; }
+.suggest-box .suggest-label { font-size: 10.5px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.03em; }
+.suggest-box .suggest-use { font-size: 11.5px; font-weight: 700; color: var(--accent-ink); background: var(--accent); border: none; padding: 5px 12px; border-radius: 999px; font-family: inherit; min-height: 30px; }
+.suggest-box .suggest-amount { font-size: 17px; font-weight: 700; margin: 4px 0 1px; font-variant-numeric: tabular-nums; }
+.suggest-box .suggest-sub { font-size: 11.5px; color: var(--text-secondary); }
+
+.source-line { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-muted); margin-bottom: 14px; }
+.source-line .source-dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
+.source-line .source-dot.live { background: var(--good); }
+.source-line .source-dot.cache { background: var(--warning); }
+.source-line .source-dot.fallback { background: var(--text-muted); }
+
 .field { margin-bottom: 12px; }
 .field label { font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 5px; }
 .field .input {

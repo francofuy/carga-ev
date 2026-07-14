@@ -87,11 +87,31 @@ siempre ni ser accesibles desde otra cuenta):
 
 - Registro de carga en Casa (con motor de tarifas) o Público (tarifa manual), por **kWh directo o
   por % de batería** (usa la capacidad del vehículo guardado).
-- **Carga pública con red y cargo fijo**: se elige la red (UTE, eOne, DMC, Evergo, Otro); con UTE
-  se abre solo el campo "Cargo fijo" (estatal, cobra fijo por sesión), en el resto queda disponible
-  vía "+ Agregar cargo fijo" por si algún día cambia. La red se guarda con la carga y reemplaza el
-  genérico "Manual" en las listas. Columnas `fixed_fee`/`network` agregadas con migración
-  (`ALTER TABLE ... ADD COLUMN`) para no perder datos ya guardados en el dispositivo.
+- **Carga pública con red, franja horaria y sugerencia de precio en vivo**: se elige la red (UTE,
+  eOne, DMC, Evergo, Mobility, DISA, Otro); redes con variantes (por horario, ej. DMC/eOne/Mobility/DISA,
+  o por conector, ej. UTE Lentos/Rápidos) muestran una segunda fila de chips, preseleccionada según
+  la hora actual del dispositivo pero editable a mano — necesario porque no siempre se anota la
+  carga en el momento (mismo motivo que el borrador de carga). Aparece una caja "Sugerido $X/kWh"
+  con botón "Usar" que completa Precio y Cargo fijo (el campo se abre solo cuando la variante elegida
+  cobra cargo fijo > 0). Se guarda el nombre completo de la variante (ej. `"DMC (17 a 24hrs)"`) como
+  red de la carga, reemplazando el genérico "Manual" en las listas.
+  - **Fuente de los precios**: `src/lib/network-prices.ts` trae `https://evuruguay.com/cargadores_all.csv`
+    en vivo (CORS abierto, sin API key) — NO es oficial, ningún operador publica esto ellos mismos;
+    es un CSV compilado a mano por el dueño de ese sitio. Estrategia en cascada: fetch en vivo → si
+    falla, el último fetch exitoso cacheado en este dispositivo (`localStorage`) → si nunca hubo uno,
+    un snapshot fijo tomado a mano el 2026-07-14. Se pide una sola vez por sesión de la app (no en
+    cada apertura del sheet), para no golpear el sitio de un tercero innecesariamente.
+  - El servidor no manda `Last-Modified` ni expone `ETag` vía CORS — no hay forma de saber la fecha
+    real de modificación del archivo. En su lugar se compara el contenido contra el fetch anterior:
+    la fecha de "último cambio detectado" solo se actualiza cuando el contenido realmente difiere,
+    acotada a qué tan seguido se abre la app (documentado así en el código para no prometer precisión
+    que no existe).
+  - El agrupamiento red→variantes es genérico (`groupNetworkRows`/`pickDefaultVariant`): separa el
+    nombre de red del sufijo entre paréntesis, y si ese sufijo matchea un patrón "N a Mhrs" lo trata
+    como franja horaria: si no, es una variante propia (conector/predio). No hace falta tocar código
+    si evuruguay.com ajusta precios — sí si agrega una red nueva que no está en `NETWORK_DEFS`.
+  - Columnas `fixed_fee`/`network` (TEXT, ahora string libre) agregadas con migración
+    (`ALTER TABLE ... ADD COLUMN`) para no perder datos ya guardados en el dispositivo.
 - **Consumo en kWh/100km**: Vehículo muestra consumo homologado y real en kWh/100km (antes Wh/km) —
   la unidad estándar EV, comparable a simple vista. "Autonomía estimada" sigue siendo una sola fila
   (usa el consumo real cuando hay 2+ tramos con odómetro, si no cae al homologado) — se probó

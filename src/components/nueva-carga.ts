@@ -1,9 +1,10 @@
 import { computeHomeChargeCost, computePublicChargeCost, type TariffRates } from '../lib/tariff';
 import { getSettings, insertCharge, updateCharge, deleteCharge, getVehicle } from '../lib/db/api';
-import type { Charge, NewCharge, PublicNetwork } from '../lib/db/charges';
+import type { Charge, NewCharge } from '../lib/db/charges';
 import { bus, OPEN_EDIT_CHARGE, RESUME_DRAFT, notifyChargesUpdated, notifyDraftUpdated } from '../lib/bus';
 import { sparkBurst } from '../lib/spark-burst';
-import { saveDraft, clearDraft, type ChargeDraft } from '../lib/draft';
+import { saveDraft, clearDraft, timeAgoLabel, type ChargeDraft } from '../lib/draft';
+import { getNetworkPrices, groupNetworkRows, pickDefaultVariant, type NetworkGroup, type NetworkVariant, type NetworkPriceSource } from '../lib/network-prices';
 
 type ChargeMode = 'kwh' | 'pct';
 
@@ -49,14 +50,17 @@ export function nuevaCargaMarkup(): string {
         <div id="ncFieldsPublic" style="display:none;">
           <div class="field">
             <label>Red</label>
-            <div class="chip-row" id="ncNetworkRow" style="margin-bottom:0;">
-              <button class="chip" type="button" data-network="UTE">UTE</button>
-              <button class="chip" type="button" data-network="eOne">eOne</button>
-              <button class="chip" type="button" data-network="DMC">DMC</button>
-              <button class="chip" type="button" data-network="Evergo">Evergo</button>
-              <button class="chip" type="button" data-network="Otro">Otro</button>
-            </div>
+            <div class="chip-row" id="ncNetworkRow" style="margin-bottom:8px;"></div>
+            <div class="chip-row" id="ncVariantRow" style="margin-bottom:0; display:none;"></div>
           </div>
+
+          <div class="suggest-box" id="ncSuggestBox" style="display:none;">
+            <div class="row1"><span class="suggest-label">Sugerido</span><button class="suggest-use" type="button" id="ncSuggestUse">Usar</button></div>
+            <div class="suggest-amount" id="ncSuggestAmount">—</div>
+            <div class="suggest-sub" id="ncSuggestSub"></div>
+          </div>
+          <div class="source-line" id="ncSourceLine"></div>
+
           <div class="field"><label>Precio por kWh</label><div class="input"><span class="unit">$</span><input type="number" step="0.01" min="0" id="ncPrice" placeholder="0.00"></div></div>
 
           <div class="field" id="ncFixedFeeField" style="display:none;"><label>Cargo fijo</label><div class="input"><span class="unit">$</span><input type="number" step="0.01" min="0" id="ncFixedFee" placeholder="0.00"></div></div>
@@ -143,6 +147,12 @@ export function mountNuevaCarga(root: ParentNode): void {
   const priceInput = root.querySelector<HTMLInputElement>('#ncPrice')!;
   const odoPublicInput = root.querySelector<HTMLInputElement>('#ncOdoPublic')!;
   const networkRow = root.querySelector<HTMLElement>('#ncNetworkRow')!;
+  const variantRow = root.querySelector<HTMLElement>('#ncVariantRow')!;
+  const suggestBox = root.querySelector<HTMLElement>('#ncSuggestBox')!;
+  const suggestAmount = root.querySelector<HTMLElement>('#ncSuggestAmount')!;
+  const suggestSub = root.querySelector<HTMLElement>('#ncSuggestSub')!;
+  const suggestUseBtn = root.querySelector<HTMLButtonElement>('#ncSuggestUse')!;
+  const sourceLine = root.querySelector<HTMLElement>('#ncSourceLine')!;
   const fixedFeeField = root.querySelector<HTMLElement>('#ncFixedFeeField')!;
   const fixedFeeToggle = root.querySelector<HTMLButtonElement>('#ncFixedFeeToggle')!;
   const fixedFeeInput = root.querySelector<HTMLInputElement>('#ncFixedFee')!;
@@ -171,16 +181,22 @@ export function mountNuevaCarga(root: ParentNode): void {
   let mode: ChargeMode = 'kwh';
   let editingId: number | null = null;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
-  let selectedNetwork: PublicNetwork | null = null;
   let fixedFeeManualOpen = false;
+
+  let networkGroups: NetworkGroup[] = [];
+  let networkPricesLoaded = false;
+  let networkSource: NetworkPriceSource = 'fallback';
+  let networkChangedAt: number | null = null;
+  let selectedGroupKey: string | null = null;
+  let selectedVariant: NetworkVariant | null = null;
 
   function origin(): 'home' | 'public' {
     return seg.querySelector('.sel')?.getAttribute('data-origin') === 'public' ? 'public' : 'home';
   }
 
-  /** UTE abre el campo solo (cobra cargo fijo por sesión); en el resto queda como sugerencia manual vía el link "+ agregar". */
+  /** El campo se abre solo cuando la variante elegida cobra cargo fijo (ej. UTE, Evergo); en el resto queda como sugerencia manual vía el link "+ agregar". */
   function isFixedFeeVisible(): boolean {
-    return selectedNetwork === 'UTE' || fixedFeeManualOpen;
+    return (selectedVariant?.bajada ?? 0) > 0 || fixedFeeManualOpen;
   }
 
   function syncFixedFeeVisibility(): void {
@@ -192,6 +208,131 @@ export function mountNuevaCarga(root: ParentNode): void {
   function getFixedFee(): number {
     return isFixedFeeVisible() ? parseFloat(fixedFeeInput.value) || 0 : 0;
   }
+
+  /** Lo que se guarda como "red" de la carga: el nombre completo de la variante sugerida, o el nombre de red/"Otro" si no hay variante (dato o precio no disponible). */
+  function currentNetworkValue(): string | null {
+    return selectedVariant ? selectedVariant.empresa : selectedGroupKey;
+  }
+
+  function renderSourceLine(): void {
+    if (!networkPricesLoaded) {
+      sourceLine.innerHTML = '';
+      return;
+    }
+    const dotClass = networkSource === 'live' ? 'live' : networkSource === 'cache' ? 'cache' : 'fallback';
+    const label =
+      networkSource === 'live'
+        ? 'en vivo, hace un instante'
+        : networkSource === 'cache'
+          ? `caché de ${networkChangedAt ? timeAgoLabel(networkChangedAt) : 'antes'} (sin conexión ahora)`
+          : 'datos de referencia fijos (sin conexión, sin caché previo)';
+    sourceLine.innerHTML = `<span class="source-dot ${dotClass}"></span>evuruguay.com (no oficial) · ${label}`;
+  }
+
+  function renderSuggestBox(): void {
+    if (!selectedVariant) {
+      suggestBox.style.display = 'none';
+      return;
+    }
+    suggestBox.style.display = 'block';
+    suggestAmount.textContent = '$' + selectedVariant.precioKwh.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 3 }) + ' /kWh';
+    suggestSub.textContent = selectedVariant.bajada > 0 ? `Cargo fijo $${selectedVariant.bajada.toLocaleString('es-UY')} · ${selectedGroupKey}` : `Sin cargo fijo · ${selectedGroupKey}`;
+  }
+
+  function renderVariantChips(group: NetworkGroup, selected: NetworkVariant | null): void {
+    variantRow.innerHTML = group.variants
+      .map((v) => `<button class="chip" type="button" data-variant="${v.empresa}">${v.label}</button>`)
+      .join('');
+    variantRow.querySelectorAll<HTMLButtonElement>('button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        selectedVariant = group.variants.find((v) => v.empresa === btn.getAttribute('data-variant')) ?? null;
+        variantRow.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b === btn));
+        syncFixedFeeVisibility();
+        renderSuggestBox();
+        recalcPreview();
+      });
+    });
+    variantRow.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-variant') === selected?.empresa));
+  }
+
+  /** Aplica la selección de red actual: arma (o esconde) la fila de variantes y elige una por defecto — según la hora actual, salvo que se pida preservar una puntual (al restaurar una carga/borrador ya guardado). */
+  function applyGroupSelection(preferredVariant?: NetworkVariant | null): void {
+    const group = networkGroups.find((g) => g.key === selectedGroupKey) ?? null;
+    if (!group || group.variants.length <= 1) {
+      variantRow.style.display = 'none';
+      variantRow.innerHTML = '';
+      selectedVariant = group?.variants[0] ?? null;
+    } else {
+      selectedVariant = preferredVariant !== undefined ? preferredVariant : pickDefaultVariant(group, new Date());
+      renderVariantChips(group, selectedVariant);
+      variantRow.style.display = 'flex';
+    }
+    syncFixedFeeVisibility();
+    renderSuggestBox();
+  }
+
+  function renderNetworkChips(): void {
+    const chips = networkGroups.map((g) => `<button class="chip" type="button" data-group="${g.key}">${g.key}</button>`).join('');
+    networkRow.innerHTML = chips + `<button class="chip" type="button" data-group="Otro">Otro</button>`;
+    networkRow.querySelectorAll<HTMLButtonElement>('button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-group')!;
+        const wasSelected = selectedGroupKey === key;
+        selectedGroupKey = wasSelected ? null : key;
+        networkRow.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', !wasSelected && b === btn));
+        applyGroupSelection();
+        recalcPreview();
+      });
+    });
+    networkRow.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-group') === selectedGroupKey));
+    renderSourceLine();
+  }
+
+  /** Trae los precios una sola vez por sesión de la app (se dispara al montar, en segundo plano) — evita pegarle a evuruguay.com en cada apertura del sheet. */
+  let networkPricesPromise: Promise<void> | null = null;
+  function ensureNetworkPrices(): Promise<void> {
+    if (!networkPricesPromise) {
+      networkPricesPromise = getNetworkPrices().then((result) => {
+        networkGroups = groupNetworkRows(result.rows);
+        networkSource = result.source;
+        networkChangedAt = result.changedAt;
+        networkPricesLoaded = true;
+        renderNetworkChips();
+      });
+    }
+    return networkPricesPromise;
+  }
+  void ensureNetworkPrices();
+
+  /** Reconstruye selectedGroupKey/selectedVariant a partir de la red guardada en una carga o borrador — preserva la variante exacta (no la recalcula por la hora actual). */
+  function restoreNetworkFromSaved(saved: string | null): void {
+    if (!saved) {
+      selectedGroupKey = null;
+      selectedVariant = null;
+      return;
+    }
+    for (const group of networkGroups) {
+      const variant = group.variants.find((v) => v.empresa === saved);
+      if (variant) {
+        selectedGroupKey = group.key;
+        selectedVariant = variant;
+        return;
+      }
+    }
+    selectedGroupKey = saved;
+    selectedVariant = null;
+  }
+
+  suggestUseBtn.addEventListener('click', () => {
+    if (!selectedVariant) return;
+    priceInput.value = String(selectedVariant.precioKwh);
+    if (selectedVariant.bajada > 0) {
+      fixedFeeInput.value = String(selectedVariant.bajada);
+      fixedFeeManualOpen = true;
+    }
+    syncFixedFeeVisibility();
+    recalcPreview();
+  });
 
   function showError(msg: string | null): void {
     if (!msg) {
@@ -320,10 +461,14 @@ export function mountNuevaCarga(root: ParentNode): void {
     pctToPublic.value = '';
     mode = 'kwh';
     modeSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-mode') === 'kwh'));
-    selectedNetwork = null;
+    selectedGroupKey = null;
+    selectedVariant = null;
     fixedFeeManualOpen = false;
     fixedFeeInput.value = '';
     networkRow.querySelectorAll('button').forEach((b) => b.classList.remove('sel'));
+    variantRow.style.display = 'none';
+    variantRow.innerHTML = '';
+    suggestBox.style.display = 'none';
     syncFixedFeeVisibility();
     showError(null);
     amountEl.textContent = '$0';
@@ -347,7 +492,7 @@ export function mountNuevaCarga(root: ParentNode): void {
   async function open(): Promise<void> {
     resetForm();
     overlay.classList.add('open');
-    await loadContext();
+    await Promise.all([loadContext(), ensureNetworkPrices()]);
   }
 
   async function openEdit(charge: Charge): Promise<void> {
@@ -369,10 +514,12 @@ export function mountNuevaCarga(root: ParentNode): void {
       priceInput.value = charge.pricePerKwh != null ? String(charge.pricePerKwh) : '';
       kwhPublicInput.value = String(charge.kwh);
       odoPublicInput.value = charge.odometerKm != null ? String(charge.odometerKm) : '';
-      selectedNetwork = (charge.network as PublicNetwork | null) ?? null;
-      networkRow.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-network') === selectedNetwork));
+      await ensureNetworkPrices();
+      restoreNetworkFromSaved(charge.network);
+      renderNetworkChips();
+      applyGroupSelection(selectedVariant);
       fixedFeeInput.value = charge.fixedFee != null ? String(charge.fixedFee) : '';
-      fixedFeeManualOpen = selectedNetwork !== 'UTE' && !!charge.fixedFee && charge.fixedFee > 0;
+      fixedFeeManualOpen = (selectedVariant?.bajada ?? 0) <= 0 && !!charge.fixedFee && charge.fixedFee > 0;
       syncFixedFeeVisibility();
     }
 
@@ -408,7 +555,7 @@ export function mountNuevaCarga(root: ParentNode): void {
         pctFromPublic: pctFromPublic.value,
         pctToPublic: pctToPublic.value,
         odoPublic: odoPublicInput.value,
-        network: selectedNetwork ?? '',
+        network: currentNetworkValue() ?? '',
         fixedFee: isFixedFeeVisible() ? fixedFeeInput.value : '',
       },
       line1: o === 'home' ? `Casa · ${startInput.value}–${endInput.value}` : 'Público o trabajo',
@@ -446,10 +593,12 @@ export function mountNuevaCarga(root: ParentNode): void {
     pctFromPublic.value = draft.fields.pctFromPublic ?? '';
     pctToPublic.value = draft.fields.pctToPublic ?? '';
     odoPublicInput.value = draft.fields.odoPublic ?? '';
-    selectedNetwork = (draft.fields.network as PublicNetwork) || null;
-    networkRow.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-network') === selectedNetwork));
+    await ensureNetworkPrices();
+    restoreNetworkFromSaved(draft.fields.network || null);
+    renderNetworkChips();
+    applyGroupSelection(selectedVariant);
     fixedFeeInput.value = draft.fields.fixedFee ?? '';
-    fixedFeeManualOpen = selectedNetwork !== 'UTE' && !!draft.fields.fixedFee;
+    fixedFeeManualOpen = (selectedVariant?.bajada ?? 0) <= 0 && !!draft.fields.fixedFee;
     syncFixedFeeVisibility();
     syncVisibility();
     overlay.classList.add('open');
@@ -510,18 +659,6 @@ export function mountNuevaCarga(root: ParentNode): void {
     });
   });
 
-  networkRow.querySelectorAll<HTMLButtonElement>('button').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const network = btn.getAttribute('data-network') as PublicNetwork;
-      const wasSelected = btn.classList.contains('sel');
-      networkRow.querySelectorAll('button').forEach((b) => b.classList.remove('sel'));
-      selectedNetwork = wasSelected ? null : network;
-      if (!wasSelected) btn.classList.add('sel');
-      syncFixedFeeVisibility();
-      recalcPreview();
-    });
-  });
-
   fixedFeeToggle.addEventListener('click', () => {
     fixedFeeManualOpen = true;
     syncFixedFeeVisibility();
@@ -559,7 +696,7 @@ export function mountNuevaCarga(root: ParentNode): void {
         if (!price || price <= 0) throw new Error('Ingresá el precio por kWh.');
         const odo = odoPublicInput.value ? parseFloat(odoPublicInput.value) : null;
         const fixedFee = getFixedFee();
-        input = { location: 'public', kwh, pricePerKwh: price, odometerKm: odo, fixedFee: fixedFee > 0 ? fixedFee : null, network: selectedNetwork };
+        input = { location: 'public', kwh, pricePerKwh: price, odometerKm: odo, fixedFee: fixedFee > 0 ? fixedFee : null, network: currentNetworkValue() };
       }
       const isNew = editingId == null;
       const charge = editingId == null ? await insertCharge(input) : await updateCharge(editingId, input);

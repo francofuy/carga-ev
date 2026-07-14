@@ -4,9 +4,6 @@ import { computeHomeChargeCost, computePublicChargeCost, type TariffRates } from
 
 export type ChargeLocation = 'home' | 'public';
 
-/** UTE es estatal y cobra cargo fijo por sesión; eOne, DMC y Evergo son privados y no. */
-export type PublicNetwork = 'UTE' | 'eOne' | 'DMC' | 'Evergo' | 'Otro';
-
 export interface NewHomeCharge {
   location: 'home';
   startAt: Date;
@@ -20,7 +17,8 @@ export interface NewPublicCharge {
   pricePerKwh: number;
   odometerKm: number | null;
   fixedFee: number | null;
-  network: PublicNetwork | null;
+  /** "UTE", "Otro", o el nombre completo de la variante sugerida (ej. "DMC (17 a 24hrs)") — ver src/lib/network-prices.ts. */
+  network: string | null;
 }
 export type NewCharge = NewHomeCharge | NewPublicCharge;
 
