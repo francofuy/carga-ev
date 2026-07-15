@@ -533,12 +533,34 @@ export function mountNuevaCarga(root: ParentNode): void {
     overlay.classList.remove('open');
   }
 
-  /** Snapshot del formulario en curso, o null si no hay nada real que valga la pena guardar (ver criterio de "meaningful content" en getKwh/price). */
+/** Hay carga en curso con solo el "desde %" cargado (sin saber todavía con cuánto termina) — no exigir el rango completo para guardar el borrador, ver currentDraftSnapshot(). */
+  function hasAnyMeaningfulInput(): boolean {
+    if (origin() === 'home') {
+      return !!(kwhHomeInput.value || pctFromHome.value || pctToHome.value || odoHomeInput.value);
+    }
+    return !!(priceInput.value || kwhPublicInput.value || pctFromPublic.value || pctToPublic.value || odoPublicInput.value || selectedGroupKey);
+  }
+
+  /** Línea 2 del borrador — se degrada con gracia cuando todavía no hay como calcular un costo (ej. solo el "desde %" cargado, típico al dejar cargando de noche sin saber con cuánto va a terminar). */
+  function buildDraftLine2(o: 'home' | 'public', kwh: number): string {
+    if (kwh > 0) return `${kwh.toFixed(1)} kWh · ${amountEl.textContent} estimado`;
+    if (mode === 'pct') {
+      const from = (o === 'home' ? pctFromHome : pctFromPublic).value;
+      const to = (o === 'home' ? pctToHome : pctToPublic).value;
+      if (from && to) return `${from}% → ${to}% · rango inválido`;
+      if (from) return `Desde ${from}% · falta el % final`;
+      if (to) return `Hasta ${to}% · falta el % inicial`;
+      return 'Sin % ingresado todavía';
+    }
+    if (o === 'public' && selectedGroupKey && !priceInput.value) return `Red ${selectedGroupKey} elegida · falta precio y kWh`;
+    return 'kWh sin ingresar todavía';
+  }
+
+  /** Snapshot del formulario en curso, o null si no hay absolutamente nada escrito todavía. */
   function currentDraftSnapshot(): ChargeDraft | null {
+    if (!hasAnyMeaningfulInput()) return null;
     const kwh = getKwh();
-    if (!kwh || kwh <= 0) return null;
     const o = origin();
-    if (o === 'public' && !(parseFloat(priceInput.value) > 0)) return null;
     return {
       savedAt: Date.now(),
       origin: o,
@@ -559,7 +581,7 @@ export function mountNuevaCarga(root: ParentNode): void {
         fixedFee: isFixedFeeVisible() ? fixedFeeInput.value : '',
       },
       line1: o === 'home' ? `Casa · ${startInput.value}–${endInput.value}` : 'Público o trabajo',
-      line2: `${kwh.toFixed(1)} kWh · ${amountEl.textContent} estimado`,
+      line2: buildDraftLine2(o, kwh),
     };
   }
 
