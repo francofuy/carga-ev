@@ -48,6 +48,8 @@ targets:
       - target: LiveActivityWidget
         embed: true
       - sdk: ActivityKit.framework
+      - sdk: CoreLocation.framework
+      - sdk: UserNotifications.framework
 
   # Widget Extension de la Live Activity real (Dynamic Island + pantalla bloqueada) de una carga
   # en Casa — el spike de la Fase C (target vacío) ya confirmó que esto archiva y se instala bien

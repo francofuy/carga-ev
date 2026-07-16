@@ -6,6 +6,7 @@ import { notifyChargesUpdated } from '../lib/bus';
 import { applyTheme } from '../lib/theme';
 import { chargerKw } from '../lib/estimation';
 import { Geolocation } from '@capacitor/geolocation';
+import { startHomeGeofence, stopHomeGeofence } from '../lib/geofence';
 import {
   applyPersonalizacion,
   reapplyAccentInkForTheme,
@@ -298,11 +299,16 @@ export const ajustesScreen: Screen = {
           homeLng = null;
           await setSetting(SETTING_KEY_MAP.homeLat, '');
           await setSetting(SETTING_KEY_MAP.homeLng, '');
+          await stopHomeGeofence();
           renderLocState();
         })();
       });
     }
     renderLocState();
+    // Reactiva el monitoreo si ya había una ubicación guardada de antes de que existiera este
+    // geofencing — si no, quedaría con la ubicación guardada pero sin ningún CLCircularRegion
+    // real registrado hasta volver a tocar "Usar mi ubicación actual".
+    if (homeLat != null && homeLng != null) void startHomeGeofence(homeLat, homeLng);
 
     body.querySelector('#rowHomeLocation')!.addEventListener('click', () => locOverlay.classList.add('open'));
     body.querySelector('#locClose')!.addEventListener('click', () => locOverlay.classList.remove('open'));
@@ -322,7 +328,12 @@ export const ajustesScreen: Screen = {
           await setSetting(SETTING_KEY_MAP.homeLat, String(homeLat));
           await setSetting(SETTING_KEY_MAP.homeLng, String(homeLng));
           renderLocState();
-          showBanner(locMsg, 'Ubicación guardada.', 'success');
+          const geo = await startHomeGeofence(homeLat, homeLng);
+          showBanner(
+            locMsg,
+            geo.ok ? 'Ubicación guardada. Te avisamos cuando llegues.' : `Ubicación guardada, pero el aviso de llegada falló: ${geo.error}`,
+            geo.ok ? 'success' : 'error',
+          );
         } catch (err) {
           showBanner(locMsg, 'No se pudo obtener la ubicación: ' + (err instanceof Error ? err.message : String(err)), 'error');
         }

@@ -1,7 +1,7 @@
 import { computeHomeChargeCost, computePublicChargeCost, type TariffRates } from '../lib/tariff';
 import { getSettings, insertCharge, updateCharge, deleteCharge, getVehicle } from '../lib/db/api';
 import type { Charge, NewCharge } from '../lib/db/charges';
-import { bus, OPEN_EDIT_CHARGE, RESUME_DRAFT, notifyChargesUpdated, notifyDraftUpdated } from '../lib/bus';
+import { bus, OPEN_EDIT_CHARGE, RESUME_DRAFT, OPEN_PROGRAMAR, notifyChargesUpdated, notifyDraftUpdated } from '../lib/bus';
 import { sparkBurst } from '../lib/spark-burst';
 import { saveDraft, clearDraft, timeAgoLabel, type ChargeDraft } from '../lib/draft';
 import { getNetworkPrices, groupNetworkRows, pickDefaultVariant, type NetworkGroup, type NetworkVariant, type NetworkPriceSource } from '../lib/network-prices';
@@ -810,6 +810,8 @@ export function mountNuevaCarga(root: ParentNode): void {
   });
   bus.addEventListener(OPEN_EDIT_CHARGE, (e) => void openEdit((e as CustomEvent<Charge>).detail));
   bus.addEventListener(RESUME_DRAFT, (e) => void openDraft((e as CustomEvent<ChargeDraft>).detail));
+  // "Llegaste a Casa" (geofencing, ver src/lib/geofence.ts) — open() ya resetea a Casa/Programar/Ahora por defecto.
+  bus.addEventListener(OPEN_PROGRAMAR, () => void open());
 
   deleteBtn.addEventListener('click', () => {
     void (async () => {

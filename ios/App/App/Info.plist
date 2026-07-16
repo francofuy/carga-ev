@@ -27,7 +27,13 @@
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Se usa para guardar la ubicación de tu casa y, más adelante, avisarte cuando llegues para sugerirte programar una carga.</string>
+	<string>Se usa para guardar la ubicación de tu casa.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Se usa para avisarte cuando llegás a tu casa y sugerirte programar una carga, incluso con la app cerrada.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
