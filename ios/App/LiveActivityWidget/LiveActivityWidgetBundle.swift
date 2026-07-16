@@ -16,11 +16,14 @@
 // hasta el % inicial (lo que la batería ya tenía antes de esta carga) es fijo, no un 0 — antes la
 // barra y el "0.0/60.0 kWh" arrancaban siempre como si la batería estuviera vacía.
 //
-// La forma "ondulada" (bobina) del wireframe web quedó simplificada a una barra recta: no pudimos
-// probar a tiempo un ProgressViewStyle con forma de onda que además soporte timerInterval — queda
-// como mejora visual pendiente, sin afectar la función.
+// La forma "ondulada" (bobina) del wireframe web se aplica solo al tramo FIJO (lo que la batería
+// ya tenía) — decisión tomada a propósito: reemplazar el ProgressView(timerInterval:) del tramo
+// que crece por un Shape/estilo propio arriesgaba perder la animación que el sistema hace solo,
+// sin la app corriendo (no hay forma de confirmar eso sin gastar otro ciclo de build). El tramo
+// animado se queda como barra recta.
 
 import ActivityKit
+import Foundation
 import SwiftUI
 import WidgetKit
 
@@ -45,11 +48,33 @@ private func totalKwhSoFar(startPct: Double, kwhTotal: Double, kwhDelivered: Dou
     startPct / 100 * kwhTotal + kwhDelivered
 }
 
+/** Curva senoidal — el motivo "bobina" del wireframe, aplicado solo al tramo fijo (ver nota de
+    arriba sobre por qué el tramo animado no la usa). */
+private struct WaveShape: Shape {
+    var amplitude: CGFloat = 2
+    var wavelength: CGFloat = 12
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        guard rect.width > 0 else { return path }
+        let midY = rect.midY
+        path.move(to: CGPoint(x: rect.minX, y: midY))
+        var x: CGFloat = 0
+        while x <= rect.width {
+            let angle = (x / wavelength) * 2 * .pi
+            path.addLine(to: CGPoint(x: rect.minX + x, y: midY + amplitude * sin(angle)))
+            x += 2
+        }
+        return path
+    }
+}
+
 /**
- * Barra de batería: el tramo hasta el % inicial arranca ya relleno (fijo, no anima — es el % que
- * ya tenía la batería antes de esta carga), y el tramo que sigue lo anima el sistema solo por
- * tiempo transcurrido entre startAt y targetStopAt (sin que la app tenga que estar corriendo).
- * Antes la barra arrancaba siempre vacía, como si la batería estuviera en 0%.
+ * Barra de batería: el tramo hasta el % inicial arranca ya relleno (fijo, con forma de onda — es
+ * el % que ya tenía la batería antes de esta carga), y el tramo que sigue lo anima el sistema
+ * solo por tiempo transcurrido entre startAt y targetStopAt (sin que la app tenga que estar
+ * corriendo), como barra recta. Antes la barra arrancaba siempre vacía, como si la batería
+ * estuviera en 0%.
  */
 private struct BatteryProgressBar: View {
     var startPct: Double
@@ -61,19 +86,21 @@ private struct BatteryProgressBar: View {
         GeometryReader { geo in
             let startFrac = min(max(startPct / 100, 0), 1)
             HStack(spacing: 0) {
-                Capsule()
-                    .fill(color.opacity(0.5))
-                    .frame(width: geo.size.width * startFrac)
+                if startFrac > 0 {
+                    WaveShape()
+                        .stroke(color, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .frame(width: geo.size.width * startFrac)
+                }
                 if targetStopAt > startAt && startFrac < 1 {
                     ProgressView(timerInterval: startAt...targetStopAt, countsDown: false)
                         .tint(color)
                         .labelsHidden()
                 }
             }
+            .frame(height: 10)
             .background(Capsule().fill(color.opacity(0.15)))
-            .clipShape(Capsule())
         }
-        .frame(height: 6)
+        .frame(height: 10)
     }
 }
 
