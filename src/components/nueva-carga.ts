@@ -936,6 +936,7 @@ export function mountNuevaCarga(root: ParentNode): void {
       let liveActivityWarning = '';
       if (!tarde && batteryKwh) {
         const laResult = await syncChargeLiveActivity({
+          startAt: start,
           startPct: startPctVal,
           targetStopAt: stop,
           networkLabel: `Casa · ${homeChargerAmps}A · ${homeChargerVolts}V`,

@@ -8,6 +8,7 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 interface LiveActivityPlugin {
   isSupported(): Promise<{ value: boolean }>;
   sync(options: {
+    startAtMs: number;
     startPct: number;
     targetStopAtMs: number;
     networkLabel: string;
@@ -21,6 +22,7 @@ interface LiveActivityPlugin {
 const LiveActivity = registerPlugin<LiveActivityPlugin>('LiveActivity');
 
 export interface ChargeLiveActivityState {
+  startAt: Date;
   startPct: number;
   targetStopAt: Date;
   networkLabel: string;
@@ -44,6 +46,7 @@ export async function syncChargeLiveActivity(state: ChargeLiveActivityState): Pr
   if (!Capacitor.isNativePlatform()) return { ok: true };
   try {
     await LiveActivity.sync({
+      startAtMs: state.startAt.getTime(),
       startPct: state.startPct,
       targetStopAtMs: state.targetStopAt.getTime(),
       networkLabel: state.networkLabel,

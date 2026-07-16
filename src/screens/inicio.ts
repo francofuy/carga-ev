@@ -372,6 +372,7 @@ export const inicioScreen: Screen = {
           if (estimate && batteryKwh && now.getTime() - lastLiveActivitySyncAt > 60000) {
             lastLiveActivitySyncAt = now.getTime();
             void syncChargeLiveActivity({
+              startAt: start,
               startPct: activeCharge.startPct,
               targetStopAt: stop,
               networkLabel: `Casa · ${settings.homeChargerAmps}A · ${settings.homeChargerVolts}V`,

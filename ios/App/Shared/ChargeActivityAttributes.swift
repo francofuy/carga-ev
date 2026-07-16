@@ -10,6 +10,7 @@ import Foundation
 struct ChargeActivityAttributes: ActivityAttributes {
     // Datos fijos durante toda la carga (ActivityKit no permite mutar "attributes" después de
     // Activity.request — solo el ContentState puede actualizarse con .update()).
+    var startAt: Date
     var startPct: Double
     var targetStopAt: Date
     var networkLabel: String

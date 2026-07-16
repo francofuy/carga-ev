@@ -39,6 +39,7 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         guard
+            let startAtMs = call.getDouble("startAtMs"),
             let startPct = call.getDouble("startPct"),
             let targetStopAtMs = call.getDouble("targetStopAtMs"),
             let networkLabel = call.getString("networkLabel"),
@@ -61,6 +62,7 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
         }
 
         let attributes = ChargeActivityAttributes(
+            startAt: Date(timeIntervalSince1970: startAtMs / 1000),
             startPct: startPct,
             targetStopAt: Date(timeIntervalSince1970: targetStopAtMs / 1000),
             networkLabel: networkLabel
