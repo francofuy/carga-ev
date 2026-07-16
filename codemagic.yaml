@@ -6,15 +6,6 @@ workflows:
     environment:
       node: 22
       xcode: latest
-      # Grupo de variables/certificados a crear en Codemagic (UI del proyecto, NO en este
-      # archivo ni en git): subir el certificado de desarrollo (.p12) y el provisioning
-      # profile (.mobileprovision) de tu Apple ID gratuito ("Personal Team") en
-      # Code signing identities. `xcode-project use-profiles` los toma de ahí solo.
-      # Sin Developer Program pago no hay firma automática vía App Store Connect API,
-      # así que este es el único paso manual real: generar ese certificado/perfil una vez
-      # (developer.apple.com, con tu Apple ID) y subirlos a Codemagic.
-      groups:
-        - ios_signing_free_tier
       vars:
         BUNDLE_ID: "com.francofuy.cargaev"
     scripts:
@@ -24,19 +15,34 @@ workflows:
         script: npm run build:capacitor
       - name: Sync Capacitor (copia dist-capacitor a ios/App/App/public)
         script: npx cap sync ios
-      - name: Set up code signing (Personal Team, certificado/perfil subidos a Codemagic)
+      - name: Archive .app SIN firma de Apple
+        # No hay certificado que subir acá: con Apple ID gratis no existe firma vía el
+        # portal de developer.apple.com (eso requiere Developer Program pago) ni vía
+        # Xcode (no tenemos Mac). La firma real y gratuita la hace AltServer/Sideloadly
+        # en el momento de instalar en el iPhone, usando tu Apple ID directamente. Acá
+        # solo se compila el .app sin firmar; CODE_SIGNING_ALLOWED=NO evita que xcodebuild
+        # busque un certificado/perfil que no existe.
         script: |
-          keychain initialize
-          keychain add-certificates
-          xcode-project use-profiles
-      - name: Archive .ipa
+          set -e
+          xcodebuild archive \
+            -workspace "ios/App/App.xcworkspace" \
+            -scheme "App" \
+            -configuration Release \
+            -archivePath "$CM_BUILD_DIR/App.xcarchive" \
+            -destination "generic/platform=iOS" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+      - name: Empaquetar el .app en un .ipa (sin firmar)
+        # xcodebuild -exportArchive exige firma incluso para exportar, así que el .ipa se
+        # arma a mano: un .ipa es simplemente un .zip con el .app dentro de Payload/.
         script: |
-          xcode-project build-ipa \
-            --workspace "ios/App/App.xcworkspace" \
-            --scheme "App"
+          set -e
+          mkdir -p "$CM_BUILD_DIR/Payload"
+          cp -r "$CM_BUILD_DIR/App.xcarchive/Products/Applications/App.app" "$CM_BUILD_DIR/Payload/"
+          cd "$CM_BUILD_DIR" && zip -r CargaEV-unsigned.ipa Payload
     artifacts:
-      - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
+      - $CM_BUILD_DIR/CargaEV-unsigned.ipa
     publishing:
       email:
         recipients:
