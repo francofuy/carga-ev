@@ -14,6 +14,7 @@ import { loadDraft, clearDraft, timeAgoLabel } from '../lib/draft';
 import { estimatedAutonomyKm } from '../lib/consumption';
 import { chargerKw, estimateAtTime } from '../lib/estimation';
 import { cancelActiveChargeNotifications } from '../lib/notifications';
+import { syncChargeLiveActivity, endChargeLiveActivity } from '../lib/live-activity';
 
 function isoToTimeLabel(iso: string): string {
   return new Date(iso).toTimeString().slice(0, 5);
@@ -23,6 +24,15 @@ function bandColor(pct: number): string {
   if (pct < 20) return 'var(--critical)';
   if (pct < 80) return 'var(--warning-fill)';
   return 'var(--good)';
+}
+
+/** Línea de corriente circulando ("bobina") para la tarjeta de carga en curso — wireframe aprobado en design-lab/animacion-carga-en-casa.html. */
+function coilSvg(): string {
+  const d = 'M4,11 Q 14,2 24,11 T 44,11 T 64,11 T 84,11 T 104,11 T 124,11 T 144,11 T 164,11 T 184,11 T 204,11 T 224,11 T 244,11';
+  return `<svg class="coil-svg" viewBox="0 0 260 22" preserveAspectRatio="none">
+    <path class="coil-base" d="${d}"/>
+    <path class="coil-pulse" d="${d}"/>
+  </svg>`;
 }
 
 function startOfMonthIso(): string {
@@ -213,6 +223,9 @@ export const inicioScreen: Screen = {
     }
 
     let activeCardTimer: ReturnType<typeof setInterval> | undefined;
+    // Las Live Activities están pensadas para actualizarse cada tanto, no en cada tick del
+    // intervalo de 1s de la tarjeta — Apple recomienda no más de ~1 actualización por minuto.
+    let lastLiveActivitySyncAt = 0;
 
     /** Al terminar la ventana programada (o al tocar "Terminar ahora"), congela el estimado a `atTime` y pide confirmar el real — se guarda recién acá (insertCharge), no antes. */
     async function renderConfirmCard(ac: ActiveCharge, atTime: Date): Promise<void> {
@@ -262,6 +275,7 @@ export const inicioScreen: Screen = {
             await insertCharge({ location: 'home', startAt: start, endAt: atTime, kwh: realKwh, odometerKm: null, startPct: ac.startPct, endPct: realPct });
             await deleteActiveCharge();
             await cancelActiveChargeNotifications();
+            await endChargeLiveActivity();
             notifyActiveChargeUpdated();
             notifyChargesUpdated();
           } catch (err) {
@@ -274,6 +288,7 @@ export const inicioScreen: Screen = {
         void (async () => {
           await deleteActiveCharge();
           await cancelActiveChargeNotifications();
+          await endChargeLiveActivity();
           notifyActiveChargeUpdated();
         })();
       });
@@ -317,6 +332,7 @@ export const inicioScreen: Screen = {
             void (async () => {
               await deleteActiveCharge();
               await cancelActiveChargeNotifications();
+              await endChargeLiveActivity();
               notifyActiveChargeUpdated();
             })();
           });
@@ -327,26 +343,36 @@ export const inicioScreen: Screen = {
           // Sin vehículo configurado no hay con qué estimar el % — eso no significa que la
           // carga ya terminó, solo que no podemos calcular el número (antes esto se confundía
           // y saltaba directo a "confirmar" apenas guardabas sin tener el auto configurado).
-          const estimateHtml = batteryKwh
-            ? (() => {
-                const { pct, kwhDelivered } = estimateAtTime(activeCharge.startPct, start, now, nominalKw, batteryKwh, 1);
-                return `<div style="margin-top:8px;font-size:26px;font-weight:700;color:${bandColor(pct)};">${Math.round(pct)}%<span style="font-size:11px;color:var(--text-muted);font-weight:500;margin-left:6px;">estimado</span></div>
-                  <div class="m2" style="margin-top:2px;">${kwhDelivered.toFixed(1)} kWh entregados</div>`;
-              })()
+          const estimate = batteryKwh ? estimateAtTime(activeCharge.startPct, start, now, nominalKw, batteryKwh, 1) : null;
+          const estimateHtml = estimate
+            ? `<div style="margin-top:8px;font-size:26px;font-weight:700;color:${bandColor(estimate.pct)};">${Math.round(estimate.pct)}%<span style="font-size:11px;color:var(--text-muted);font-weight:500;margin-left:6px;">estimado</span></div>
+                  <div class="m2" style="margin-top:2px;">${estimate.kwhDelivered.toFixed(1)} kWh entregados</div>`
             : `<div class="m2" style="margin-top:8px;color:var(--text-muted);">Configurá tu vehículo en Ajustes para ver el % estimado.</div>`;
           draftCardEl.innerHTML = `
             <div class="draft-card">
-              <div class="tag">Cargando ahora · En vivo</div>
+              <div class="tag live">Cargando ahora<span class="live-dot"></span>En vivo</div>
               <div class="row1">
                 <span class="ic"><svg><use href="#i-bolt"/></svg></span>
                 <span class="meta"><div class="m1">Casa · corta a las ${isoToTimeLabel(activeCharge.targetStopAt)}</div></span>
               </div>
+              ${coilSvg()}
               ${estimateHtml}
               <div class="btnrow"><button class="del" id="activeFinishNow">Terminar ahora</button></div>
             </div>`;
           draftCardEl.querySelector<HTMLButtonElement>('#activeFinishNow')!.addEventListener('click', () => {
             void renderConfirmCard(activeCharge, new Date());
           });
+          if (estimate && batteryKwh && now.getTime() - lastLiveActivitySyncAt > 60000) {
+            lastLiveActivitySyncAt = now.getTime();
+            void syncChargeLiveActivity({
+              startPct: activeCharge.startPct,
+              targetStopAt: stop,
+              networkLabel: `Casa · ${settings.homeChargerAmps}A · ${settings.homeChargerVolts}V`,
+              pct: estimate.pct,
+              kwhDelivered: estimate.kwhDelivered,
+              kwhTotal: batteryKwh,
+            });
+          }
           return;
         }
 

@@ -1,0 +1,183 @@
+<title>Animación — tarjeta "Cargando ahora" en Inicio</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --r-md: 14px; --r-lg: 18px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --border: #2A2F38;
+      --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C;
+      --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+      --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+      --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --border: #2A2F38;
+    --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+    --accent: #4FB0F5; --accent-ink: #04121C;
+    --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+    --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+    --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+    --page-surface: #0B0E13;
+  }
+  :root[data-theme="light"] {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 28px 16px 60px;
+  }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 600px; text-align: center; margin-bottom: 20px; }
+  .eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; text-wrap: balance; }
+  .page-head p { font-size: 12.5px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 4px; }
+  .page-head b { color: var(--text); }
+
+  .theme-toggle-row { display: flex; gap: 8px; margin-bottom: 26px; }
+  .theme-btn { font-size: 11.5px; font-weight: 700; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); cursor: pointer; }
+  .theme-btn.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  .compare { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; max-width: 900px; }
+  .col { width: 300px; }
+  .col-label { font-size: 12px; font-weight: 700; text-align: center; margin-bottom: 10px; color: var(--text-secondary); }
+  .col-label.b { color: var(--accent); }
+
+  /* ===== bezel (mini, solo el bloque de arriba de Inicio) ===== */
+  .phone { position: relative; background: var(--bg); border-radius: 30px; border: 1px solid var(--border);
+    box-shadow: var(--shadow-2); overflow: hidden; padding: 30px 14px 20px; }
+  .notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 74px; height: 18px; background: #000; border-radius: 999px; }
+  .nav-title { font-size: 20px; font-weight: 700; margin: 6px 0 12px; letter-spacing: -0.015em; }
+
+  /* ===== la tarjeta real, tal cual existe hoy en shell.css (.draft-card) ===== */
+  .draft-card {
+    position: relative; border-radius: var(--r-lg); padding: 14px 16px;
+    background: var(--accent-soft);
+    border: 1.5px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  .tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; display: flex; align-items: center; gap: 7px; }
+  .row1 { display: flex; align-items: center; gap: 10px; }
+  .ic { width: 30px; height: 30px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 22%, var(--surface)); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .ic svg { width: 15px; height: 15px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.2; }
+  .m1 { font-size: 13px; font-weight: 700; }
+  .estimate { margin-top: 8px; font-size: 26px; font-weight: 700; }
+  .estimate .u { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-left: 6px; }
+  .m2 { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .del { background: none; border: none; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--critical); padding: 9px 0 0; cursor: pointer; }
+
+  /* ===== A: como está hoy — nada animado ===== */
+  .static-gap { height: 3px; margin: 9px 0 5px; }
+
+  /* ===== B: propuesta — led + bobina de corriente ===== */
+  .live-dot-row { display: flex; align-items: center; gap: 5px; margin-left: auto; }
+  .live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: pulseLed 1.3s ease-in-out infinite; }
+  @keyframes pulseLed { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .coil-svg { width: 100%; height: 22px; display: block; margin: 9px 0 5px; }
+  .coil-base { fill: none; stroke: color-mix(in srgb, var(--accent) 30%, transparent); stroke-width: 3; stroke-linecap: round; }
+  .coil-pulse { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 15 200; animation: coilFlow 2s linear infinite; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--accent) 60%, transparent)); }
+  @keyframes coilFlow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -215; } }
+  @media (prefers-reduced-motion: reduce) { .live-dot, .coil-pulse { animation: none; } }
+
+  .note { max-width: 640px; margin-top: 30px; text-align: center; font-size: 11.5px; line-height: 1.7; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; }
+  .note b { color: var(--text); }
+</style>
+
+<div class="page-head">
+  <div class="eyebrow">Wireframe — animación en la app (NO aplicado a src/ todavía)</div>
+  <h1>Tarjeta "Cargando ahora" en Inicio, con y sin animación</h1>
+  <p>Misma tarjeta real (<b>.draft-card</b>, mismos tokens), lado a lado. La versión B agrega un led
+    pulsante en el tag y una línea de corriente circulando ("bobina") debajo del encabezado — el
+    mismo lenguaje visual ya aprobado para la Live Activity, aplicado acá también.</p>
+</div>
+<div class="theme-toggle-row">
+  <button class="theme-btn active" data-theme-btn="light">Claro</button>
+  <button class="theme-btn" data-theme-btn="dark">Oscuro</button>
+</div>
+
+<div class="compare">
+  <div class="col">
+    <div class="col-label">A · Como está hoy (sin animación)</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="nav-title">Inicio</div>
+      <div class="draft-card">
+        <div class="tag">Cargando ahora · En vivo</div>
+        <div class="row1">
+          <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+          <span class="m1">Casa · corta a las 15:20</span>
+        </div>
+        <div class="static-gap"></div>
+        <div class="estimate" style="color:var(--warning-fill);">32%<span class="u">estimado</span></div>
+        <div class="m2">0.0 kWh entregados</div>
+        <button class="del">Terminar ahora</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="col-label b">B · Propuesta (con animación)</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="nav-title">Inicio</div>
+      <div class="draft-card">
+        <div class="tag">Cargando ahora
+          <span class="live-dot-row"><span class="live-dot"></span>En vivo</span>
+        </div>
+        <div class="row1">
+          <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+          <span class="m1">Casa · corta a las 15:20</span>
+        </div>
+        <svg class="coil-svg" viewBox="0 0 260 22" preserveAspectRatio="none">
+          <path class="coil-base" d="M4,11 Q 14,2 24,11 T 44,11 T 64,11 T 84,11 T 104,11 T 124,11 T 144,11 T 164,11 T 184,11 T 204,11 T 224,11 T 244,11"/>
+          <path class="coil-pulse" d="M4,11 Q 14,2 24,11 T 44,11 T 64,11 T 84,11 T 104,11 T 124,11 T 144,11 T 164,11 T 184,11 T 204,11 T 224,11 T 244,11"/>
+        </svg>
+        <div class="estimate" style="color:var(--warning-fill);">32%<span class="u">estimado</span></div>
+        <div class="m2">0.0 kWh entregados</div>
+        <button class="del">Terminar ahora</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  Respeta <b>Reducir movimiento</b> (se apaga solo) y usa los mismos <b>--accent</b>/<b>--warning-fill</b>/
+  <b>--good</b>/<b>--critical</b> de siempre — el color de la bobina sigue el mismo % de batería que ya
+  pinta el número grande. Si lo apruebas, se aplica en <code>src/screens/inicio.ts</code> y
+  <code>src/styles/shell.css</code>, nada más.
+</div>
+
+<script>
+  document.querySelectorAll('.theme-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const t = btn.getAttribute('data-theme-btn');
+      document.documentElement.setAttribute('data-theme', t);
+      document.querySelectorAll('.theme-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    });
+  });
+</script>

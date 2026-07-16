@@ -9,6 +9,7 @@ import { upsertActiveCharge, listCharges } from '../lib/db/api';
 import { notifyActiveChargeUpdated } from '../lib/bus';
 import { chargerKw, estimateAtTime, computeCalibrationFactor } from '../lib/estimation';
 import { scheduleActiveChargeNotifications } from '../lib/notifications';
+import { syncChargeLiveActivity } from '../lib/live-activity';
 
 type ChargeMode = 'kwh' | 'pct';
 type HomeFlow = 'programar' | 'rapido';
@@ -927,6 +928,19 @@ export function mountNuevaCarga(root: ParentNode): void {
       });
       notifyActiveChargeUpdated();
       void scheduleActiveChargeNotifications(start, stop, cortaAInput.value);
+      // Solo tiene sentido prender la Live Activity si la carga ya arrancó ("Ahora") y hay
+      // vehículo configurado (si no, no hay con qué estimar kWh) — "Más tarde" la prende
+      // inicio.ts cuando llega la hora de inicio y repinta la tarjeta "Cargando ahora".
+      if (!tarde && batteryKwh) {
+        void syncChargeLiveActivity({
+          startPct: startPctVal,
+          targetStopAt: stop,
+          networkLabel: `Casa · ${homeChargerAmps}A · ${homeChargerVolts}V`,
+          pct: startPctVal,
+          kwhDelivered: 0,
+          kwhTotal: batteryKwh,
+        });
+      }
       close();
       toastText.textContent = tarde ? 'Carga programada guardada' : 'Carga programada — empezó a contar';
       toast.classList.add('show');

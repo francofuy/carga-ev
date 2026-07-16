@@ -32,6 +32,7 @@ targets:
       # arrancar (causó un crash instantáneo al abrir, encontrado en el spike).
       - path: App/public
         type: folder
+      - path: Shared
     configFiles:
       Debug: ../debug.xcconfig
     settings:
@@ -46,25 +47,29 @@ targets:
       - package: CapApp-SPM
       - target: LiveActivityWidget
         embed: true
+      - sdk: ActivityKit.framework
 
-  # Spike de la Fase C: target casi vacío, solo para confirmar que un Widget Extension
-  # (requisito de las Live Activities) archiva y empaqueta bien sin firma real de Apple
-  # a través del mismo pipeline de Codemagic ya verificado en la Fase A. La Live Activity
-  # de verdad (diseño "bobina", franjas de color, datos reales) se escribe recién después
-  # de confirmar esto en un dispositivo real.
+  # Widget Extension de la Live Activity real (Dynamic Island + pantalla bloqueada) de una carga
+  # en Casa — el spike de la Fase C (target vacío) ya confirmó que esto archiva y se instala bien
+  # sin firma real de Apple en este pipeline; ver LiveActivityWidgetBundle.swift para el diseño.
   LiveActivityWidget:
     type: app-extension
     platform: iOS
-    deploymentTarget: "16.1"
+    deploymentTarget: "16.2"
     sources:
       - path: LiveActivityWidget
         excludes:
           - Info.plist
+      - path: Shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.francofuy.cargaev.LiveActivityWidget
         INFOPLIST_FILE: LiveActivityWidget/Info.plist
         SKIP_INSTALL: YES
+    dependencies:
+      - sdk: ActivityKit.framework
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
 
 schemes:
   App:

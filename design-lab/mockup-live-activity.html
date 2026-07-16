@@ -1,0 +1,214 @@
+<title>Mockup — Live Activity: dónde aparece de verdad</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --border: #2A2F38;
+      --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C;
+      --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+      --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --border: #2A2F38;
+    --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+    --accent: #4FB0F5; --accent-ink: #04121C;
+    --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+    --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+    --page-surface: #0B0E13;
+  }
+  :root[data-theme="light"] {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 28px 16px 60px;
+  }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 640px; text-align: center; margin-bottom: 20px; }
+  .eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; text-wrap: balance; }
+  .page-head p { font-size: 12.5px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+  .page-head b { color: var(--text); }
+
+  .theme-toggle-row { display: flex; gap: 8px; margin-bottom: 30px; }
+  .theme-btn { font-size: 11.5px; font-weight: 700; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); cursor: pointer; }
+  .theme-btn.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  .row { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; max-width: 980px; margin-bottom: 10px; }
+  .unit { width: 270px; text-align: center; }
+  .unit-label { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; }
+  .unit-label b { color: var(--text); }
+
+  /* ===== bezel del lock screen ===== */
+  .lock-phone { position: relative; height: 540px; border-radius: 34px; border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: var(--shadow-2); overflow: hidden;
+    background: radial-gradient(120% 90% at 30% 0%, color-mix(in srgb, var(--accent) 55%, #05070a) 0%, #05070a 60%); }
+  .lock-notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 78px; height: 20px; background: #000; border-radius: 999px; z-index: 5; }
+  .lock-clock { text-align: center; color: #fff; margin-top: 54px; }
+  .lock-clock .t { font-size: 52px; font-weight: 600; font-family: var(--num-font); line-height: 1; }
+  .lock-clock .d { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+
+  .live-lock-card {
+    position: absolute; left: 12px; right: 12px; bottom: 130px;
+    background: #14171cf2; backdrop-filter: blur(18px);
+    border-radius: 22px; padding: 13px 15px; box-shadow: 0 10px 24px -8px rgba(0,0,0,0.5);
+  }
+  .live-head { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
+  .live-head .ic { width: 26px; height: 26px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 25%, transparent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .live-head .ic svg { width: 13px; height: 13px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.25; }
+  .live-head b { color: #fff; font-size: 12.5px; display: block; }
+  .live-head span.netw { color: rgba(255,255,255,0.5); font-size: 10px; }
+  .coil-svg { width: 100%; height: 20px; display: block; margin: 2px 0 7px; }
+  .coil-base { fill: none; stroke: rgba(255,255,255,0.18); stroke-width: 3; stroke-linecap: round; }
+  .coil-pulse { fill: none; stroke: #fff; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 15 200; animation: coilFlow 2s linear infinite; filter: drop-shadow(0 0 3px rgba(255,255,255,0.65)); }
+  @keyframes coilFlow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -215; } }
+  @media (prefers-reduced-motion: reduce) { .coil-pulse { animation: none; } }
+  .live-hero { display: flex; align-items: baseline; gap: 6px; }
+  .live-hero .pct { font-size: 25px; font-weight: 700; color: #fff; }
+  .live-hero .sign { font-size: 12px; color: rgba(255,255,255,0.5); }
+  .live-hero .approx { font-size: 10px; color: rgba(255,255,255,0.4); margin-left: 3px; }
+  .live-sub { display: flex; justify-content: space-between; font-size: 10.5px; color: rgba(255,255,255,0.55); margin: 3px 0 8px; }
+  .live-sub b { color: #fff; }
+  .live-target { display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 10px; color: rgba(255,255,255,0.5); }
+  .live-target b { color: #fff; }
+
+  .lock-shortcuts { position: absolute; bottom: 34px; left: 26px; right: 26px; display: flex; justify-content: space-between; }
+  .lock-shortcuts .sc { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.14); display: flex; align-items: center; justify-content: center; }
+  .lock-shortcuts .sc svg { width: 18px; height: 18px; stroke: #fff; fill: none; stroke-width: 1.8; }
+
+  /* ===== bezel de "usando otra app" (isla dinámica) ===== */
+  .app-phone { position: relative; height: 540px; background: var(--bg); border-radius: 34px; border: 1px solid var(--border);
+    box-shadow: var(--shadow-2); overflow: hidden; }
+  .app-fake-content { position: absolute; inset: 0; padding: 60px 16px; opacity: 0.35; }
+  .app-fake-content .l1 { height: 14px; width: 60%; background: var(--border); border-radius: 5px; margin-bottom: 10px; }
+  .app-fake-content .l2 { height: 90px; background: var(--surface-2); border-radius: 14px; margin-bottom: 14px; }
+  .app-fake-content .l3 { height: 14px; width: 85%; background: var(--border); border-radius: 5px; margin-bottom: 8px; }
+  .app-fake-content .l4 { height: 14px; width: 70%; background: var(--border); border-radius: 5px; }
+  .app-fake-caption { position: absolute; top: 50%; left: 0; right: 0; text-align: center; font-size: 10.5px; color: var(--text-muted); font-weight: 600; }
+
+  .di-compact { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); z-index: 10;
+    display: flex; align-items: center; gap: 7px; background: #000; border-radius: 999px; padding: 6px 13px 6px 6px; }
+  .di-compact .ic { width: 20px; height: 20px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 30%, transparent); display: flex; align-items: center; justify-content: center; }
+  .di-compact .ic svg { width: 11px; height: 11px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.3; }
+  .di-compact .txt { font-size: 10.5px; font-weight: 600; color: #fff; white-space: nowrap; }
+
+  .di-expanded { position: absolute; top: 40px; left: 12px; right: 12px; z-index: 11; background: #050505; border-radius: 22px; padding: 14px 16px; box-shadow: var(--shadow-2); }
+
+  .callout { margin-top: 12px; font-size: 11px; color: var(--text-secondary); line-height: 1.5; }
+  .callout b { color: var(--text); }
+
+  .note { max-width: 680px; margin-top: 34px; text-align: center; font-size: 11.5px; line-height: 1.7; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; }
+  .note b { color: var(--text); }
+</style>
+
+<div class="page-head">
+  <div class="eyebrow">Mockup — cómo se vería la Live Activity (todavía NO existe, ver nota abajo)</div>
+  <h1>Dónde aparece de verdad una Live Activity en iOS</h1>
+  <p>No es una pantalla más de la app — vive <b>fuera</b> de ella, en dos lugares del sistema. Esto es
+    lo que tocaría instalar/programar una carga para ver, si el código ya estuviera escrito.</p>
+</div>
+<div class="theme-toggle-row">
+  <button class="theme-btn active" data-theme-btn="light">Claro</button>
+  <button class="theme-btn" data-theme-btn="dark">Oscuro</button>
+</div>
+
+<div class="row">
+  <div class="unit">
+    <div class="unit-label">1 · <b>Pantalla bloqueada</b><br>debajo del reloj, sin abrir nada</div>
+    <div class="lock-phone">
+      <div class="lock-notch"></div>
+      <div class="lock-clock"><div class="t">15:16</div><div class="d">martes, 16 de julio</div></div>
+      <div class="live-lock-card">
+        <div class="live-head">
+          <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+          <div><b>Cargando en Casa</b><span class="netw">UTE Lentos · 24A · 226V</span></div>
+        </div>
+        <svg class="coil-svg" viewBox="0 0 260 20" preserveAspectRatio="none">
+          <path class="coil-base" d="M4,10 Q 14,2 24,10 T 44,10 T 64,10 T 84,10 T 104,10 T 124,10 T 144,10 T 164,10 T 184,10 T 204,10 T 224,10 T 244,10"/>
+          <path class="coil-pulse" d="M4,10 Q 14,2 24,10 T 44,10 T 64,10 T 84,10 T 104,10 T 124,10 T 144,10 T 164,10 T 184,10 T 204,10 T 224,10 T 244,10"/>
+        </svg>
+        <div class="live-hero"><span class="pct num">32</span><span class="sign">%</span><span class="approx">estimado</span></div>
+        <div class="live-sub"><b class="num">12.7 / 39.8 kWh</b><span>desde 24.7%</span></div>
+        <div class="live-target"><span>Corta a las</span><b class="num">15:20</b></div>
+      </div>
+      <div class="lock-shortcuts">
+        <div class="sc"><svg viewBox="0 0 24 24"><path d="M8 3v3M16 3v3M4 9h16M12 12v6M9 15h6"/></svg></div>
+        <div class="sc"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 9v3l2 2"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="unit">
+    <div class="unit-label">2 · <b>Dynamic Island</b><br>usando cualquier otra app, arriba del todo</div>
+    <div class="app-phone">
+      <div class="app-fake-content"><div class="l1"></div><div class="l2"></div><div class="l3"></div><div class="l4"></div></div>
+      <div class="app-fake-caption">(otra app cualquiera, de fondo)</div>
+      <div class="di-compact">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <span class="txt">Cargando <span class="num">32%</span></span>
+      </div>
+    </div>
+    <div class="callout"><b>Compacta</b> (arriba, todo el tiempo) — al tocar y mantener se expande:</div>
+  </div>
+
+  <div class="unit">
+    <div class="unit-label">3 · <b>Dynamic Island expandida</b><br>al tocar y mantener la compacta</div>
+    <div class="app-phone">
+      <div class="app-fake-content"><div class="l1"></div><div class="l2"></div><div class="l3"></div><div class="l4"></div></div>
+      <div class="di-expanded">
+        <div class="live-head">
+          <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+          <div><b>Cargando en Casa</b><span class="netw">UTE Lentos · 24A · 226V</span></div>
+        </div>
+        <svg class="coil-svg" viewBox="0 0 260 20" preserveAspectRatio="none">
+          <path class="coil-base" d="M4,10 Q 14,2 24,10 T 44,10 T 64,10 T 84,10 T 104,10 T 124,10 T 144,10 T 164,10 T 184,10 T 204,10 T 224,10 T 244,10"/>
+          <path class="coil-pulse" d="M4,10 Q 14,2 24,10 T 44,10 T 64,10 T 84,10 T 104,10 T 124,10 T 144,10 T 164,10 T 184,10 T 204,10 T 224,10 T 244,10"/>
+        </svg>
+        <div class="live-hero"><span class="pct num">32</span><span class="sign">%</span><span class="approx">estimado</span></div>
+        <div class="live-sub"><b class="num">12.7 / 39.8 kWh</b><span>desde 24.7%</span></div>
+        <div class="live-target"><span>Corta a las</span><b class="num">15:20</b></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <b>Por qué hoy no ves nada de esto:</b> el target <code>LiveActivityWidget</code> que instalamos es un
+  stub vacío (un solo texto fijo, "Carga EV — spike") — nada en la app llama todavía a
+  <code>Activity.request(...)</code>, que es la API que efectivamente prende una Live Activity. Este
+  mockup es lo que se construiría <b>después</b> del spike: conectar "Programar carga" con este target,
+  con estos 3 diseños (tarjeta de bloqueo + isla compacta + isla expandida) usando datos reales del
+  motor de estimación en vez de los números fijos de acá.
+</div>
+
+<script>
+  document.querySelectorAll('.theme-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const t = btn.getAttribute('data-theme-btn');
+      document.documentElement.setAttribute('data-theme', t);
+      document.querySelectorAll('.theme-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    });
+  });
+</script>

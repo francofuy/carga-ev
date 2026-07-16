@@ -164,6 +164,19 @@
   font: inherit; font-size: calc(13.5px * var(--font-scale)); font-weight: 600; padding: 10px 12px; min-height: 40px;
 }
 
+/* Carga en curso ("Cargando ahora"): led pulsante junto al tag + línea de corriente circulando
+   debajo del encabezado. Respeta Reducir movimiento vía la regla global en tokens.css. */
+.draft-card .tag.live { display: flex; align-items: center; gap: 6px; }
+.draft-card .live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: dcPulseLed 1.3s ease-in-out infinite; }
+@keyframes dcPulseLed { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.draft-card .coil-svg { width: 100%; height: 22px; display: block; margin: 9px 0 5px; }
+.draft-card .coil-base { fill: none; stroke: color-mix(in srgb, var(--accent) 30%, transparent); stroke-width: 3; stroke-linecap: round; }
+.draft-card .coil-pulse {
+  fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 15 200;
+  animation: dcCoilFlow 2s linear infinite; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--accent) 60%, transparent));
+}
+@keyframes dcCoilFlow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -215; } }
+
 .section-title {
   font-size: calc(13px * var(--font-scale));
   font-weight: 700;
