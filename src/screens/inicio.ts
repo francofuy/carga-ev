@@ -260,6 +260,20 @@ export const inicioScreen: Screen = {
           </div>
         </div>`;
       const confirmErrorEl = draftCardEl.querySelector<HTMLElement>('#confirmError')!;
+      const confirmPctInput = draftCardEl.querySelector<HTMLInputElement>('#confirmPct')!;
+      const confirmKwhInput = draftCardEl.querySelector<HTMLInputElement>('#confirmKwh')!;
+      // Una vez que se sabe el % final REAL, el delta de batería (start% → final%) es más
+      // confiable que la estimación física previa — se recalcula solo, pero sigue editable a
+      // mano por si el dato no coincide (medición real distinta, etc.).
+      if (vehicle?.batteryKwh) {
+        const batteryKwh = vehicle.batteryKwh;
+        confirmPctInput.addEventListener('input', () => {
+          const realPctVal = parseFloat(confirmPctInput.value);
+          if (!isFinite(realPctVal)) return;
+          const kwhFromDelta = Math.max(0, (realPctVal - ac.startPct) / 100 * batteryKwh);
+          confirmKwhInput.value = kwhFromDelta.toFixed(1);
+        });
+      }
       draftCardEl.querySelector<HTMLButtonElement>('#confirmSave')!.addEventListener('click', () => {
         void (async () => {
           const realPct = parseFloat(draftCardEl.querySelector<HTMLInputElement>('#confirmPct')!.value);
