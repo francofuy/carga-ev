@@ -5,6 +5,7 @@ import type { BackupData } from '../lib/db/backup';
 import { notifyChargesUpdated } from '../lib/bus';
 import { applyTheme } from '../lib/theme';
 import { chargerKw } from '../lib/estimation';
+import { Geolocation } from '@capacitor/geolocation';
 import {
   applyPersonalizacion,
   reapplyAccentInkForTheme,
@@ -309,23 +310,23 @@ export const ajustesScreen: Screen = {
       if (e.target === locOverlay) locOverlay.classList.remove('open');
     });
     body.querySelector('#locUseCurrent')!.addEventListener('click', () => {
-      if (!('geolocation' in navigator)) {
-        showBanner(locMsg, 'Este dispositivo no soporta geolocalización.', 'error');
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          void (async () => {
-            homeLat = pos.coords.latitude;
-            homeLng = pos.coords.longitude;
-            await setSetting(SETTING_KEY_MAP.homeLat, String(homeLat));
-            await setSetting(SETTING_KEY_MAP.homeLng, String(homeLng));
-            renderLocState();
-            showBanner(locMsg, 'Ubicación guardada.', 'success');
-          })();
-        },
-        (err) => showBanner(locMsg, 'No se pudo obtener la ubicación: ' + err.message, 'error'),
-      );
+      void (async () => {
+        try {
+          // @capacitor/geolocation en vez de navigator.geolocation directo: en el build nativo
+          // (Capacitor/WKWebView) la API web de geolocalización no dispara el permiso de iOS de
+          // forma confiable — hacía que el botón no hiciera nada. El plugin también funciona en
+          // el build web (PWA), así que reemplaza el uso directo del navegador en los dos casos.
+          const pos = await Geolocation.getCurrentPosition();
+          homeLat = pos.coords.latitude;
+          homeLng = pos.coords.longitude;
+          await setSetting(SETTING_KEY_MAP.homeLat, String(homeLat));
+          await setSetting(SETTING_KEY_MAP.homeLng, String(homeLng));
+          renderLocState();
+          showBanner(locMsg, 'Ubicación guardada.', 'success');
+        } catch (err) {
+          showBanner(locMsg, 'No se pudo obtener la ubicación: ' + (err instanceof Error ? err.message : String(err)), 'error');
+        }
+      })();
     });
 
     // ---- Personalización ----
