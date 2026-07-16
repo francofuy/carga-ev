@@ -25,7 +25,7 @@ workflows:
         script: |
           set -e
           xcodebuild archive \
-            -workspace "ios/App/App.xcworkspace" \
+            -project "ios/App/App.xcodeproj" \
             -scheme "App" \
             -configuration Release \
             -archivePath "$CM_BUILD_DIR/App.xcarchive" \
