@@ -1,0 +1,46 @@
+workflows:
+  ios-bare-shell:
+    name: Carga EV - iOS bare shell (Fase A, sin Live Activity)
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      node: 22
+      xcode: latest
+      # Grupo de variables/certificados a crear en Codemagic (UI del proyecto, NO en este
+      # archivo ni en git): subir el certificado de desarrollo (.p12) y el provisioning
+      # profile (.mobileprovision) de tu Apple ID gratuito ("Personal Team") en
+      # Code signing identities. `xcode-project use-profiles` los toma de ahí solo.
+      # Sin Developer Program pago no hay firma automática vía App Store Connect API,
+      # así que este es el único paso manual real: generar ese certificado/perfil una vez
+      # (developer.apple.com, con tu Apple ID) y subirlos a Codemagic.
+      groups:
+        - ios_signing_free_tier
+      vars:
+        BUNDLE_ID: "com.francofuy.cargaev"
+    scripts:
+      - name: Install npm dependencies
+        script: npm ci
+      - name: Build web assets (modo Capacitor, sin service worker, base "/")
+        script: npm run build:capacitor
+      - name: Sync Capacitor (copia dist-capacitor a ios/App/App/public)
+        script: npx cap sync ios
+      - name: Set up code signing (Personal Team, certificado/perfil subidos a Codemagic)
+        script: |
+          keychain initialize
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Archive .ipa
+        script: |
+          xcode-project build-ipa \
+            --workspace "ios/App/App.xcworkspace" \
+            --scheme "App"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      email:
+        recipients:
+          - cmferme@citeksoluciones.com
+        notify:
+          success: true
+          failure: true

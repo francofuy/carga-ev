@@ -6,10 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:capacitor": "tsc && cross-env CAPACITOR=1 vite build",
     "preview": "vite preview",
     "deploy": "npm run build && gh-pages -d dist --nojekyll"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/ios": "^8.4.2",
+    "cross-env": "^10.1.0",
     "gh-pages": "^6.3.0",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",

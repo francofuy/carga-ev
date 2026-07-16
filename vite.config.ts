@@ -1,15 +1,22 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// Build para la app nativa (Capacitor) en vez del sitio en GitHub Pages: activado por
+// `npm run build:capacitor`. Capacitor sirve dist-capacitor/ como capacitor://localhost/,
+// sin el subpath /carga-ev/ que necesita GitHub Pages, y no tiene uso para un service worker
+// PWA (no hay prompt de instalación ni escenario offline que el bundle nativo no cubra ya).
+const isCapacitor = process.env.CAPACITOR === '1';
+
 export default defineConfig({
   // GitHub Pages sirve el proyecto bajo /carga-ev/, no en la raíz del dominio.
-  base: '/carga-ev/',
+  base: isCapacitor ? '/' : '/carga-ev/',
   optimizeDeps: {
     // Requerido por @sqlite.org/sqlite-wasm: su propio empaquetado no debe pasar por el
     // pre-bundler de Vite (ver README del paquete).
     exclude: ['@sqlite.org/sqlite-wasm'],
   },
-  plugins: [
+  build: isCapacitor ? { outDir: 'dist-capacitor' } : undefined,
+  plugins: isCapacitor ? [] : [
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],

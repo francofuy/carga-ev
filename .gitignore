@@ -9,8 +9,15 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-capacitor
 dist-ssr
 *.local
+
+# Xcode / Capacitor iOS (proyecto en ios/ se commitea, solo se ignoran artefactos de build)
+ios/App/App/public
+ios/**/xcuserdata/
+ios/**/DerivedData/
+ios/**/*.xcworkspace/xcuserdata/
 
 # Editor directories and files
 .vscode/*
