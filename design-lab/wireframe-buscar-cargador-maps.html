@@ -1,0 +1,169 @@
+<title>Wireframe — Buscar cargador cerca (deep-link a Maps)</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB;
+    --border: #DCE1E8; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --good-soft: #E4F7E4;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-pill: 999px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34;
+      --border: #2A2F38; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C;
+      --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+      --good: #21C05E; --good-soft: #0F2A16;
+      --shadow-1: 0 0 0 1px var(--border);
+      --shadow-2: 0 14px 30px -10px rgba(0, 0, 0, 0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34;
+    --border: #2A2F38; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+    --accent: #4FB0F5; --accent-ink: #04121C;
+    --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+    --good: #21C05E; --good-soft: #0F2A16;
+    --shadow-1: 0 0 0 1px var(--border);
+    --shadow-2: 0 14px 30px -10px rgba(0, 0, 0, 0.55);
+    --page-surface: #0B0E13;
+  }
+  :root[data-theme="light"] {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB;
+    --border: #DCE1E8; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --good-soft: #E4F7E4;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+
+  .page-head { max-width: 720px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 27px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14.5px; line-height: 1.55; color: var(--text-secondary); margin: 0; }
+
+  .versions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  @media (max-width: 760px) { .versions { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; } }
+  .col-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 10px; text-align: center; }
+  .col-label.after { color: var(--accent); }
+
+  .frame { background: var(--surface); border-radius: 26px; box-shadow: var(--shadow-2); overflow: hidden; padding: 16px 16px 18px; }
+  .sheet-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+  .field-label { font-size: 10px; font-weight: 600; color: var(--text-secondary); margin: 2px 0 6px; }
+  .chip-row { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .chip-mini { font-size: 10px; font-weight: 700; padding: 6px 10px; border-radius: 999px; background: var(--surface-2); color: var(--text-secondary); }
+  .chip-mini.sel { background: var(--text); color: var(--bg); }
+
+  .maps-link {
+    display: flex; align-items: center; gap: 8px; background: var(--accent-soft); border-radius: var(--r-sm);
+    padding: 10px 12px; margin-bottom: 12px; color: var(--accent); font-size: 12.5px; font-weight: 700;
+  }
+  .maps-link .pin { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .maps-link .pin svg { width: 11px; height: 11px; stroke: var(--accent-ink); fill: none; }
+  .maps-link .txt { flex: 1; }
+  .maps-link .txt .q { font-size: 9.5px; font-weight: 600; color: var(--text-muted); margin-top: 1px; }
+  .maps-link .go { color: var(--text-muted); font-weight: 400; }
+
+  .suggest-box { background: var(--accent-soft); border-radius: var(--r-sm); padding: 10px 12px; margin-bottom: 8px; }
+  .suggest-box .row1 { display: flex; justify-content: space-between; align-items: center; }
+  .suggest-box .sl { font-size: 9.5px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .03em; }
+  .suggest-box .su { font-size: 10px; font-weight: 700; color: var(--accent-ink); background: var(--accent); padding: 4px 10px; border-radius: 999px; }
+  .suggest-box .sa { font-size: 15px; font-weight: 700; margin: 4px 0 1px; }
+  .suggest-box .ss { font-size: 10px; color: var(--text-secondary); }
+
+  .field-row { display: flex; gap: 6px; margin-bottom: 8px; }
+  .field { flex: 1; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+  .field .l { font-size: 8px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+  .field .v { font-size: 12px; font-weight: 600; margin-top: 2px; }
+
+  .frame-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; margin: 14px 0 0; }
+
+  .note-card { background: var(--surface); border-radius: var(--r-md); padding: 16px 18px; box-shadow: var(--shadow-1); max-width: 900px; margin: 36px 0 0; }
+  .note-card .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 8px; }
+  .note-card p { margin: 0 0 8px; font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
+  .note-card p:last-child { margin-bottom: 0; }
+  .note-card code { background: var(--surface-2); border-radius: 4px; padding: 2px 6px; font-size: 12px; color: var(--text); display: inline-block; margin-top: 3px; word-break: break-all; }
+  .note-card b { color: var(--text); }
+
+  .verdict-final { max-width: 900px; margin: 20px 0 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--good); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe · sin mapa propio, deep-link a Google Maps</div>
+    <h1>Buscar cargador cerca</h1>
+    <p>Ni API, ni inventario propio, ni Términos de Servicio que romper — un link que abre Maps con una búsqueda ya armada. Dos estados: antes de elegir red (búsqueda genérica) y después (búsqueda con el nombre de la red, para encontrar esa marca puntual).</p>
+  </div>
+
+  <div class="versions">
+    <div>
+      <div class="col-label">Sin red elegida todavía</div>
+      <div class="frame">
+        <div class="sheet-title">Nueva carga</div>
+        <div class="field-label">Red</div>
+        <div class="chip-row"><span class="chip-mini">UTE</span><span class="chip-mini">eOne</span><span class="chip-mini">DMC</span><span class="chip-mini">Evergo</span><span class="chip-mini">Otro</span></div>
+        <div class="maps-link">
+          <span class="pin"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.3"/></svg></span>
+          <span class="txt">Buscar cargador cerca<div class="q">"cargador auto eléctrico" en Maps</div></span>
+          <span class="go">↗</span>
+        </div>
+        <div class="field-row"><div class="field"><div class="l">Precio / kWh</div><div class="v">—</div></div></div>
+      </div>
+      <div class="frame-label">Búsqueda genérica — cualquier red cerca</div>
+    </div>
+
+    <div>
+      <div class="col-label after">Con DMC elegido</div>
+      <div class="frame">
+        <div class="sheet-title">Nueva carga</div>
+        <div class="field-label">Red</div>
+        <div class="chip-row"><span class="chip-mini">UTE</span><span class="chip-mini">eOne</span><span class="chip-mini sel">DMC</span><span class="chip-mini">Evergo</span><span class="chip-mini">Otro</span></div>
+        <div class="suggest-box">
+          <div class="row1"><span class="sl">Sugerido</span><span class="su">Usar</span></div>
+          <div class="sa">$15,00 /kWh</div>
+          <div class="ss">Sin cargo fijo · DMC</div>
+        </div>
+        <div class="maps-link">
+          <span class="pin"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.3"/></svg></span>
+          <span class="txt">Buscar cargador DMC cerca<div class="q">"DMC cargador auto eléctrico" en Maps</div></span>
+          <span class="go">↗</span>
+        </div>
+        <div class="field-row"><div class="field"><div class="l">Precio / kWh</div><div class="v">15.00</div></div></div>
+      </div>
+      <div class="frame-label">Búsqueda ajustada a la red que ya elegiste</div>
+    </div>
+  </div>
+
+  <div class="note-card">
+    <div class="nt">Cómo funciona (técnico)</div>
+    <p>Es la <b>URL universal de Google Maps</b>, sin API key, sin costo, documentada por Google para justo este uso (abrir una búsqueda desde otra app):</p>
+    <code>https://www.google.com/maps/search/?api=1&query=DMC+cargador+auto+el%C3%A9ctrico</code>
+    <p style="margin-top:10px;">En iPhone, si tenés la app de Google Maps instalada, la abre directo ahí; si no, abre Maps en Safari — en los dos casos con tu ubicación real y el resultado que ya viste que funciona bien.</p>
+    <p>Sin red elegida ("Otro" o ninguna), la búsqueda queda genérica: <code>cargador+auto+el%C3%A9ctrico</code>.</p>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Mi veredicto</div>
+    <p>Esto resuelve el pedido original (¿dónde hay un cargador con tal conector/potencia?) sin ninguno de los problemas que encontramos en el camino — no hay inventario que mantener, no hay datos que puedan quedar viejos, no hay costo, no hay riesgo de romper un Término de Servicio. Google ya lo hace mejor que lo que podríamos armar nosotros con lo que hay disponible públicamente.</p>
+    <p>¿Lo aplico tal cual — el link genérico siempre visible, y que cambie el texto de búsqueda según la red elegida?</p>
+  </div>
+</div>

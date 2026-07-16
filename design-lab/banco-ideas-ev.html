@@ -1,0 +1,267 @@
+<title>Banco de ideas — conceptos EV para Electrico</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB;
+    --border: #DCE1E8; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --good-soft: #E4F7E4;
+    --warning: #C77E00; --warning-soft: #FEF3DC;
+    --critical: #d03b3b; --critical-soft: #FBE4E3;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-pill: 999px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34;
+      --border: #2A2F38; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C;
+      --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+      --good: #21C05E; --good-soft: #0F2A16; --warning: #FAB219; --warning-soft: #3A2C0E;
+      --critical: #FF6259; --critical-soft: #3A1613;
+      --shadow-1: 0 0 0 1px var(--border);
+      --shadow-2: 0 14px 30px -10px rgba(0, 0, 0, 0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34;
+    --border: #2A2F38; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+    --accent: #4FB0F5; --accent-ink: #04121C;
+    --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+    --good: #21C05E; --good-soft: #0F2A16; --warning: #FAB219; --warning-soft: #3A2C0E;
+    --critical: #FF6259; --critical-soft: #3A1613;
+    --shadow-1: 0 0 0 1px var(--border);
+    --shadow-2: 0 14px 30px -10px rgba(0, 0, 0, 0.55);
+    --page-surface: #0B0E13;
+  }
+  :root[data-theme="light"] {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB;
+    --border: #DCE1E8; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --good-soft: #E4F7E4; --warning: #C77E00; --warning-soft: #FEF3DC;
+    --critical: #d03b3b; --critical-soft: #FBE4E3;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  .page-head { max-width: 760px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 27px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14.5px; line-height: 1.55; color: var(--text-secondary); margin: 0; }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 18px 0 36px; }
+  .legend .li { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-secondary); background: var(--surface); padding: 7px 12px; border-radius: var(--r-pill); box-shadow: var(--shadow-1); }
+  .legend .dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+  .legend .dot.feasible { background: var(--good); }
+  .legend .dot.hardware { background: var(--warning); }
+  .legend .dot.info { background: var(--text-muted); }
+
+  h2.section-h { font-size: 15px; font-weight: 700; margin: 40px 0 16px; display: flex; align-items: center; gap: 10px; }
+  h2.section-h:first-of-type { margin-top: 0; }
+  h2.section-h .n { width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+  .idea-card { background: var(--surface); border-radius: var(--r-lg); padding: 16px 18px; box-shadow: var(--shadow-1); }
+  .idea-card .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+  .idea-card .name { font-size: 14.5px; font-weight: 700; }
+  .idea-card .badge { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; padding: 3px 7px; border-radius: 5px; white-space: nowrap; flex: 0 0 auto; }
+  .idea-card .badge.feasible { background: var(--good-soft); color: var(--good); }
+  .idea-card .badge.hardware { background: var(--warning-soft); color: var(--warning); }
+  .idea-card .badge.info { background: var(--surface-2); color: var(--text-muted); }
+  .idea-card p { font-size: 12.5px; line-height: 1.55; color: var(--text-secondary); margin: 0; }
+  .idea-card .src { font-size: 10.5px; color: var(--text-muted); margin-top: 8px; font-style: italic; }
+
+  /* mini mockups */
+  .mock-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 22px; margin-top: 18px; }
+  .mock-frame { background: var(--surface); border-radius: 24px; box-shadow: var(--shadow-2); padding: 14px; }
+  .mock-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
+  .mock-card { background: var(--bg); border-radius: var(--r-md); padding: 13px 14px; }
+  .mock-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-top: 1px solid var(--border); font-size: 11px; }
+  .mock-row:first-child { border-top: none; }
+  .mock-row .v { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mock-badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 5px; margin-top: 3px; }
+  .mock-bignum { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; margin: 2px 0; }
+  .mock-bar-track { height: 8px; border-radius: 4px; background: var(--surface-3); overflow: hidden; margin: 6px 0; }
+  .mock-bar-fill { height: 100%; border-radius: 4px; }
+  .mock-btn { display: block; text-align: center; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 700; padding: 8px; border-radius: 8px; margin-top: 8px; }
+  .mock-sub { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+  .mock-streak { display: flex; gap: 4px; margin-top: 8px; }
+  .mock-streak span { flex: 1; height: 22px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 8.5px; font-weight: 700; }
+
+  .verdict-final { max-width: 900px; margin: 46px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--good); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Banco de ideas · guardado, nada aplicado a producción</div>
+    <h1>Conceptos, ayudas y apps del mundo EV</h1>
+    <p>11 búsquedas reales, organizadas en 5 categorías. Cada idea tiene una etiqueta de qué tan realista es construirla con lo que Electrico ya tiene (datos manuales, sin hardware del auto, sin backend propio) — para separar "lo puedo hacer ya" de "necesitaría otra cosa primero".</p>
+  </div>
+
+  <div class="legend">
+    <span class="li"><span class="dot feasible"></span>Feasible con los datos que ya cargás</span>
+    <span class="li"><span class="dot hardware"></span>Necesita hardware/backend nuevo</span>
+    <span class="li"><span class="dot info"></span>Solo informativo — no es una feature</span>
+  </div>
+
+  <h2 class="section-h"><span class="n">1</span>Ayudas y trámites (Uruguay)</h2>
+  <div class="cards">
+    <div class="idea-card">
+      <div class="top"><span class="name">Aviso de cambio de IMESI</span><span class="badge feasible">Feasible</span></div>
+      <p>Desde 2027 el IMESI deja de ser 0% parejo: exonerado hasta USD 19.000, 5% entre 19.001–27.000, 9% por encima. Una pantalla de referencia en Vehículo/Ajustes explicando esto — útil si en algún momento pensás en cambiar de auto.</p>
+      <div class="src">Fuente: gub.uy / Fernández Secco, régimen vigente desde 1/1/2027</div>
+    </div>
+    <div class="idea-card">
+      <div class="top"><span class="name">Ficha del programa "Subite"</span><span class="badge info">Info</span></div>
+      <p>Reembolsos de hasta USD 4.000 para taxis/remises/apps de transporte ("Subite Pasajeros"), más líneas para motos, cargo y buses departamentales. Una tarjeta informativa, no aplica a tu caso de uso particular hoy.</p>
+      <div class="src">Fuente: MIEM/DNE, gub.uy</div>
+    </div>
+    <div class="idea-card">
+      <div class="top"><span class="name">Seguro BSE −15%</span><span class="badge feasible">Feasible</span></div>
+      <p>El BSE aplica 15% de descuento en la póliza de todo vehículo eléctrico ($8.000–$12.000/año de ahorro). Un campo más en "Datos del vehículo" para trackear el gasto de seguro/SOA junto a la carga, y verlo reflejado en el gasto total.</p>
+      <div class="src">Fuente: ambito.com, autoencuotas.com</div>
+    </div>
+  </div>
+
+  <h2 class="section-h"><span class="n">2</span>Salud y diagnóstico de batería</h2>
+  <div class="cards">
+    <div class="idea-card">
+      <div class="top"><span class="name">Salud de batería (SOH) estimado</span><span class="badge feasible">Feasible</span></div>
+      <p>Ya tenés consumo real vs. homologado (Vehículo). Con eso + antigüedad se puede estimar un "% de salud" aproximado — no es un dato certificado como LeafSpy/CanZE (que leen el BMS real), pero una estimación honesta con lo que ya cargás.</p>
+      <div class="src">Referencia: LeafSpy, CanZE, EVNotify, Clearwatt — todas leen el BMS por OBD, esto sería una aproximación sin hardware</div>
+    </div>
+    <div class="idea-card">
+      <div class="top"><span class="name">Diagnóstico real vía OBD/BMS</span><span class="badge hardware">Hardware</span></div>
+      <p>Lo que hacen de verdad las apps de referencia — requiere un dongle OBD-II Bluetooth y que el auto exponga esos datos. Fuera de alcance para una PWA sin hardware adicional.</p>
+      <div class="src">Fuente: forococheselectricos.com, Clearwatt (£30/año)</div>
+    </div>
+  </div>
+
+  <h2 class="section-h"><span class="n">3</span>Planificación y carga pública</h2>
+  <div class="cards">
+    <div class="idea-card">
+      <div class="top"><span class="name">Cola virtual en cargador público</span><span class="badge hardware">Hardware/backend</span></div>
+      <p>Idea real de la app uruguaya "Electrificados": escaneás la patente, te anota en una cola virtual del cargador y avisa cuando el auto de adelante termina. Necesitaría un backend compartido entre usuarios — no aplica a una app privada de un solo usuario.</p>
+      <div class="src">Fuente: electrificados.uy</div>
+    </div>
+    <div class="idea-card">
+      <div class="top"><span class="name">Planificador de viaje tipo ABRP</span><span class="badge hardware">Backend</span></div>
+      <p>A Better Route Planner simula consumo real según tu auto específico y sugiere dónde parar a cargar en una ruta larga. Necesita un motor de ruteo + datos de elevación/clima — mucho más allá del alcance actual.</p>
+      <div class="src">Fuente: ABRP vs PlugShare vs ChargePoint (recharged.com)</div>
+    </div>
+    <div class="idea-card">
+      <div class="top"><span class="name">Filtro por conector/potencia en el mapa</span><span class="badge feasible">Feasible</span></div>
+      <p>Si algún día se agrega el mapa de Open Charge Map (ya evaluado en otra conversación), PlugShare muestra que filtrar por tipo de conector/potencia/red es lo que más usa la gente — anotarlo para esa eventual feature.</p>
+      <div class="src">Fuente: PlugShare, recharged.com</div>
+    </div>
+  </div>
+
+  <h2 class="section-h"><span class="n">4</span>Carga bidireccional (V2H/V2G)</h2>
+  <div class="cards">
+    <div class="idea-card">
+      <div class="top"><span class="name">V2H — el auto como respaldo del hogar</span><span class="badge info">Info</span></div>
+      <p>Convierte la batería del auto en generador de respaldo casero en un corte de luz. Solo algunas marcas lo soportan (Ford, Kia, Volvo, Polestar) — no hay info de que el GAC Aion lo tenga. Puramente informativo por ahora.</p>
+      <div class="src">Fuente: ecoflow.com, recharged.com — cargadores V2H cuestan USD 3.000–8.000 más que uno normal</div>
+    </div>
+    <div class="idea-card">
+      <div class="top"><span class="name">V2G — vender energía a la red</span><span class="badge info">Info</span></div>
+      <p>En pilotos de UK/Países Bajos/Japón/California se gana USD 420–780/año devolviendo energía a la red en horas pico. No existe programa así en Uruguay todavía (UTE no lo ofrece hoy) — a futuro, si aparece, calzaría perfecto con el motor de tarifas que ya tenés.</p>
+      <div class="src">Fuente: ecoflow.com, thechargeport.com</div>
+    </div>
+  </div>
+
+  <h2 class="section-h"><span class="n">5</span>Eco-driving, ahorro y gamificación</h2>
+  <div class="cards">
+    <div class="idea-card">
+      <div class="top"><span class="name">Calculadora de ahorro vs. nafta</span><span class="badge feasible">Feasible</span></div>
+      <p>Con tu consumo real (Wh/km) + precio de la nafta + consumo promedio de un auto equivalente, calcular cuánto ahorrás por mes/año en $ y en CO₂ evitado. Todo con datos que ya tenés (consumo real) + 2 inputs nuevos (precio nafta, L/100km de referencia).</p>
+      <div class="src">Fuente: AplicaLaEcologica, Fundación Renovables, autoelectricos.es — EV emite ~4x menos CO₂/km</div>
+    </div>
+    <div class="idea-card">
+      <div class="top"><span class="name">Racha de cargas en Valle</span><span class="badge feasible">Feasible</span></div>
+      <p>100% de tus cargas ya son en Valle (tu dato real) — un contador de "X cargas seguidas 100% en horario barato" es puro cálculo sobre datos que ya existen en la base, sin nada nuevo que trackear.</p>
+      <div class="src">Inspirado en: investigación de gamificación eco-driving (frontiersin.org) — comparación/rachas es el elemento más efectivo</div>
+    </div>
+    <div class="idea-card">
+      <div class="top"><span class="name">Score de eco-conducción</span><span class="badge hardware">Hardware</span></div>
+      <p>Lo que hacen apps de gamificación real: analizan aceleración/frenado en vivo. Necesita telemetría del auto (acelerómetro del teléfono como aproximación es poco confiable) — no encaja con el enfoque manual actual.</p>
+      <div class="src">Fuente: wialon.com, ScienceDirect — 34 sistemas de gamificación revisados, la mayoría apps con feedback en vivo</div>
+    </div>
+  </div>
+
+  <h2 class="section-h"><span class="n">6</span>Comunidad</h2>
+  <div class="cards">
+    <div class="idea-card">
+      <div class="top"><span class="name">Link a comunidades reales</span><span class="badge feasible">Feasible</span></div>
+      <p>Un simple enlace en Ajustes a Electrificados.uy o al grupo de Facebook "Vehículos y autos eléctricos en Uruguay" — cero desarrollo, solo reconoce que esas comunidades ya existen y son activas.</p>
+      <div class="src">Fuente: electrificados.uy, Electricos Uruguay, grupo de Facebook</div>
+    </div>
+  </div>
+
+  <h2 class="section-h"><span class="n">7</span>Cómo se verían las 3 ideas más "feasible" — mockups</h2>
+  <div class="mock-wrap">
+    <div>
+      <div class="mock-label">Ahorro vs. nafta</div>
+      <div class="mock-frame">
+        <div class="mock-card">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Ahorro este mes</div>
+          <div class="mock-bignum" style="color:var(--good);">$4.820</div>
+          <div class="mock-sub">vs. un auto a nafta con tu mismo kilometraje</div>
+          <div class="mock-row"><span>CO₂ evitado</span><span class="v">38 kg</span></div>
+          <div class="mock-row"><span>Litros de nafta "no comprados"</span><span class="v">≈ 46 L</span></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock-label">Racha en Valle</div>
+      <div class="mock-frame">
+        <div class="mock-card">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Racha actual</div>
+          <div class="mock-bignum" style="color:var(--accent);">12 cargas</div>
+          <div class="mock-sub">100% en horario Valle seguidas</div>
+          <div class="mock-streak">
+            <span style="background:var(--good-soft);color:var(--good);">✓</span>
+            <span style="background:var(--good-soft);color:var(--good);">✓</span>
+            <span style="background:var(--good-soft);color:var(--good);">✓</span>
+            <span style="background:var(--good-soft);color:var(--good);">✓</span>
+            <span style="background:var(--surface-3);color:var(--text-muted);">···</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock-label">Salud de batería (estimada)</div>
+      <div class="mock-frame">
+        <div class="mock-card">
+          <div style="font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;">Salud estimada</div>
+          <div class="mock-bignum">≈ 94%</div>
+          <div class="mock-bar-track"><div class="mock-bar-fill" style="width:94%;background:var(--good);"></div></div>
+          <div class="mock-sub">Estimado por consumo real, no certificado — un dongle OBD daría el dato exacto</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Mi lectura</div>
+    <p>De las 15 ideas relevadas, <b>6 son genuinamente construibles hoy</b> sin agregar backend ni hardware: aviso de IMESI, campo de seguro/SOA, salud de batería estimada, calculadora de ahorro vs. nafta, racha en Valle, y el link a comunidades. El resto (cola virtual, planificador de rutas, diagnóstico OBD real, V2H/V2G, score de eco-conducción en vivo) necesitan un backend compartido, hardware del auto, o simplemente no aplican todavía en Uruguay.</p>
+    <p>Si en algún momento querés avanzar con alguna, seguimos el mismo proceso de siempre: wireframe primero, aprobación, después código real.</p>
+  </div>
+</div>

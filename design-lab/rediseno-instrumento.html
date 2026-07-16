@@ -1,0 +1,985 @@
+<title>Rediseño total — Instrumento, con materiales Apple</title>
+<style>
+  :root {
+    /* Colores de sistema reales de Apple (HIG, variantes de modo oscuro) — no inventados */
+    --black: #000000;
+    --mat-1: rgba(28, 28, 30, 0.68);
+    --mat-2: rgba(44, 44, 46, 0.6);
+    --hairline: rgba(255, 255, 255, 0.09);
+    --label: rgba(255, 255, 255, 0.94);
+    --label-2: rgba(235, 235, 245, 0.6);
+    --label-3: rgba(235, 235, 245, 0.34);
+    --sys-orange: #FF9F0A;
+    --sys-orange-soft: rgba(255, 159, 10, 0.16);
+    --sys-green: #30D158;
+    --sys-green-soft: rgba(48, 209, 88, 0.16);
+    --sys-red: #FF453A;
+    --sys-red-soft: rgba(255, 69, 58, 0.16);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--black); color: var(--label);
+    font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 40px 20px 100px;
+    position: relative;
+  }
+  .mono { font-family: ui-monospace, "SF Mono", "Menlo", "Courier New", monospace; }
+  .wrap { max-width: 1180px; margin: 0 auto; position: relative; z-index: 1; }
+
+  /* glow ambiental — el mismo recurso "aurora" que ya usa la app real, reinterpretado */
+  .ambient-glow {
+    position: fixed; top: -10%; left: 0; right: 0; height: 480px; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(circle at 25% 30%, rgba(255, 159, 10, 0.16), transparent 60%),
+      radial-gradient(circle at 75% 40%, rgba(48, 209, 88, 0.1), transparent 55%);
+    filter: blur(50px);
+  }
+
+  /* ===== Página / narrativa ===== */
+  .stage-eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--sys-orange); margin-bottom: 10px; }
+  h1.page-title { font-size: 34px; font-weight: 700; letter-spacing: 0.01em; margin: 0 0 12px; text-wrap: balance; }
+  .page-intro { max-width: 680px; font-size: 15px; line-height: 1.6; color: var(--label-2); margin: 0 0 44px; }
+  .page-intro b { color: var(--label); font-weight: 600; }
+
+  h2.stage-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 64px 0 22px; padding-bottom: 14px;
+    border-bottom: 1px solid var(--hairline);
+  }
+  h2.stage-h:first-of-type { margin-top: 0; }
+  h2.stage-h .idx { font-family: ui-monospace, monospace; font-size: 13px; color: var(--sys-orange); font-weight: 600; }
+  h2.stage-h .title { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  h2.stage-h .sub { margin-left: auto; font-size: 12px; color: var(--label-3); font-weight: 500; }
+
+  .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 30px; }
+  @media (max-width: 800px) { .plan-grid { grid-template-columns: 1fr; } }
+  .plan-card { background: var(--mat-1); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid var(--hairline); border-radius: 20px; padding: 18px 20px; }
+  .plan-card .k { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sys-green); margin-bottom: 10px; }
+  .plan-card p { font-size: 13px; line-height: 1.55; color: var(--label-2); margin: 0; }
+  .plan-card .swrow { display: flex; gap: 7px; margin-bottom: 12px; }
+  .plan-card .sw { width: 24px; height: 24px; border-radius: 8px; border: 1px solid var(--hairline); }
+
+  /* ===== panel material (el componente insignia) ===== */
+  .gpanel {
+    position: relative; background: var(--mat-1); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--hairline); border-radius: 24px; padding: 20px;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 20px 40px -20px rgba(0, 0, 0, 0.6);
+  }
+  .gpanel.grid-bg {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(rgba(28, 28, 30, 0.68), rgba(28, 28, 30, 0.68));
+    background-size: 16px 16px, 16px 16px, 100% 100%;
+  }
+  /* guiño chico a la herencia "instrumento" — una sola muesca, no un marco entero */
+  .gpanel .tick { position: absolute; top: 14px; left: 20px; width: 14px; height: 2px; background: var(--sys-orange); border-radius: 1px; opacity: 0.8; }
+
+  /* ===== componentes: fila de demo ===== */
+  .demo-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; margin-bottom: 18px; }
+  .demo-label { font-size: 11px; font-weight: 600; color: var(--label-3); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* botón real Apple: relleno con tinte, spring press */
+  .abtn {
+    font-family: -apple-system, sans-serif; font-size: 15px; font-weight: 600;
+    background: var(--sys-orange); color: #1A0F00; border: none; border-radius: 14px; padding: 12px 22px;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease;
+  }
+  .abtn:active { transform: scale(0.96); }
+  .abtn.secondary { background: var(--mat-2); color: var(--label); border: 1px solid var(--hairline); }
+  .abtn.ghost { background: transparent; color: var(--sys-orange); }
+  @media (prefers-reduced-motion: reduce) { .abtn { transition: none; } }
+
+  /* input estilo iOS grouped */
+  .afield { display: flex; flex-direction: column; gap: 7px; min-width: 150px; }
+  .afield .lbl { font-size: 12.5px; font-weight: 600; color: var(--label-2); }
+  .afield .box { background: var(--mat-2); border-radius: 12px; padding: 11px 13px; display: flex; justify-content: space-between; align-items: baseline; border: 1px solid transparent; transition: border-color 0.2s ease; }
+  .afield .box:focus-within { border-color: var(--sys-orange); }
+  .afield .box input { background: none; border: none; outline: none; color: var(--label); font-family: ui-monospace, monospace; font-size: 15px; width: 100%; }
+  .afield .box .unit { font-size: 12px; color: var(--label-3); }
+
+  /* tag/badge = pill de estado, look Apple */
+  .atag { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; padding: 5px 11px; border-radius: 999px; }
+  .atag .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .atag.orange { color: var(--sys-orange); background: var(--sys-orange-soft); }
+  .atag.green { color: var(--sys-green); background: var(--sys-green-soft); }
+  .atag.red { color: var(--sys-red); background: var(--sys-red-soft); }
+  .atag.dim { color: var(--label-3); background: var(--mat-2); }
+
+  /* tab bar: isla flotante real, pastilla con spring */
+  .tabbar-demo { display: flex; position: relative; background: var(--mat-1); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid var(--hairline); border-radius: 22px; padding: 6px; }
+  .tabbar-demo .pill { position: absolute; top: 6px; bottom: 6px; left: 6px; width: calc(25% - 6px); background: var(--sys-orange); border-radius: 16px; transition: transform 0.4s cubic-bezier(0.34, 1.2, 0.64, 1); }
+  .tabbar-demo .t { flex: 1; text-align: center; padding: 10px 4px; font-size: 10.5px; font-weight: 600; color: var(--label-3); position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .tabbar-demo .t.on { color: #1A0F00; }
+  .tabbar-demo .t svg { width: 20px; height: 20px; stroke: currentColor; fill: none; }
+
+  /* readout hero */
+  .readout-hero { text-align: center; padding: 10px; }
+  .readout-hero .l { font-size: 12px; font-weight: 600; color: var(--label-2); margin-bottom: 8px; }
+  .readout-hero .n { font-family: ui-monospace, "SF Mono", monospace; font-size: 44px; font-weight: 700; color: var(--label); letter-spacing: -0.01em; }
+  .readout-hero .n .unit { font-size: 17px; font-weight: 500; color: var(--label-3); margin-left: 6px; }
+  .readout-hero .n .accent { color: var(--sys-orange); }
+  .readout-hero .s { font-size: 12.5px; color: var(--label-3); margin-top: 6px; }
+
+  .grid-cols3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 760px) { .grid-cols3 { grid-template-columns: 1fr; } }
+
+  /* ===== animación — física de resorte, no jank mecánico ===== */
+  @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .enter-demo { animation: fadeSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  @media (prefers-reduced-motion: reduce) { .enter-demo { animation: none; } }
+
+  @keyframes pulseLed { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
+  .led-demo { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--label-2); font-weight: 500; }
+  .led-demo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sys-red); animation: pulseLed 1.3s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .led-demo .dot { animation: none; } }
+
+  .needle-demo { position: relative; width: 100%; height: 100px; display: flex; align-items: flex-end; justify-content: center; }
+  .needle-demo svg { overflow: visible; }
+  .needle-demo .needle { transform-origin: 90px 90px; animation: needleSwing 2.6s cubic-bezier(0.34, 1.1, 0.64, 1) infinite alternate; }
+  @keyframes needleSwing { 0% { transform: rotate(-50deg); } 100% { transform: rotate(30deg); } }
+  @media (prefers-reduced-motion: reduce) { .needle-demo .needle { animation: none; transform: rotate(-8deg); } }
+
+  .digit-wrap { display: inline-block; height: 1.15em; overflow: hidden; position: relative; width: 0.62em; vertical-align: bottom; }
+  .digit-track { position: absolute; left: 0; top: 0; transition: transform 1.1s cubic-bezier(0.16, 1, 0.3, 1); }
+  .digit-track div { height: 1.15em; display: flex; align-items: center; justify-content: center; }
+  .digit-demo { font-family: ui-monospace, "SF Mono", monospace; font-size: 34px; font-weight: 700; color: var(--label); display: flex; }
+  @media (prefers-reduced-motion: reduce) { .digit-track { transition: none; } }
+
+  .anim-card { background: var(--mat-1); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid var(--hairline); border-radius: 20px; padding: 20px; }
+  .anim-card .cap { font-size: 12px; color: var(--label-3); margin-top: 16px; text-align: center; }
+
+  /* ===== Pantalla completa ===== */
+  .device { max-width: 380px; margin: 0 auto; padding: 8px 0 0; position: relative; }
+  .device-title { font-size: 12px; color: var(--label-3); font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .device-title .live { color: var(--sys-red); display: flex; align-items: center; gap: 5px; font-weight: 700; }
+  .device .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .device .cell { background: var(--mat-1); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid var(--hairline); border-radius: 18px; padding: 14px 16px; }
+  .device .cell .l { font-size: 11px; color: var(--label-3); font-weight: 600; }
+  .device .cell .v { font-family: ui-monospace, monospace; font-size: 19px; font-weight: 700; color: var(--label); margin-top: 4px; }
+  .device .chart-panel { margin-bottom: 14px; }
+  .bars-mock { display: flex; align-items: flex-end; gap: 7px; height: 70px; padding: 10px 4px 0; border-bottom: 1px solid var(--hairline); }
+  .bars-mock .b { flex: 1; background: rgba(48, 209, 88, 0.3); border-radius: 4px 4px 1px 1px; }
+  .bars-mock .b.hot { background: var(--sys-orange); }
+  .bars-mock .m { font-size: 9px; color: var(--label-3); text-align: center; margin-top: 5px; flex: 1; font-weight: 600; }
+  .device .list-row { display: flex; align-items: center; gap: 11px; padding: 11px 0; border-top: 1px solid var(--hairline); font-size: 13px; }
+  .device .list-row:first-child { border-top: none; }
+  .device .list-row .ic { width: 30px; height: 30px; border-radius: 10px; background: var(--sys-orange-soft); display: flex; align-items: center; justify-content: center; color: var(--sys-orange); flex: 0 0 auto; }
+  .device .list-row .ic svg { width: 15px; height: 15px; stroke: currentColor; fill: none; }
+  .device .list-row .meta { flex: 1; color: var(--label-3); font-size: 11.5px; }
+  .device .list-row .meta b { color: var(--label); display: block; font-weight: 600; font-size: 13.5px; }
+  .device .list-row .amt { text-align: right; color: var(--label); font-weight: 700; font-family: ui-monospace, monospace; }
+  .device .tabbar-demo { margin-top: 16px; }
+
+  /* ===== Stage 06 — momentos inmersivos ===== */
+  .particle { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; filter: blur(0.5px); animation: driftParticle linear infinite; }
+  @keyframes driftParticle { 0% { transform: translateY(0) translateX(0); opacity: 0; } 10% { opacity: var(--pop, 0.5); } 90% { opacity: var(--pop, 0.5); } 100% { transform: translateY(-140px) translateX(var(--dx, 20px)); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .particle { animation: none; display: none; } }
+
+  /* Dynamic Island — actividad en vivo */
+  .dyisland { display: flex; align-items: center; gap: 10px; background: #000; border-radius: 999px; padding: 8px 16px 8px 8px; width: fit-content; margin: 0 auto 14px; box-shadow: 0 8px 24px -8px rgba(0,0,0,0.6); }
+  .dyisland .ic { width: 26px; height: 26px; border-radius: 50%; background: var(--sys-orange-soft); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .dyisland .ic svg { width: 14px; height: 14px; stroke: var(--sys-orange); fill: none; }
+  .dyisland .txt { font-size: 12px; font-weight: 600; color: var(--label); white-space: nowrap; }
+  .dyisland .txt .dim { color: var(--label-3); font-weight: 500; margin-left: 4px; }
+
+  .live-activity-exp { background: #000; border-radius: 26px; padding: 16px 18px; }
+  .live-activity-exp .head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .live-activity-exp .head .ic { width: 34px; height: 34px; border-radius: 10px; background: var(--sys-orange-soft); display: flex; align-items: center; justify-content: center; }
+  .live-activity-exp .head .ic svg { width: 18px; height: 18px; stroke: var(--sys-orange); fill: none; }
+  .live-activity-exp .head b { font-size: 14px; font-weight: 700; display: block; }
+  .live-activity-exp .head span { font-size: 11.5px; color: var(--label-3); }
+  .live-activity-exp .bar-track { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.1); overflow: hidden; margin-bottom: 8px; }
+  .live-activity-exp .bar-fill { height: 100%; background: linear-gradient(90deg, var(--sys-orange), #FFC670); border-radius: 4px; animation: fillGrow 3s cubic-bezier(0.16,1,0.3,1) forwards; }
+  @keyframes fillGrow { from { width: 0%; } to { width: 62%; } }
+  .live-activity-exp .foot { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--label-3); font-family: ui-monospace, monospace; }
+  @media (prefers-reduced-motion: reduce) { .live-activity-exp .bar-fill { animation: none; width: 62%; } }
+
+  /* onda de corriente en vivo */
+  .waveform-panel svg { display: block; width: 100%; height: 60px; }
+  .waveform-panel .wave { fill: none; stroke: var(--sys-orange); stroke-width: 2; stroke-linecap: round; filter: drop-shadow(0 0 4px rgba(255,159,10,0.5)); }
+  @keyframes waveDraw { from { stroke-dashoffset: 400; } to { stroke-dashoffset: 0; } }
+  .waveform-panel .wave { stroke-dasharray: 400; animation: waveDraw 2.4s linear infinite; }
+  @media (prefers-reduced-motion: reduce) { .waveform-panel .wave { animation: none; stroke-dashoffset: 0; } }
+
+  /* swipe-to-delete */
+  .swipe-demo { position: relative; overflow: hidden; border-radius: 14px; }
+  .swipe-demo .action { position: absolute; inset: 0; background: var(--sys-red); display: flex; align-items: center; justify-content: flex-end; padding-right: 18px; }
+  .swipe-demo .action span { color: #fff; font-size: 13px; font-weight: 700; }
+  .swipe-demo .row-fg { position: relative; background: var(--mat-2); padding: 12px 14px; display: flex; align-items: center; gap: 10px; transform: translateX(-72px); animation: peekSwipe 3s ease-in-out infinite; }
+  @keyframes peekSwipe { 0%, 20% { transform: translateX(0); } 50%, 80% { transform: translateX(-72px); } 100% { transform: translateX(0); } }
+  @media (prefers-reduced-motion: reduce) { .swipe-demo .row-fg { animation: none; transform: translateX(-72px); } }
+
+  /* gauge con cúpula de vidrio */
+  .gauge-dome { position: relative; }
+  .gauge-dome .dome-shine { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); width: 140px; height: 60px; border-radius: 50%; background: linear-gradient(180deg, rgba(255,255,255,0.12), transparent 70%); pointer-events: none; }
+
+  /* confirmación: círculo a check */
+  .confirm-morph { width: 52px; height: 52px; margin: 0 auto; }
+  .confirm-morph circle { fill: none; stroke: var(--sys-green); stroke-width: 3; stroke-dasharray: 150; stroke-dashoffset: 150; animation: circleDraw 0.5s ease-out forwards; }
+  .confirm-morph path { fill: none; stroke: var(--sys-green); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 30; stroke-dashoffset: 30; animation: checkDraw 0.35s ease-out 0.45s forwards; }
+  @keyframes circleDraw { to { stroke-dashoffset: 0; } }
+  @keyframes checkDraw { to { stroke-dashoffset: 0; } }
+  @media (prefers-reduced-motion: reduce) { .confirm-morph circle, .confirm-morph path { animation-duration: 0.01s; } }
+
+  /* ===== Stage 07+ — controles nuevos para las pantallas restantes ===== */
+  .segmented { display: flex; position: relative; background: var(--mat-2); border-radius: 12px; padding: 3px; }
+  .segmented .seg-pill { position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); background: var(--sys-orange); border-radius: 9px; transition: transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1); }
+  .segmented[data-sel="1"] .seg-pill { transform: translateX(100%); }
+  .segmented .seg { flex: 1; text-align: center; padding: 8px 4px; font-size: 13px; font-weight: 600; color: var(--label-3); position: relative; z-index: 1; cursor: pointer; transition: color 0.2s ease; }
+  .segmented .seg.on { color: #1A0F00; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-size: 12.5px; font-weight: 600; padding: 8px 14px; border-radius: 999px; background: var(--mat-2); color: var(--label-2); border: 1px solid transparent; cursor: pointer; transition: all 0.2s ease; }
+  .chip.on { background: var(--sys-orange-soft); color: var(--sys-orange); border-color: rgba(255, 159, 10, 0.4); }
+
+  .toggle-ios { width: 46px; height: 28px; border-radius: 14px; background: var(--mat-2); position: relative; cursor: pointer; flex: 0 0 auto; transition: background 0.25s ease; }
+  .toggle-ios .knob { position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1); }
+  .toggle-ios.on { background: var(--sys-green); }
+  .toggle-ios.on .knob { transform: translateX(18px); }
+
+  .slider-ios { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; background: var(--mat-2); outline: none; }
+  .slider-ios::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--hairline); cursor: pointer; }
+
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 2px; border-top: 1px solid var(--hairline); font-size: 14px; gap: 12px; }
+  .setting-row:first-child { border-top: none; }
+  .setting-row .chev { color: var(--label-3); font-size: 13px; }
+
+  .hue-bar { height: 14px; border-radius: 7px; background: linear-gradient(90deg, #ff3b30, #ff9f0a, #ffd60a, #30d158, #64d2ff, #0a84ff, #bf5af2, #ff3b30); position: relative; margin: 14px 6px 4px; }
+  .hue-bar .knob { position: absolute; top: 50%; width: 22px; height: 22px; border-radius: 50%; border: 3px solid #000; transform: translate(-50%, -50%); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); }
+
+  .draft-banner { display: flex; align-items: center; gap: 10px; background: var(--sys-orange-soft); border: 1px solid rgba(255, 159, 10, 0.3); border-radius: 16px; padding: 12px 14px; margin-bottom: 14px; animation: fadeSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+  .draft-banner .ic { color: var(--sys-orange); flex: 0 0 auto; display: flex; }
+  .draft-banner .tx { flex: 1; font-size: 12px; color: var(--label-2); }
+  .draft-banner .tx b { display: block; font-size: 13.5px; font-weight: 700; color: var(--label); }
+  .draft-banner .x { color: var(--label-3); font-size: 13px; font-weight: 700; cursor: pointer; }
+
+  .month-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .month-head .m { font-size: 13px; font-weight: 700; }
+  .month-head .t { font-size: 12px; color: var(--label-3); font-family: ui-monospace, monospace; }
+
+  /* simulador — la pieza central de "se acciona al iniciar/completar" */
+  .sim-progress-track { height: 10px; border-radius: 5px; background: rgba(255, 255, 255, 0.08); overflow: hidden; margin: 16px 0 10px; }
+  .sim-progress-fill { height: 100%; width: 0%; border-radius: 5px; background: linear-gradient(90deg, var(--sys-orange), #FFC670); transition: width 0.1s linear; }
+  .sim-stage-label { font-size: 12px; color: var(--label-3); text-align: center; min-height: 16px; }
+
+  @keyframes diEnergize { 0% { transform: scale(0.3); opacity: 0; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+  .dyisland.energize { animation: diEnergize 0.5s cubic-bezier(0.34, 1.4, 0.64, 1); }
+  @keyframes laCollapse { to { transform: scale(0.85); opacity: 0; } }
+  .live-activity-exp.collapsing { animation: laCollapse 0.4s ease-in forwards; }
+  @media (prefers-reduced-motion: reduce) { .dyisland.energize, .live-activity-exp.collapsing { animation: none; } }
+
+  @keyframes franjaMorph { 0%, 40% { background: var(--sys-green-soft); color: var(--sys-green); } 50%, 90% { background: var(--sys-orange-soft); color: var(--sys-orange); } 100% { background: var(--sys-green-soft); color: var(--sys-green); } }
+  .atag.franja-live { animation: franjaMorph 6s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .atag.franja-live { animation: none; } }
+
+  /* ===== Stage 12/13 — motor de estimación + widgets ===== */
+  .compare-chart svg { display: block; width: 100%; height: 130px; }
+  .compare-chart .theo { fill: none; stroke: var(--label-3); stroke-width: 2; stroke-dasharray: 5 5; }
+  .compare-chart .real { fill: none; stroke: var(--sys-orange); stroke-width: 2.5; filter: drop-shadow(0 0 4px rgba(255,159,10,0.4)); }
+  .compare-chart .axis { stroke: var(--hairline); stroke-width: 1; }
+  .compare-legend { display: flex; gap: 18px; margin-top: 10px; font-size: 11.5px; color: var(--label-3); }
+  .compare-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .compare-legend .ld { width: 14px; height: 2px; display: inline-block; }
+
+  .widget-frame { border-radius: 26px; position: relative; background: #1c1c1e; }
+  .widget-frame.small { width: 154px; aspect-ratio: 1/1; margin: 0 auto; padding: 14px; display: flex; flex-direction: column; }
+  .widget-frame.medium { width: 100%; max-width: 330px; aspect-ratio: 2.15/1; margin: 0 auto; padding: 16px 18px; display: flex; flex-direction: column; }
+  .widget-frame.lock { width: 108px; aspect-ratio: 1/1; margin: 0 auto; background: rgba(255,255,255,0.16); backdrop-filter: blur(4px); padding: 12px; display: flex; align-items: center; justify-content: center; }
+  .widget-caption { font-size: 10.5px; font-weight: 600; color: var(--label-3); text-align: center; margin-top: 8px; }
+  .widget-frame .wtitle { font-size: 10.5px; font-weight: 700; color: var(--label-3); text-transform: uppercase; letter-spacing: 0.04em; display: flex; justify-content: space-between; }
+  .widget-frame .weta { margin-top: auto; font-size: 11px; color: var(--label-2); font-weight: 600; }
+  .widget-frame .weta b { color: var(--label); font-family: ui-monospace, monospace; }
+
+  /* pila cargándose — bandas de color por fase, no un solo tono fijo */
+  .pila-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+  .pila { width: 52px; height: 92px; border: 3px solid rgba(255,255,255,0.32); border-radius: 13px; position: relative; overflow: hidden; background: rgba(255,255,255,0.04); }
+  .pila::before { content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 20px; height: 6px; background: rgba(255,255,255,0.32); border-radius: 3px 3px 0 0; }
+  .pila .fill { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 8px 8px 0 0; animation: pilaFill 6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+  .pila .fill::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: rgba(255,255,255,0.55); filter: blur(0.5px); }
+  .pila.mono .fill { animation: pilaFillMono 6s cubic-bezier(0.4, 0, 0.2, 1) infinite; background: rgba(255,255,255,0.85) !important; }
+  @keyframes pilaFill {
+    0%   { height: 4%;  background: var(--sys-red); }
+    14%  { height: 17%; background: var(--sys-red); }
+    16%  { height: 19%; background: var(--sys-orange); }
+    83%  { height: 82%; background: var(--sys-orange); }
+    85%  { height: 85%; background: var(--sys-green); }
+    100% { height: 100%; background: var(--sys-green); }
+  }
+  @keyframes pilaFillMono { 0% { height: 4%; } 100% { height: 100%; } }
+  @media (prefers-reduced-motion: reduce) { .pila .fill { animation: none; height: 65%; background: var(--sys-orange); } }
+
+  /* velocímetro — pista con 3 zonas fijas (como el tacómetro de un auto), aguja que sube */
+  .gauge-widget { position: relative; width: 100%; }
+  .gauge-widget svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .gauge-widget .zone-red { stroke: var(--sys-red); opacity: 0.55; }
+  .gauge-widget .zone-orange { stroke: var(--sys-orange); opacity: 0.55; }
+  .gauge-widget .zone-green { stroke: var(--sys-green); opacity: 0.55; }
+  .gauge-widget .needle { transform-origin: 90px 90px; stroke: #fff; filter: drop-shadow(0 0 2px rgba(0,0,0,0.6)); animation: needleRise 6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+  @keyframes needleRise { 0% { transform: rotate(-86deg); } 16% { transform: rotate(-62deg); } 84% { transform: rotate(62deg); } 100% { transform: rotate(86deg); } }
+  @media (prefers-reduced-motion: reduce) { .gauge-widget .needle { animation: none; transform: rotate(20deg); } }
+
+  .phase-label { position: relative; height: 15px; text-align: center; font-size: 10.5px; font-weight: 700; margin-top: 2px; }
+  .phase-label span { position: absolute; inset: 0; opacity: 0; }
+  .phase-label .p1 { color: var(--sys-red); animation: phaseA 6s ease infinite; }
+  .phase-label .p2 { color: var(--sys-orange); animation: phaseB 6s ease infinite; }
+  .phase-label .p3 { color: var(--sys-green); animation: phaseC 6s ease infinite; }
+  @keyframes phaseA { 0%, 13% { opacity: 1; } 16%, 100% { opacity: 0; } }
+  @keyframes phaseB { 0%, 14% { opacity: 0; } 17%, 82% { opacity: 1; } 85%, 100% { opacity: 0; } }
+  @keyframes phaseC { 0%, 83% { opacity: 0; } 86%, 100% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .phase-label .p2 { opacity: 1; } .phase-label .p1, .phase-label .p3 { opacity: 0; animation: none; } }
+
+  .verdict { max-width: 900px; margin: 60px auto 0; background: var(--mat-1); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid var(--hairline); border-radius: 22px; padding: 26px 28px; }
+  .verdict .k { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sys-green); margin-bottom: 12px; }
+  .verdict p { font-size: 14.5px; line-height: 1.65; color: var(--label-2); margin: 0 0 12px; }
+  .verdict p:last-child { margin-bottom: 0; }
+  .verdict b { color: var(--label); font-weight: 600; }
+</style>
+
+<div class="ambient-glow"></div>
+<div class="wrap">
+  <div class="stage-eyebrow">Rediseño total · versión 3, con las 5 pantallas + acciones en vivo · nada aplicado</div>
+  <h1 class="page-title">Instrumento — con materiales de Apple</h1>
+  <p class="page-intro">Mismo concepto que te gustó (el teléfono midiendo electricidad, dos canales de dato, números monoespaciados), pero ejecutado con lo que realmente hace que algo "se sienta Apple": <b>materiales translúcidos con blur</b> en vez de paneles planos, <b>colores de sistema reales</b> (naranja/verde/rojo de HIG, no inventados), <b>resortes (spring)</b> en vez de saltos mecánicos, y esquinas grandes y continuas en vez de brackets duros. El "instrumento" queda solo como una muesca chica en cada panel — un guiño, no todo el lenguaje.</p>
+
+  <h2 class="stage-h"><span class="idx">01</span><span class="title">Plan de diseño</span><span class="sub">qué cambió y por qué</span></h2>
+  <div class="plan-grid">
+    <div class="plan-card">
+      <div class="k">Color</div>
+      <div class="swrow">
+        <span class="sw" style="background:var(--black);"></span><span class="sw" style="background:var(--mat-2);"></span>
+        <span class="sw" style="background:var(--sys-orange);"></span><span class="sw" style="background:var(--sys-green);"></span>
+        <span class="sw" style="background:var(--label);"></span><span class="sw" style="background:var(--sys-red);"></span>
+      </div>
+      <p>Negro real (así se ve el modo oscuro de Apple en pantallas OLED) + los colores de sistema oficiales de HIG — <code class="mono" style="color:var(--sys-orange);">#FF9F0A</code>, <code class="mono" style="color:var(--sys-green);">#30D158</code>, <code class="mono" style="color:var(--sys-red);">#FF453A</code> — no un ámbar/verde de osciloscopio inventado.</p>
+    </div>
+    <div class="plan-card">
+      <div class="k">Tipografía</div>
+      <p>SF Mono se queda para los números (así los usa Apple mismo en Salud, Bolsa y Wallet) — pero las etiquetas pasan a texto normal, peso 600, sin mayúsculas forzadas ni tracking extremo. Se lee como una app de Apple, no como un panel grabado.</p>
+    </div>
+    <div class="plan-card">
+      <div class="k">Layout</div>
+      <p>Vidrio esmerilado (<code class="mono">backdrop-filter: blur</code>) sobre un resplandor ambiental de fondo — el mismo recurso que ya usa Electrico hoy (aurora), reinterpretado con los colores nuevos. Esquinas grandes (20–24px), no brackets.</p>
+    </div>
+  </div>
+
+  <h2 class="stage-h"><span class="idx">02</span><span class="title">Componentes</span><span class="sub">estructura, ya con materiales</span></h2>
+
+  <div class="demo-label">Panel base — vidrio esmerilado + resplandor detrás</div>
+  <div class="demo-row" style="width:100%;">
+    <div class="gpanel grid-bg" style="flex:1; min-width:260px;">
+      <div class="tick"></div>
+      <div class="readout-hero">
+        <div class="l">Gasto — este mes</div>
+        <div class="n">$330</div>
+        <div class="s">5 lecturas registradas</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-label">Botones — relleno de sistema, resorte al presionar</div>
+  <div class="demo-row">
+    <button class="abtn">Registrar</button>
+    <button class="abtn secondary">Editar</button>
+    <button class="abtn ghost">Cancelar</button>
+  </div>
+
+  <div class="demo-label">Campos de entrada — grouped list de iOS</div>
+  <div class="demo-row">
+    <div class="afield">
+      <span class="lbl">kWh cargados</span>
+      <div class="box"><input value="18.4"><span class="unit">kWh</span></div>
+    </div>
+    <div class="afield">
+      <span class="lbl">Odómetro</span>
+      <div class="box"><input value="15347"><span class="unit">km</span></div>
+    </div>
+  </div>
+
+  <div class="demo-label">Etiquetas de estado — pill, no bracket</div>
+  <div class="demo-row">
+    <span class="atag orange"><span class="dot"></span>Punta</span>
+    <span class="atag green"><span class="dot"></span>Valle</span>
+    <span class="atag red"><span class="dot"></span>Sobre presupuesto</span>
+    <span class="atag dim"><span class="dot"></span>Sin datos</span>
+  </div>
+
+  <div class="demo-label">Tab bar — isla flotante, pastilla con resorte</div>
+  <div class="demo-row" style="width:100%;">
+    <div class="tabbar-demo" style="width:100%;">
+      <div class="pill"></div>
+      <div class="t on"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9h12v-9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Inicio</div>
+      <div class="t"><svg viewBox="0 0 24 24"><line x1="5" y1="7" x2="19" y2="7" stroke-width="1.8" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke-width="1.8" stroke-linecap="round"/><line x1="5" y1="17" x2="19" y2="17" stroke-width="1.8" stroke-linecap="round"/></svg>Cargas</div>
+      <div class="t"><svg viewBox="0 0 24 24"><path d="M4 16V11.5L6.2 6.8A2 2 0 0 1 8 5.6h8a2 2 0 0 1 1.8 1.2L20 11.5V16" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><rect x="3" y="13" width="18" height="5.5" rx="2" stroke-width="1.7"/></svg>Vehículo</div>
+      <div class="t"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1" stroke-width="1.7"/><path d="M12 3.5v2.4M12 18.1v2.4M20.5 12h-2.4M5.9 12H3.5M17.7 6.3l-1.7 1.7M8 16l-1.7 1.7M17.7 17.7 16 16M8 8 6.3 6.3" stroke-width="1.7" stroke-linecap="round"/></svg>Ajustes</div>
+    </div>
+  </div>
+
+  <h2 class="stage-h"><span class="idx">03</span><span class="title">Color</span><span class="sub">los mismos componentes, con los 2 canales</span></h2>
+  <div class="grid-cols3">
+    <div class="gpanel grid-bg">
+      <div class="tick"></div>
+      <div class="demo-label" style="margin-bottom:12px;">Canal A</div>
+      <div style="font-size:12px;color:var(--label-2);font-weight:600;">$/kWh prom.</div>
+      <div style="font-family:ui-monospace,monospace;font-size:26px;font-weight:700;color:var(--sys-orange);margin-top:2px;">2.44</div>
+    </div>
+    <div class="gpanel grid-bg">
+      <div class="tick" style="background:var(--sys-green);"></div>
+      <div class="demo-label" style="margin-bottom:12px;">Canal B</div>
+      <div style="font-size:12px;color:var(--label-2);font-weight:600;">% en Valle</div>
+      <div style="font-family:ui-monospace,monospace;font-size:26px;font-weight:700;color:var(--sys-green);margin-top:2px;">100</div>
+    </div>
+    <div class="gpanel grid-bg">
+      <div class="tick" style="background:var(--sys-red);"></div>
+      <div class="demo-label" style="margin-bottom:12px;">Alerta</div>
+      <div style="font-size:12px;color:var(--label-2);font-weight:600;">Franja Punta</div>
+      <div style="font-family:ui-monospace,monospace;font-size:26px;font-weight:700;color:var(--sys-red);margin-top:2px;">12.03</div>
+    </div>
+  </div>
+
+  <h2 class="stage-h"><span class="idx">04</span><span class="title">Animación</span><span class="sub">física de resorte, no jank mecánico</span></h2>
+  <div class="grid-cols3">
+    <div class="anim-card">
+      <div class="digit-demo" id="digitDemo"></div>
+      <div class="cap">Números que ruedan con spring — como el contador real de Electrico, no un flicker</div>
+    </div>
+    <div class="anim-card gauge-dome">
+      <div class="dome-shine"></div>
+      <div class="needle-demo">
+        <svg width="180" height="100" viewBox="0 0 180 100">
+          <path d="M20 90 A70 70 0 0 1 160 90" fill="none" stroke="var(--hairline)" stroke-width="3"/>
+          <line class="needle" x1="90" y1="90" x2="90" y2="24" stroke="var(--sys-orange)" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="90" cy="90" r="6" fill="var(--sys-orange)"/>
+        </svg>
+      </div>
+      <div class="cap">Aguja de galga bajo una cúpula de vidrio (autonomía / batería)</div>
+    </div>
+    <div class="anim-card">
+      <div class="led-demo"><span class="dot"></span>Grabando lectura en vivo</div>
+      <div class="cap" style="margin-top:28px;">Punto pulsante — el mismo lenguaje que usa Apple para "en vivo" (Control Center)</div>
+    </div>
+    <div class="anim-card enter-demo">
+      <div class="gpanel" style="padding:14px;">
+        <div style="font-size:12px;color:var(--label-2);font-weight:600;">Entrada de panel</div>
+        <div style="font-family:ui-monospace,monospace;font-size:20px;font-weight:700;margin-top:2px;">Fade + slide</div>
+      </div>
+      <div class="cap">Ease-out suave al aparecer, no barrido de escaneo</div>
+    </div>
+    <div class="anim-card">
+      <button class="abtn">Guardar</button>
+      <div class="cap">Al tocar: resorte con leve rebote — feedback táctil real, no un paso mecánico</div>
+    </div>
+    <div class="anim-card">
+      <div class="tabbar-demo">
+        <div class="pill"></div>
+        <div class="t on">A</div><div class="t">B</div><div class="t">C</div>
+      </div>
+      <div class="cap" style="margin-top:16px;">Pastilla que desliza con resorte al cambiar de pestaña</div>
+    </div>
+  </div>
+
+  <h2 class="stage-h"><span class="idx">05</span><span class="title">Pantalla completa</span><span class="sub">Inicio, con datos reales</span></h2>
+  <div class="device">
+    <div class="dyisland">
+      <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+      <span class="txt">Cargando en Casa<span class="dim"> · 3h 20m restantes</span></span>
+    </div>
+    <div class="device-title">Inicio <span class="live"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--sys-red);display:inline-block;animation:pulseLed 1.3s ease-in-out infinite;"></span>En vivo</span></div>
+    <div class="gpanel grid-bg" style="margin-bottom:14px;">
+      <div class="tick"></div>
+      <div class="readout-hero">
+        <div class="l">Gasto este mes</div>
+        <div class="n">$330</div>
+        <div class="s">5 lecturas · autonomía est. 380 km</div>
+      </div>
+    </div>
+    <div class="waveform-panel gpanel" style="margin-bottom:14px; padding:14px 16px;">
+      <div class="demo-label" style="margin-bottom:6px;">Corriente en vivo — cargando ahora</div>
+      <svg viewBox="0 0 400 60" preserveAspectRatio="none">
+        <polyline class="wave" points="0,30 20,30 30,10 40,50 50,30 90,30 100,15 110,45 120,30 160,30 170,8 180,52 190,30 230,30 240,18 250,42 260,30 300,30 310,12 320,48 330,30 400,30" vector-effect="non-scaling-stroke"/>
+      </svg>
+    </div>
+    <div class="row2">
+      <div class="cell"><div class="l">$/kWh prom.</div><div class="v" style="color:var(--sys-orange);">2.44</div></div>
+      <div class="cell"><div class="l">% en Valle</div><div class="v" style="color:var(--sys-green);">100</div></div>
+    </div>
+    <div class="gpanel chart-panel">
+      <div class="demo-label">Tendencia — 6 meses</div>
+      <div class="bars-mock">
+        <div class="b" style="height:18%;"></div><div class="b" style="height:12%;"></div>
+        <div class="b" style="height:22%;"></div><div class="b" style="height:15%;"></div>
+        <div class="b" style="height:10%;"></div><div class="b hot" style="height:100%;"></div>
+      </div>
+      <div style="display:flex;">
+        <span class="m">FEB</span><span class="m">MAR</span><span class="m">ABR</span><span class="m">MAY</span><span class="m">JUN</span><span class="m">JUL</span>
+      </div>
+    </div>
+    <div class="gpanel">
+      <div class="demo-label">Últimas lecturas</div>
+      <div class="swipe-demo" style="margin-bottom:6px;">
+        <div class="action"><span>Eliminar</span></div>
+        <div class="row-fg">
+          <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+          <span class="meta"><b>Dom 12 Jul · 01:24</b>Casa · Valle</span><span class="amt">$58</span>
+        </div>
+      </div>
+      <div class="list-row">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <span class="meta"><b>Mié 08 Jul · 00:00</b>Casa · Valle</span><span class="amt">$61</span>
+      </div>
+    </div>
+    <div class="tabbar-demo">
+      <div class="pill"></div>
+      <div class="t on"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9h12v-9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Inicio</div>
+      <div class="t"><svg viewBox="0 0 24 24"><line x1="5" y1="7" x2="19" y2="7" stroke-width="1.8" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke-width="1.8" stroke-linecap="round"/><line x1="5" y1="17" x2="19" y2="17" stroke-width="1.8" stroke-linecap="round"/></svg>Cargas</div>
+      <div class="t"><svg viewBox="0 0 24 24"><path d="M4 16V11.5L6.2 6.8A2 2 0 0 1 8 5.6h8a2 2 0 0 1 1.8 1.2L20 11.5V16" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><rect x="3" y="13" width="18" height="5.5" rx="2" stroke-width="1.7"/></svg>Vehículo</div>
+      <div class="t"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1" stroke-width="1.7"/><path d="M12 3.5v2.4M12 18.1v2.4M20.5 12h-2.4M5.9 12H3.5M17.7 6.3l-1.7 1.7M8 16l-1.7 1.7M17.7 17.7 16 16M8 8 6.3 6.3" stroke-width="1.7" stroke-linecap="round"/></svg>Ajustes</div>
+    </div>
+  </div>
+
+  <h2 class="stage-h"><span class="idx">06</span><span class="title">Momentos inmersivos</span><span class="sub">lo que hace que se sienta viva, no una demo estática</span></h2>
+  <div class="grid-cols3">
+    <div class="anim-card">
+      <div class="demo-label" style="text-align:center;">Dynamic Island — carga en curso</div>
+      <div class="dyisland" style="margin:14px auto;">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <span class="txt">Cargando<span class="dim"> · 45%</span></span>
+      </div>
+      <div class="cap">Compacta, siempre visible arriba mientras cargás de noche — sin abrir la app</div>
+    </div>
+    <div class="anim-card">
+      <div class="demo-label" style="text-align:center;">Live Activity — expandida (long-press)</div>
+      <div class="live-activity-exp" style="margin-top:10px;">
+        <div class="head">
+          <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+          <div><b>Cargando en Casa</b><span>Franja Valle · $2,44/kWh</span></div>
+        </div>
+        <div class="bar-track"><div class="bar-fill"></div></div>
+        <div class="foot"><span>27.0 kWh</span><span>3h 20m restantes</span></div>
+      </div>
+      <div class="cap">Al mantener presionada la compacta — mismo patrón que un viaje o un timer</div>
+    </div>
+    <div class="anim-card">
+      <div class="demo-label" style="text-align:center;">Confirmación al guardar</div>
+      <svg class="confirm-morph" viewBox="0 0 52 52" style="margin-top:14px;">
+        <circle cx="26" cy="26" r="22"/>
+        <path d="M15 27l7 7 15-15"/>
+      </svg>
+      <div class="cap">Círculo que se dibuja y termina en check — reemplaza al toast plano</div>
+    </div>
+  </div>
+
+  <h2 class="stage-h"><span class="idx">07</span><span class="title">Acciones en vivo</span><span class="sub">lo que se dispara al iniciar y al completar — tocalo</span></h2>
+  <div class="anim-card" style="max-width:380px;margin:0 auto 8px;">
+    <div class="demo-label" style="text-align:center;margin-bottom:14px;">Simulá el ciclo completo de una carga</div>
+    <div id="simIsland" class="dyisland" style="display:none;">
+      <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+      <span class="txt">Cargando<span class="dim"> · Casa</span></span>
+    </div>
+    <div id="simLA" class="live-activity-exp" style="display:none;margin-top:10px;">
+      <div class="head">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <div><b>Cargando en Casa</b><span>Franja Valle · $2,44/kWh</span></div>
+      </div>
+      <div style="text-align:center;padding:6px 0 4px;">
+        <span id="simKwh" class="mono" style="font-size:32px;font-weight:700;">0.0</span><span style="font-size:14px;color:var(--label-3);margin-left:4px;">kWh</span>
+      </div>
+    </div>
+    <svg id="simCheck" class="confirm-morph" viewBox="0 0 52 52" style="display:none;margin:14px auto;">
+      <circle cx="26" cy="26" r="22"/>
+      <path d="M15 27l7 7 15-15"/>
+    </svg>
+    <button class="abtn" id="simBtn" style="width:100%;margin-top:6px;">▶ Iniciar carga</button>
+    <div class="sim-progress-track"><div class="sim-progress-fill" id="simFill"></div></div>
+    <div class="sim-stage-label" id="simLabel">Tocá el botón para ver la secuencia completa</div>
+  </div>
+  <div class="grid-cols3" style="margin-top:24px;">
+    <div class="anim-card">
+      <div class="demo-label" style="text-align:center;">Dynamic Island — carga en curso</div>
+      <div class="dyisland" style="margin:14px auto;">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <span class="txt">Cargando<span class="dim"> · 45%</span></span>
+      </div>
+      <div class="cap">Compacta, siempre visible arriba mientras cargás de noche — sin abrir la app</div>
+    </div>
+    <div class="anim-card">
+      <div class="demo-label" style="text-align:center;">Confirmación al guardar</div>
+      <svg class="confirm-morph" viewBox="0 0 52 52" style="margin-top:14px;">
+        <circle cx="26" cy="26" r="22"/>
+        <path d="M15 27l7 7 15-15"/>
+      </svg>
+      <div class="cap">Círculo que se dibuja y termina en check — reemplaza al toast plano</div>
+    </div>
+    <div class="anim-card">
+      <div class="demo-label" style="text-align:center;">Cambio de franja — en vivo</div>
+      <div style="display:flex;justify-content:center;margin:22px 0 10px;">
+        <span class="atag franja-live"><span class="dot"></span>Valle → Punta</span>
+      </div>
+      <div class="cap">La pastilla de franja muta de color sola cuando cambia el horario — sin recargar nada</div>
+    </div>
+  </div>
+
+  <h2 class="stage-h"><span class="idx">08</span><span class="title">Pantalla completa</span><span class="sub">Nueva carga</span></h2>
+  <div class="device">
+    <div class="device-title">Nueva carga</div>
+    <div class="draft-banner">
+      <span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/></svg></span>
+      <span class="tx"><b>Recuperamos tu borrador</b>Desde 20% · hace 12 min</span>
+      <span class="x">✕</span>
+    </div>
+    <div class="segmented" data-sel="1" style="margin-bottom:16px;">
+      <div class="seg-pill"></div>
+      <div class="seg">Privada</div>
+      <div class="seg on">Pública</div>
+    </div>
+    <div class="gpanel" style="margin-bottom:14px;">
+      <div class="demo-label" style="margin-bottom:10px;">Red</div>
+      <div class="chip-row" style="margin-bottom:16px;">
+        <span class="chip on">UTE</span><span class="chip">eOne</span><span class="chip">DMC</span><span class="chip">Evergo</span>
+      </div>
+      <div class="demo-label" style="margin-bottom:10px;">Variante</div>
+      <div class="chip-row">
+        <span class="chip on">Diurno</span><span class="chip">Nocturno</span>
+      </div>
+    </div>
+    <div class="gpanel" style="margin-bottom:14px;">
+      <div class="demo-label" style="margin-bottom:10px;">Potencia del cargador</div>
+      <div class="chip-row">
+        <span class="chip">16A · 3,2kW</span><span class="chip on">20A · 4,4kW</span><span class="chip">32A · 7kW</span><span class="chip">Rápido · 50kW</span>
+      </div>
+      <p style="font-size:11.5px;color:var(--label-3);margin:10px 2px 0;">Se usa para estimar el % en vivo mientras cargás (Etapa 12) — no afecta el registro final, que siempre se ajusta con el kWh real que cargues.</p>
+    </div>
+    <div class="row2">
+      <div class="afield">
+        <span class="lbl">kWh cargados</span>
+        <div class="box"><input value="18.4"><span class="unit">kWh</span></div>
+      </div>
+      <div class="afield">
+        <span class="lbl">Cargo fijo</span>
+        <div class="box"><input value="120"><span class="unit">$</span></div>
+      </div>
+    </div>
+    <button class="abtn" style="width:100%;">Guardar</button>
+  </div>
+
+  <h2 class="stage-h"><span class="idx">09</span><span class="title">Pantalla completa</span><span class="sub">Cargas — historial</span></h2>
+  <div class="device">
+    <div class="device-title">Cargas</div>
+    <div class="chip-row" style="margin-bottom:14px;">
+      <span class="chip on">Todas</span><span class="chip">Privada</span><span class="chip">Pública</span>
+    </div>
+    <div class="gpanel" style="margin-bottom:12px;">
+      <div class="month-head"><span class="m">Julio 2026</span><span class="t">$330 · 5 cargas</span></div>
+      <div class="swipe-demo" style="margin-bottom:2px;">
+        <div class="action"><span>Eliminar</span></div>
+        <div class="row-fg">
+          <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+          <span class="meta"><b>Dom 12 Jul · 01:24</b>Casa · Valle</span><span class="amt">$58</span>
+        </div>
+      </div>
+      <div class="list-row">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <span class="meta"><b>Mié 08 Jul · 00:00</b>Casa · Valle</span><span class="amt">$61</span>
+      </div>
+      <div class="list-row">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <span class="meta"><b>Lun 06 Jul · 22:10</b>UTE · Pública</span><span class="amt">$84</span>
+      </div>
+      <div class="list-row">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <span class="meta"><b>Vie 03 Jul · 23:40</b>Casa · Valle</span><span class="amt">$52</span>
+      </div>
+    </div>
+    <div class="gpanel">
+      <div class="month-head"><span class="m">Junio 2026</span><span class="t">$298 · 6 cargas</span></div>
+      <div class="list-row">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <span class="meta"><b>Mar 30 Jun · 23:15</b>Casa · Valle</span><span class="amt">$49</span>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="stage-h"><span class="idx">10</span><span class="title">Pantalla completa</span><span class="sub">Vehículo</span></h2>
+  <div class="device">
+    <div class="device-title">Vehículo</div>
+    <div class="gpanel grid-bg" style="margin-bottom:14px;">
+      <div class="tick"></div>
+      <div class="readout-hero">
+        <div class="l">Consumo real</div>
+        <div class="n">14.2<span class="unit">kWh/100km</span></div>
+        <div class="s">Autonomía estimada · 380 km</div>
+      </div>
+    </div>
+    <div class="anim-card gauge-dome" style="margin-bottom:14px;padding:20px;">
+      <div class="dome-shine"></div>
+      <div class="needle-demo">
+        <svg width="180" height="100" viewBox="0 0 180 100">
+          <path d="M20 90 A70 70 0 0 1 160 90" fill="none" stroke="var(--hairline)" stroke-width="3"/>
+          <line class="needle" x1="90" y1="90" x2="90" y2="24" stroke="var(--sys-orange)" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="90" cy="90" r="6" fill="var(--sys-orange)"/>
+        </svg>
+      </div>
+      <div class="cap">Autonomía sobre 60 kWh útiles</div>
+    </div>
+    <div class="gpanel">
+      <div class="demo-label" style="margin-bottom:4px;">Ficha técnica</div>
+      <div class="setting-row"><span>Marca y modelo</span><span style="color:var(--label-2);">GAC Aion UT Max</span></div>
+      <div class="setting-row"><span>Batería</span><span style="color:var(--label-2);" class="mono">60 kWh</span></div>
+      <div class="setting-row"><span>Consumo homologado</span><span style="color:var(--label-2);" class="mono">135 Wh/km</span></div>
+    </div>
+  </div>
+
+  <h2 class="stage-h"><span class="idx">11</span><span class="title">Pantalla completa</span><span class="sub">Ajustes y Personalización</span></h2>
+  <div class="grid-cols3" style="align-items:start;">
+    <div class="device" style="max-width:100%;margin:0;">
+      <div class="device-title">Ajustes</div>
+      <div class="gpanel">
+        <div class="setting-row" style="border-top:none;"><span>Tarifas</span><span class="chev">›</span></div>
+        <div class="setting-row"><span>Notificaciones</span><span class="chev">›</span></div>
+        <div class="setting-row"><span>Tema</span><span class="chev">›</span></div>
+        <div class="setting-row"><span style="color:var(--sys-orange);font-weight:700;">Personalización</span><span class="chev">›</span></div>
+      </div>
+    </div>
+    <div class="device" style="max-width:100%;margin:0;grid-column:span 2;">
+      <div class="device-title">Personalización — Color</div>
+      <div class="gpanel" style="margin-bottom:12px;">
+        <div class="demo-label">Tono de acento</div>
+        <div class="hue-bar"><div class="knob" style="left:8%;background:var(--sys-orange);"></div></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:14px;">
+          <div style="width:44px;height:44px;border-radius:14px;background:var(--sys-orange);flex:0 0 auto;"></div>
+          <div style="font-size:12px;color:var(--label-3);">Contraste con texto: <b style="color:var(--sys-green);">AA · 5.2:1</b></div>
+        </div>
+      </div>
+      <div class="gpanel" style="margin-bottom:12px;">
+        <div class="demo-label" style="margin-bottom:10px;">Tipografía</div>
+        <div class="chip-row"><span class="chip">Compacta</span><span class="chip on">Estándar</span><span class="chip">Grande</span></div>
+      </div>
+      <div class="gpanel" style="margin-bottom:12px;">
+        <div class="demo-label" style="margin-bottom:10px;">Forma y contenedores</div>
+        <div class="chip-row"><span class="chip on">Plano</span><span class="chip">Redondeado</span></div>
+      </div>
+      <div class="gpanel">
+        <div class="setting-row" style="border-top:none;">
+          <span>Fondo animado (aurora)</span>
+          <div class="toggle-ios on"><div class="knob"></div></div>
+        </div>
+        <input type="range" class="slider-ios" min="0" max="100" value="30" style="margin-top:10px;">
+      </div>
+    </div>
+  </div>
+
+  <h2 class="stage-h"><span class="idx">12</span><span class="title">Motor de estimación</span><span class="sub">de dónde sale el % en vivo</span></h2>
+  <div class="plan-grid">
+    <div class="plan-card">
+      <div class="k">La fórmula base</div>
+      <p><code class="mono">kW = V × A × η</code> (η ≈ 0,92 en AC monofásico/trifásico). Ej.: 220V × 20A × 0,92 ≈ <b style="color:var(--label);">4,05 kW</b>. Los kWh acumulados son simplemente <code class="mono">kW × horas transcurridas</code> — una recta.</p>
+    </div>
+    <div class="plan-card">
+      <div class="k">Por qué no es lineal</div>
+      <p>Esa recta solo vale hasta ~80% de batería. Litio carga en <b style="color:var(--label);">CC/CV</b>: después del 80% el cargador baja la corriente para no forzar la celda, y la curva se achata — por eso el simulador de la Etapa 07 ahora frena cerca del final.</p>
+    </div>
+    <div class="plan-card">
+      <div class="k">Calibrado con tu historial</div>
+      <p>En vez de confiar en el amperaje nominal (optimista), la app recalcula <b style="color:var(--sys-green);">η real</b> mirando cuántos kWh terminaron entregándose de verdad en tus cargas pasadas en ese mismo cargador. Más cargas iguales → estimado más preciso.</p>
+    </div>
+  </div>
+  <div class="gpanel">
+    <div class="demo-label" style="margin-bottom:8px;">Teórico (nameplate) vs. calibrado con tu historial — mismo cargador, 20A</div>
+    <div class="compare-chart">
+      <svg viewBox="0 0 380 130" preserveAspectRatio="none">
+        <line class="axis" x1="0" y1="110" x2="380" y2="110"/>
+        <polyline class="theo" points="0,108 60,90 120,68 180,46 240,26 300,10 340,4" vector-effect="non-scaling-stroke"/>
+        <polyline class="real" points="0,108 60,92 120,72 180,52 240,36 280,24 320,14 360,6" vector-effect="non-scaling-stroke"/>
+      </svg>
+    </div>
+    <div class="compare-legend">
+      <span><i class="ld" style="background:var(--label-3);border-top:2px dashed var(--label-3);height:0;"></i>Teórico · dice que termina a las 3:00 h</span>
+      <span><i class="ld" style="background:var(--sys-orange);"></i>Calibrado (12 cargas previas) · termina real a las 3:24 h</span>
+    </div>
+  </div>
+
+  <h2 class="stage-h"><span class="idx">13</span><span class="title">Widgets de pantalla de inicio</span><span class="sub">pila cargándose y velocímetro — con bandas por fase</span></h2>
+  <p class="page-intro" style="margin-bottom:26px;">Nada de anillos abstractos: una <b>pila</b> que se llena de verdad y un <b>velocímetro</b> cuya aguja sube, los dos con <b>bandas de color por fase</b> — no un degradé cualquiera, sino las mismas 3 fases físicas de la Etapa 12 (arranque, carga rápida CC, final CV). Ojo: en un widget real de WidgetKit esto no anima continuo — iOS actualiza en topes de tiempo (timeline), no en vivo como una web. Acá se anima para mostrar el concepto con claridad.</p>
+  <div class="grid-cols3">
+    <div class="anim-card">
+      <div class="widget-frame small">
+        <div class="wtitle"><span>Carga EV</span><span>●</span></div>
+        <div class="pila-wrap">
+          <div class="pila"><div class="fill"></div></div>
+          <div class="phase-label"><span class="p1">Arrancando</span><span class="p2">Carga rápida</span><span class="p3">Finalizando</span></div>
+        </div>
+        <div class="weta">Listo en <b>1h 40m</b></div>
+      </div>
+      <div class="cap">Pequeño — pila real llenándose, el color cambia solo al cruzar cada banda de fase</div>
+    </div>
+    <div class="anim-card">
+      <div class="widget-frame medium">
+        <div class="wtitle"><span>Cargando en Casa · 20A</span><span style="color:var(--sys-green);">Valle</span></div>
+        <div style="display:flex;align-items:center;gap:14px;flex:1;">
+          <div class="gauge-widget" style="width:110px;flex:0 0 auto;">
+            <svg viewBox="0 0 180 100">
+              <path class="zone-red" d="M20 90 A70 70 0 0 1 27.6 58.2" fill="none" stroke-width="7"/>
+              <path class="zone-orange" d="M27.6 58.2 A70 70 0 0 1 152.4 58.2" fill="none" stroke-width="7"/>
+              <path class="zone-green" d="M152.4 58.2 A70 70 0 0 1 160 90" fill="none" stroke-width="7"/>
+              <line class="needle" x1="90" y1="90" x2="90" y2="26" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="90" cy="90" r="5" fill="#fff"/>
+            </svg>
+          </div>
+          <div style="flex:1;">
+            <div class="mono" style="font-size:24px;font-weight:700;">17.8<span style="font-size:12px;color:var(--label-3);font-weight:500;"> / 27.4 kWh</span></div>
+            <div class="sim-progress-track" style="margin:6px 0 0;"><div class="sim-progress-fill" style="width:65%;"></div></div>
+          </div>
+        </div>
+        <div class="weta">Listo ~23:40 · calibrado con 12 cargas en Casa</div>
+      </div>
+      <div class="cap">Mediano — velocímetro con las 3 zonas fijas en la pista, aguja que sube con la carga</div>
+    </div>
+    <div class="anim-card">
+      <div class="widget-frame lock">
+        <div class="pila mono" style="width:34px;height:60px;"><div class="fill"></div></div>
+      </div>
+      <div class="cap">Pantalla bloqueada — misma pila, pero monocroma: es una regla real de iOS, los widgets de lock screen solo usan un tinte</div>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <div class="k">Qué cambió, concretamente</div>
+    <p><b>Se fue:</b> el bracket duro rodeando cada panel, el `[ BOTÓN ]` con corchetes de texto, el flicker tipo CRT, la barra de interruptores rígida, la paleta ámbar/verde inventada, el mayúsculas-siempre.</p>
+    <p><b>Se quedó:</b> el resplandor de dos colores detrás de los números clave, los números en monoespaciado, el punto pulsante de "en vivo", la aguja de galga para la autonomía — el corazón del concepto "instrumento" sigue ahí, ahora como un detalle sutil (la muescita naranja en la esquina de cada panel) en vez de todo el lenguaje visual.</p>
+    <p>Se siente mucho más cercano a una app real de Apple (Salud, Wallet, Clima) que a un panel de laboratorio — que es exactamente lo que pediste.</p>
+    <p><b>Momentos inmersivos:</b> una <b>Dynamic Island</b> con la carga en curso (compacta y expandida, el uso más natural de esa función en una app así), una <b>onda de corriente en vivo</b> en Inicio, <b>swipe-to-delete</b> real en las lecturas, una <b>cúpula de vidrio</b> sobre la aguja de galga, una <b>confirmación</b> tipo check en vez de un toast plano, y partículas de luz que derivan de fondo.</p>
+    <p><b>Lo nuevo de esta vuelta — acciones que se accionan solas:</b> un <b>simulador tocable</b> del ciclo completo de una carga (Etapa 07): al iniciar, la Dynamic Island "energiza" apareciendo con un resorte; mientras carga, el kWh acumulado sube dígito a dígito en vivo (mismo mecanismo de rueda que el contador real); al completar, la Live Activity se colapsa con un fundido y aparece el check de confirmación — un ciclo entero con causa y efecto, no una animación de loop pasivo. Además, una pastilla de franja horaria que muta de color sola (Valle → Punta) para mostrar que la app "sabe" en qué momento del día estás sin que la abras.</p>
+    <p><b>Pantallas que faltaban, ahora completas:</b> <b>Nueva carga</b> (con el banner de borrador recuperado, el selector Privada/Pública, y los chips de red/variante ya con el lenguaje de materiales nuevo), <b>Cargas</b> (historial agrupado por mes, con swipe-to-delete), <b>Vehículo</b> (consumo, cúpula de galga para autonomía, ficha técnica) y <b>Ajustes + Personalización</b> (lista de ajustes y el detalle de Color/Tipografía/Forma/Fondo animado con los controles nuevos: segmented control, chips, toggle y slider estilo iOS).</p>
+    <p><b>Motor de estimación (Etapa 12) y widgets (Etapa 13):</b> el % en vivo sale de potencia teórica (V×A×η) corregida por la curva CC/CV real (se achata después del 80%) y calibrada con tu propio historial de cargas en ese mismo cargador — por eso el simulador de la Etapa 07 ahora frena cerca del final en vez de terminar de golpe. Los widgets llevan esa misma física a la forma, no a un anillo abstracto: una <b>pila</b> que se llena de verdad (pequeño y lock screen, este último monocromo por regla real de iOS) y un <b>velocímetro</b> con 3 zonas fijas en la pista — rojo/naranja/verde según la fase física real, no un degradé decorativo (mediano). El color de la pila y la posición de la aguja cambian de banda exactamente en los mismos puntos (15% y 85%) que la curva CC/CV de la Etapa 12.</p>
+  </div>
+</div>
+
+<script>
+  (function spawnParticles() {
+    const colors = ['255,159,10', '48,209,88'];
+    for (let i = 0; i < 22; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      const size = 2 + Math.random() * 3;
+      const color = colors[i % 2];
+      p.style.width = size + 'px';
+      p.style.height = size + 'px';
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.top = 40 + Math.random() * 55 + 'vh';
+      p.style.background = `rgba(${color}, 0.8)`;
+      p.style.setProperty('--dx', (Math.random() * 40 - 20) + 'px');
+      p.style.setProperty('--pop', String(0.3 + Math.random() * 0.4));
+      p.style.animationDuration = (8 + Math.random() * 10) + 's';
+      p.style.animationDelay = (Math.random() * 10) + 's';
+      document.body.appendChild(p);
+    }
+  })();
+
+  function renderDigit(el, text) {
+    el.innerHTML = '';
+    for (const ch of text) {
+      if (/[0-9]/.test(ch)) {
+        const wrap = document.createElement('span');
+        wrap.className = 'digit-wrap';
+        const track = document.createElement('span');
+        track.className = 'digit-track';
+        for (let d = 0; d <= 9; d++) {
+          const div = document.createElement('div');
+          div.textContent = String(d);
+          track.appendChild(div);
+        }
+        wrap.appendChild(track);
+        el.appendChild(wrap);
+        const digit = Number(ch);
+        requestAnimationFrame(() => { track.style.transform = 'translateY(-' + (digit * 1.15) + 'em)'; });
+      } else {
+        const span = document.createElement('span');
+        span.textContent = ch;
+        el.appendChild(span);
+      }
+    }
+  }
+  renderDigit(document.getElementById('digitDemo'), '$330');
+
+  /* controles genéricos, reusados en todas las pantallas nuevas */
+  document.querySelectorAll('.segmented').forEach((seg) => {
+    const segs = seg.querySelectorAll('.seg');
+    segs.forEach((s, i) => {
+      s.addEventListener('click', () => {
+        segs.forEach((x) => x.classList.remove('on'));
+        s.classList.add('on');
+        seg.dataset.sel = String(i);
+      });
+    });
+  });
+  document.querySelectorAll('.chip-row').forEach((row) => {
+    row.querySelectorAll('.chip').forEach((c) => {
+      c.addEventListener('click', () => {
+        row.querySelectorAll('.chip').forEach((x) => x.classList.remove('on'));
+        c.classList.add('on');
+      });
+    });
+  });
+  document.querySelectorAll('.toggle-ios').forEach((t) => {
+    t.addEventListener('click', () => t.classList.toggle('on'));
+  });
+  document.querySelectorAll('.draft-banner .x').forEach((x) => {
+    x.addEventListener('click', () => { x.closest('.draft-banner').style.display = 'none'; });
+  });
+
+  /* simulador del ciclo completo — Etapa 07 */
+  (function chargeSim() {
+    const btn = document.getElementById('simBtn');
+    const label = document.getElementById('simLabel');
+    const island = document.getElementById('simIsland');
+    const fill = document.getElementById('simFill');
+    const kwhEl = document.getElementById('simKwh');
+    const check = document.getElementById('simCheck');
+    const la = document.getElementById('simLA');
+    if (!btn) return;
+    let running = false;
+    const total = 27.4;
+
+    btn.addEventListener('click', () => {
+      if (running) return;
+      running = true;
+      btn.style.opacity = '0.5';
+      check.style.display = 'none';
+      la.classList.remove('collapsing');
+      la.style.display = 'block';
+      island.style.display = 'flex';
+      island.classList.remove('energize');
+      void island.offsetWidth;
+      island.classList.add('energize');
+      fill.style.width = '0%';
+      kwhEl.textContent = '0.0';
+      label.textContent = 'Cargando en Casa · 20A · calibrado con 12 cargas previas';
+
+      let pct = 0;
+      const timer = setInterval(() => {
+        pct += pct < 80 ? 2.4 : 0.7; /* CC hasta 80%, después CV: el cargador achata la curva */
+        const p = Math.min(pct, 100);
+        fill.style.width = p + '%';
+        kwhEl.textContent = (total * p / 100).toFixed(1);
+        if (p >= 80 && p < 80.8) { label.textContent = 'Frenando cerca del final (curva CC/CV real)'; }
+        if (pct >= 100) {
+          clearInterval(timer);
+          label.textContent = 'Carga completa';
+          setTimeout(() => {
+            la.classList.add('collapsing');
+            island.style.display = 'none';
+            setTimeout(() => {
+              la.style.display = 'none';
+              check.style.display = 'block';
+              label.textContent = '¡Guardado! 27.4 kWh · $67';
+              running = false;
+              btn.style.opacity = '1';
+              btn.textContent = '↻ Repetir simulación';
+            }, 450);
+          }, 700);
+        }
+      }, 90);
+    });
+  })();
+</script>

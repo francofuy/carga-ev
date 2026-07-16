@@ -49,7 +49,15 @@ siempre ni ser accesibles desde otra cuenta):
 
 ## Decisiones clave y por qué (para no repreguntarlas ni revertirlas sin querer)
 
-- **PWA en vez de app nativa**: el usuario no tiene Mac/Xcode disponible.
+- **PWA en vez de app nativa**: el usuario no tiene Mac/Xcode disponible. Investigado (2026-07-15):
+  SÍ existe un camino 100% gratis sin comprar/rentar Mac — Codemagic (cloud build en Mac M2, 500
+  min/mes gratis) compila y firma un `.ipa` a partir de un repo Capacitor; AltStore/Sideloadly lo
+  instalan en el iPhone con un Apple ID gratuito (re-firma cada 7 días sin cuenta paga). Firma
+  automática de Codemagic vía App Store Connect API key requiere Developer Program pago ($99/año);
+  con Apple ID gratis la firma es manual (cert/provisioning generados a mano, no vía Xcode). Queda
+  como **idea guardada, no aplicada** — requeriría envolver la PWA con Capacitor + escribir una
+  Widget Extension en Swift para Live Activities, un proyecto aparte bastante más grande que el
+  actual.
 - **`opfs-sahpool` en vez del VFS `opfs` estándar**: no exige headers `Cross-Origin-Opener/Embedder-Policy`
   ni un hosting especial — funciona en cualquier estático (GitHub Pages incluido).
 - **SQLite corre en un Worker, no en el hilo principal**: Safari (a diferencia de Chrome) solo
