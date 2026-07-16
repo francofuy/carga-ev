@@ -4,6 +4,7 @@ import type { Charge, NewCharge, PeriodStats, MonthlyTotal, RealConsumption } fr
 import type { Vehicle } from './vehicle';
 import type { AppSettings } from './settings';
 import type { BackupData } from './backup';
+import type { ActiveCharge } from './active-charge';
 
 export function getStatsSince(sinceIso: string): Promise<PeriodStats> {
   return callDb('getStatsSince', { sinceIso });
@@ -39,6 +40,18 @@ export function getVehicle(): Promise<Vehicle | null> {
 
 export function upsertVehicle(vehicle: Vehicle): Promise<void> {
   return callDb('upsertVehicle', { vehicle });
+}
+
+export function getActiveCharge(): Promise<ActiveCharge | null> {
+  return callDb('getActiveCharge');
+}
+
+export function upsertActiveCharge(activeCharge: ActiveCharge): Promise<void> {
+  return callDb('upsertActiveCharge', { activeCharge });
+}
+
+export function deleteActiveCharge(): Promise<void> {
+  return callDb('deleteActiveCharge');
 }
 
 export function getSettings(): Promise<AppSettings> {

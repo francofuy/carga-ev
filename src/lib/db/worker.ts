@@ -9,6 +9,7 @@ import type { OpfsSAHPoolDatabase } from '@sqlite.org/sqlite-wasm';
 import { SCHEMA_SQL, SETTINGS_KEYS } from './schema';
 import { UTE_2026_RATES, DEFAULT_PUNTA_START_HOUR } from '../tariff';
 import { getVehicle, upsertVehicle, deleteVehicle } from './vehicle';
+import { getActiveCharge, upsertActiveCharge, deleteActiveCharge, type ActiveCharge } from './active-charge';
 import {
   insertCharge, updateCharge, listCharges, deleteCharge, deleteAllCharges, restoreCharge, getStatsSince,
   getMonthlyTotals, getRealConsumption,
@@ -43,7 +44,12 @@ async function initDb(): Promise<OpfsSAHPoolDatabase> {
 
 /** `CREATE TABLE IF NOT EXISTS` no agrega columnas a una tabla que ya existe en el dispositivo — así que las columnas nuevas se agregan acá, ignorando el error si ya estaban. */
 function migrateSchema(db: OpfsSAHPoolDatabase): void {
-  for (const stmt of ['ALTER TABLE charges ADD COLUMN fixed_fee REAL', 'ALTER TABLE charges ADD COLUMN network TEXT']) {
+  for (const stmt of [
+    'ALTER TABLE charges ADD COLUMN fixed_fee REAL',
+    'ALTER TABLE charges ADD COLUMN network TEXT',
+    'ALTER TABLE charges ADD COLUMN start_pct REAL',
+    'ALTER TABLE charges ADD COLUMN end_pct REAL',
+  ]) {
     try {
       db.exec(stmt);
     } catch {
@@ -61,6 +67,8 @@ function seedDefaultSettings(db: OpfsSAHPoolDatabase): void {
     [SETTINGS_KEYS.notifBackupEnabled]: '1',
     [SETTINGS_KEYS.theme]: 'auto',
     [SETTINGS_KEYS.accentColor]: '#1F8FE0',
+    [SETTINGS_KEYS.homeChargerAmps]: '32',
+    [SETTINGS_KEYS.homeChargerVolts]: '220',
   };
   for (const [key, value] of Object.entries(defaults)) {
     db.exec('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)', { bind: [key, value] });
@@ -120,6 +128,20 @@ const handlers: Record<string, (args: never) => Promise<unknown>> = {
     upsertVehicle(db, args.vehicle);
     return true;
   },
+  async getActiveCharge() {
+    const db = await getDb();
+    return getActiveCharge(db);
+  },
+  async upsertActiveCharge(args: { activeCharge: ActiveCharge }) {
+    const db = await getDb();
+    upsertActiveCharge(db, args.activeCharge);
+    return true;
+  },
+  async deleteActiveCharge() {
+    const db = await getDb();
+    deleteActiveCharge(db);
+    return true;
+  },
   async getSettings() {
     const db = await getDb();
     return getSettings(db);
@@ -173,6 +195,10 @@ function keyToSettingName(camelKey: string): string {
     notifBackupEnabled: 'notif_backup_enabled',
     theme: 'theme',
     accentColor: 'accent_color',
+    homeChargerAmps: 'home_charger_amps',
+    homeChargerVolts: 'home_charger_volts',
+    homeLat: 'home_lat',
+    homeLng: 'home_lng',
   };
   return map[camelKey] ?? camelKey;
 }

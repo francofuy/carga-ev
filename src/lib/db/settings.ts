@@ -13,6 +13,12 @@ export interface AppSettings {
   theme: 'auto' | 'light' | 'dark';
   accentColor: string;
   personalizacion: PersonalizacionConfig;
+  /** Amperaje/voltaje reales del cargador de Casa (ej. 24A/226V) — usados por src/lib/estimation.ts para calcular kW. */
+  homeChargerAmps: number;
+  homeChargerVolts: number;
+  /** Ubicación de Casa para el futuro aviso de geofencing — null hasta que el usuario la guarde una vez. */
+  homeLat: number | null;
+  homeLng: number | null;
 }
 
 /** Si ya existe `personalizacion` guardada, se usa tal cual (con merge de defaults por si se agregó un campo nuevo). Si no, se migra una única vez desde el `accentColor` hex del viejo sistema de 5 swatches, para no perder el color elegido. */
@@ -44,6 +50,10 @@ export function getSettings(db: OpfsSAHPoolDatabase): AppSettings {
     theme: (map[SETTINGS_KEYS.theme] as AppSettings['theme']) ?? 'auto',
     accentColor,
     personalizacion: resolvePersonalizacion(map[SETTINGS_KEYS.personalizacion], accentColor),
+    homeChargerAmps: Number(map[SETTINGS_KEYS.homeChargerAmps]) || 0,
+    homeChargerVolts: Number(map[SETTINGS_KEYS.homeChargerVolts]) || 0,
+    homeLat: map[SETTINGS_KEYS.homeLat] ? Number(map[SETTINGS_KEYS.homeLat]) : null,
+    homeLng: map[SETTINGS_KEYS.homeLng] ? Number(map[SETTINGS_KEYS.homeLng]) : null,
   };
 }
 

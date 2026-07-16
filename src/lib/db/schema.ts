@@ -31,6 +31,15 @@ CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS active_charge (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  mode TEXT NOT NULL CHECK (mode IN ('scheduled','live')),
+  start_at TEXT NOT NULL,
+  target_stop_at TEXT NOT NULL,
+  start_pct REAL NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `;
 
 export const SETTINGS_KEYS = {
@@ -42,4 +51,8 @@ export const SETTINGS_KEYS = {
   theme: 'theme',
   accentColor: 'accent_color',
   personalizacion: 'personalizacion',
+  homeChargerAmps: 'home_charger_amps',
+  homeChargerVolts: 'home_charger_volts',
+  homeLat: 'home_lat',
+  homeLng: 'home_lng',
 } as const;

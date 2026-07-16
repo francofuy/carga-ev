@@ -10,6 +10,9 @@ export interface NewHomeCharge {
   endAt: Date;
   kwh: number;
   odometerKm: number | null;
+  /** % de batería al iniciar/terminar — decimal real (24.7, no redondeado), null si vino del modo rápido sin ese dato. */
+  startPct?: number | null;
+  endPct?: number | null;
 }
 export interface NewPublicCharge {
   location: 'public';
@@ -37,6 +40,8 @@ export interface Charge {
   llanoKwh: number;
   puntaKwh: number;
   createdAt: string;
+  startPct: number | null;
+  endPct: number | null;
 }
 
 interface ChargeRow {
@@ -54,6 +59,8 @@ interface ChargeRow {
   breakdown_llano_kwh: number;
   breakdown_punta_kwh: number;
   created_at: string;
+  start_pct: number | null;
+  end_pct: number | null;
 }
 
 function fromRow(row: ChargeRow): Charge {
@@ -72,6 +79,8 @@ function fromRow(row: ChargeRow): Charge {
     llanoKwh: row.breakdown_llano_kwh,
     puntaKwh: row.breakdown_punta_kwh,
     createdAt: row.created_at,
+    startPct: row.start_pct,
+    endPct: row.end_pct,
   };
 }
 
@@ -85,12 +94,15 @@ export function insertCharge(
   let cost: number, valleKwh: number, llanoKwh: number, puntaKwh: number;
   let startAt: string | null = null, endAt: string | null = null, pricePerKwh: number | null = null;
   let fixedFee: number | null = null, network: string | null = null;
+  let startPct: number | null = null, endPct: number | null = null;
 
   if (input.location === 'home') {
     const b = computeHomeChargeCost(input.startAt, input.endAt, input.kwh, rates, puntaStartHour);
     cost = b.total; valleKwh = b.valleKwh; llanoKwh = b.llanoKwh; puntaKwh = b.puntaKwh;
     startAt = input.startAt.toISOString();
     endAt = input.endAt.toISOString();
+    startPct = input.startPct ?? null;
+    endPct = input.endPct ?? null;
   } else {
     cost = computePublicChargeCost(input.pricePerKwh, input.kwh, input.fixedFee ?? 0);
     valleKwh = 0; llanoKwh = 0; puntaKwh = 0;
@@ -102,9 +114,9 @@ export function insertCharge(
   db.exec(
     `INSERT INTO charges
        (location, start_at, end_at, kwh, odometer_km, price_per_kwh, fixed_fee, network, cost,
-        breakdown_valle_kwh, breakdown_llano_kwh, breakdown_punta_kwh)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    { bind: [input.location, startAt, endAt, input.kwh, input.odometerKm, pricePerKwh, fixedFee, network, cost, valleKwh, llanoKwh, puntaKwh] },
+        breakdown_valle_kwh, breakdown_llano_kwh, breakdown_punta_kwh, start_pct, end_pct)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    { bind: [input.location, startAt, endAt, input.kwh, input.odometerKm, pricePerKwh, fixedFee, network, cost, valleKwh, llanoKwh, puntaKwh, startPct, endPct] },
   );
 
   const rows = queryRows<ChargeRow>(db, 'SELECT * FROM charges WHERE id = last_insert_rowid()');
@@ -126,12 +138,15 @@ export function updateCharge(
   let cost: number, valleKwh: number, llanoKwh: number, puntaKwh: number;
   let startAt: string | null = null, endAt: string | null = null, pricePerKwh: number | null = null;
   let fixedFee: number | null = null, network: string | null = null;
+  let startPct: number | null = null, endPct: number | null = null;
 
   if (input.location === 'home') {
     const b = computeHomeChargeCost(input.startAt, input.endAt, input.kwh, rates, puntaStartHour);
     cost = b.total; valleKwh = b.valleKwh; llanoKwh = b.llanoKwh; puntaKwh = b.puntaKwh;
     startAt = input.startAt.toISOString();
     endAt = input.endAt.toISOString();
+    startPct = input.startPct ?? null;
+    endPct = input.endPct ?? null;
   } else {
     cost = computePublicChargeCost(input.pricePerKwh, input.kwh, input.fixedFee ?? 0);
     valleKwh = 0; llanoKwh = 0; puntaKwh = 0;
@@ -143,9 +158,9 @@ export function updateCharge(
   db.exec(
     `UPDATE charges SET
        location = ?, start_at = ?, end_at = ?, kwh = ?, odometer_km = ?, price_per_kwh = ?, fixed_fee = ?, network = ?, cost = ?,
-       breakdown_valle_kwh = ?, breakdown_llano_kwh = ?, breakdown_punta_kwh = ?
+       breakdown_valle_kwh = ?, breakdown_llano_kwh = ?, breakdown_punta_kwh = ?, start_pct = ?, end_pct = ?
      WHERE id = ?`,
-    { bind: [input.location, startAt, endAt, input.kwh, input.odometerKm, pricePerKwh, fixedFee, network, cost, valleKwh, llanoKwh, puntaKwh, id] },
+    { bind: [input.location, startAt, endAt, input.kwh, input.odometerKm, pricePerKwh, fixedFee, network, cost, valleKwh, llanoKwh, puntaKwh, startPct, endPct, id] },
   );
 
   const rows = queryRows<ChargeRow>(db, 'SELECT * FROM charges WHERE id = ?', [id]);
@@ -178,12 +193,12 @@ export function restoreCharge(db: OpfsSAHPoolDatabase, c: Omit<Charge, 'id'>): v
   db.exec(
     `INSERT INTO charges
        (location, start_at, end_at, kwh, odometer_km, price_per_kwh, fixed_fee, network, cost,
-        breakdown_valle_kwh, breakdown_llano_kwh, breakdown_punta_kwh, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        breakdown_valle_kwh, breakdown_llano_kwh, breakdown_punta_kwh, created_at, start_pct, end_pct)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     {
       bind: [
         c.location, c.startAt, c.endAt, c.kwh, c.odometerKm, c.pricePerKwh, c.fixedFee, c.network, c.cost,
-        c.valleKwh, c.llanoKwh, c.puntaKwh, c.createdAt,
+        c.valleKwh, c.llanoKwh, c.puntaKwh, c.createdAt, c.startPct, c.endPct,
       ],
     },
   );

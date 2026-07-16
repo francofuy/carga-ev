@@ -4,6 +4,7 @@ import type { AppSettings } from '../lib/db/settings';
 import type { BackupData } from '../lib/db/backup';
 import { notifyChargesUpdated } from '../lib/bus';
 import { applyTheme } from '../lib/theme';
+import { chargerKw } from '../lib/estimation';
 import {
   applyPersonalizacion,
   reapplyAccentInkForTheme,
@@ -23,6 +24,10 @@ const SETTING_KEY_MAP: Record<keyof AppSettings, string> = {
   theme: 'theme',
   accentColor: 'accent_color',
   personalizacion: 'personalizacion',
+  homeChargerAmps: 'home_charger_amps',
+  homeChargerVolts: 'home_charger_volts',
+  homeLat: 'home_lat',
+  homeLng: 'home_lng',
 };
 
 function bodyHtml(): string {
@@ -66,6 +71,18 @@ function bodyHtml(): string {
       </div>
     </div>
 
+    <div class="section-title">Carga en Casa</div>
+    <div class="settings-group">
+      <div class="settings-row" id="rowChargerData" style="cursor:pointer;">
+        <span class="lbl">Datos de carga en Casa</span>
+        <span style="color:var(--text-muted);margin-left:6px;">›</span>
+      </div>
+      <div class="settings-row" id="rowHomeLocation" style="cursor:pointer;">
+        <span class="lbl">Ubicación de Casa</span>
+        <span style="color:var(--text-muted);margin-left:6px;">›</span>
+      </div>
+    </div>
+
     <div class="section-title">Datos</div>
     <div class="alert-banner" id="dataMsg"></div>
     <div class="settings-group">
@@ -74,6 +91,42 @@ function bodyHtml(): string {
       <div class="settings-row destructive" id="rowWipe"><span class="lbl">Borrar todos los datos</span></div>
     </div>
     <input type="file" id="importFile" accept="application/json" style="display:none;">
+
+    <div class="sheet-overlay" id="hcOverlay">
+      <div class="sheet">
+        <div class="sheet-head">
+          <div class="sheet-title">Datos de carga en Casa</div>
+          <button class="sheet-cancel" id="hcClose">Cerrar</button>
+        </div>
+        <p style="font-size:calc(13px * var(--font-scale));color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">
+          Necesarios para que "Programar" pueda estimar cuánto vas a cargar — se sacan de la
+          pantalla de tu propio cargador.
+        </p>
+        <div class="settings-row"><span class="lbl">Amperaje</span><input class="val-input" id="hcAmps" type="number" step="1" min="0"><span>A</span></div>
+        <div class="settings-row"><span class="lbl">Voltaje</span><input class="val-input" id="hcVolts" type="number" step="1" min="0"><span>V</span></div>
+        <div class="settings-row" style="cursor:default;"><span class="lbl">Potencia estimada</span><span id="hcKwPreview" style="font-weight:700;">—</span></div>
+        <p style="font-size:calc(12px * var(--font-scale));color:var(--text-muted);margin:8px 0 0;line-height:1.5;">
+          Incluye un 0,92 de eficiencia (pérdidas típicas de carga en AC) — cada carga real que
+          confirmás en Casa termina de calibrar qué tan preciso es este número.
+        </p>
+      </div>
+    </div>
+
+    <div class="sheet-overlay" id="locOverlay">
+      <div class="sheet">
+        <div class="sheet-head">
+          <div class="sheet-title">Ubicación de Casa</div>
+          <button class="sheet-cancel" id="locClose">Cerrar</button>
+        </div>
+        <p style="font-size:calc(13px * var(--font-scale));color:var(--text-secondary);margin:0 0 16px;line-height:1.5;">
+          Se usa para avisarte cuando llegás y sugerirte programar la carga. Nunca se comparte —
+          vive solo en tu teléfono.
+        </p>
+        <div id="locState" style="margin-bottom:14px;"></div>
+        <button class="link-btn" id="locUseCurrent">Usar mi ubicación actual</button>
+        <div class="alert-banner" id="locMsg"></div>
+      </div>
+    </div>
 
     <div class="sheet-overlay" id="pznOverlay">
       <div class="sheet">
@@ -194,6 +247,85 @@ export const ajustesScreen: Screen = {
         reapplyAccentInkForTheme(pznConfig);
         await setSetting(SETTING_KEY_MAP.theme, value);
       })();
+    });
+
+    // ---- Datos de carga en Casa ----
+    const hcOverlay = body.querySelector<HTMLElement>('#hcOverlay')!;
+    const hcAmpsInput = body.querySelector<HTMLInputElement>('#hcAmps')!;
+    const hcVoltsInput = body.querySelector<HTMLInputElement>('#hcVolts')!;
+    const hcKwPreview = body.querySelector<HTMLElement>('#hcKwPreview')!;
+
+    hcAmpsInput.value = settings.homeChargerAmps ? String(settings.homeChargerAmps) : '';
+    hcVoltsInput.value = settings.homeChargerVolts ? String(settings.homeChargerVolts) : '';
+
+    function updateHcKwPreview(): void {
+      const amps = Number(hcAmpsInput.value) || 0;
+      const volts = Number(hcVoltsInput.value) || 0;
+      hcKwPreview.textContent = amps > 0 && volts > 0 ? `≈ ${chargerKw(amps, volts).toFixed(1)} kW` : '—';
+    }
+    updateHcKwPreview();
+
+    body.querySelector('#rowChargerData')!.addEventListener('click', () => hcOverlay.classList.add('open'));
+    body.querySelector('#hcClose')!.addEventListener('click', () => hcOverlay.classList.remove('open'));
+    hcOverlay.addEventListener('click', (e) => {
+      if (e.target === hcOverlay) hcOverlay.classList.remove('open');
+    });
+    hcAmpsInput.addEventListener('input', updateHcKwPreview);
+    hcVoltsInput.addEventListener('input', updateHcKwPreview);
+    hcAmpsInput.addEventListener('change', () => {
+      void setSetting(SETTING_KEY_MAP.homeChargerAmps, hcAmpsInput.value);
+    });
+    hcVoltsInput.addEventListener('change', () => {
+      void setSetting(SETTING_KEY_MAP.homeChargerVolts, hcVoltsInput.value);
+    });
+
+    // ---- Ubicación de Casa ----
+    const locOverlay = body.querySelector<HTMLElement>('#locOverlay')!;
+    const locStateEl = body.querySelector<HTMLElement>('#locState')!;
+    const locMsg = body.querySelector<HTMLElement>('#locMsg')!;
+    let homeLat = settings.homeLat;
+    let homeLng = settings.homeLng;
+
+    function renderLocState(): void {
+      locStateEl.innerHTML =
+        homeLat != null && homeLng != null
+          ? `<p style="font-size:calc(13px * var(--font-scale));color:var(--text);margin:0 0 6px;"><b>Guardada</b> · ${homeLat.toFixed(4)}, ${homeLng.toFixed(4)}</p><button class="link-btn" id="locClear" style="color:var(--critical);">Borrar ubicación</button>`
+          : `<p style="font-size:calc(13px * var(--font-scale));color:var(--text-secondary);margin:0;">Sin guardar todavía.</p>`;
+      locStateEl.querySelector<HTMLButtonElement>('#locClear')?.addEventListener('click', () => {
+        void (async () => {
+          homeLat = null;
+          homeLng = null;
+          await setSetting(SETTING_KEY_MAP.homeLat, '');
+          await setSetting(SETTING_KEY_MAP.homeLng, '');
+          renderLocState();
+        })();
+      });
+    }
+    renderLocState();
+
+    body.querySelector('#rowHomeLocation')!.addEventListener('click', () => locOverlay.classList.add('open'));
+    body.querySelector('#locClose')!.addEventListener('click', () => locOverlay.classList.remove('open'));
+    locOverlay.addEventListener('click', (e) => {
+      if (e.target === locOverlay) locOverlay.classList.remove('open');
+    });
+    body.querySelector('#locUseCurrent')!.addEventListener('click', () => {
+      if (!('geolocation' in navigator)) {
+        showBanner(locMsg, 'Este dispositivo no soporta geolocalización.', 'error');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          void (async () => {
+            homeLat = pos.coords.latitude;
+            homeLng = pos.coords.longitude;
+            await setSetting(SETTING_KEY_MAP.homeLat, String(homeLat));
+            await setSetting(SETTING_KEY_MAP.homeLng, String(homeLng));
+            renderLocState();
+            showBanner(locMsg, 'Ubicación guardada.', 'success');
+          })();
+        },
+        (err) => showBanner(locMsg, 'No se pudo obtener la ubicación: ' + err.message, 'error'),
+      );
     });
 
     // ---- Personalización ----

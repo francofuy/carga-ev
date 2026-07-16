@@ -5,8 +5,14 @@ import { bus, OPEN_EDIT_CHARGE, RESUME_DRAFT, notifyChargesUpdated, notifyDraftU
 import { sparkBurst } from '../lib/spark-burst';
 import { saveDraft, clearDraft, timeAgoLabel, type ChargeDraft } from '../lib/draft';
 import { getNetworkPrices, groupNetworkRows, pickDefaultVariant, type NetworkGroup, type NetworkVariant, type NetworkPriceSource } from '../lib/network-prices';
+import { upsertActiveCharge, listCharges } from '../lib/db/api';
+import { notifyActiveChargeUpdated } from '../lib/bus';
+import { chargerKw, estimateAtTime, computeCalibrationFactor } from '../lib/estimation';
+import { scheduleActiveChargeNotifications } from '../lib/notifications';
 
 type ChargeMode = 'kwh' | 'pct';
+type HomeFlow = 'programar' | 'rapido';
+type WhenChoice = 'ahora' | 'tarde';
 
 export function nuevaCargaMarkup(): string {
   return `
@@ -21,12 +27,34 @@ export function nuevaCargaMarkup(): string {
           <button class="sel" data-origin="home">Casa</button>
           <button data-origin="public">Público o trabajo</button>
         </div>
+        <div class="segmented sub" id="ncHomeFlowSeg" style="display:none;">
+          <button class="sel" data-flow="programar">Programar</button>
+          <button data-flow="rapido">Modo rápido</button>
+        </div>
         <div class="segmented sub" id="ncModeSeg">
           <button class="sel" data-mode="kwh">kWh</button>
           <button data-mode="pct" id="ncModePctBtn">% batería</button>
         </div>
         <div class="form-note" id="ncNoVehicleNote" style="display:none;">Configurá tu vehículo en la pestaña Vehículo para poder cargar por % de batería.</div>
         <div class="form-error" id="ncError"></div>
+
+        <div id="ncProgramarBlock" style="display:none;">
+          <div class="field"><label>Cargando a</label><div class="input" id="ncPowerRef" style="color:var(--text-secondary);">—</div></div>
+          <div class="segmented sub" id="ncWhenSeg">
+            <button class="sel" data-when="ahora">Ahora</button>
+            <button data-when="tarde">Más tarde</button>
+          </div>
+          <div class="field" id="ncEmpiezaField" style="display:none;"><label>Empieza a las</label><div class="input"><input type="time" id="ncEmpieza" value="00:00"></div></div>
+          <div class="field"><label>Batería al iniciar</label><div class="input"><input type="number" step="0.1" min="0" max="100" id="ncBateriaInicial" placeholder="0.0"><span class="unit">%</span></div></div>
+          <div class="field"><label>Corta a las</label><div class="input"><input type="time" id="ncCortaA" value="07:00"></div></div>
+          <div class="cost-preview" id="ncEstimateBox">
+            <div class="label" id="ncEstimateLabel">Estimado</div>
+            <div class="amount" id="ncEstimateValue">—</div>
+            <div class="breakdown" id="ncEstimateSub"></div>
+          </div>
+          <div class="form-note" id="ncEscapeLink" style="cursor:pointer;">¿Fue una carga rápida? <u>Anotar el resultado directo</u></div>
+        </div>
+        <div class="form-note" id="ncBackToProgramar" style="display:none;cursor:pointer;">‹ Volver a programar</div>
 
         <div id="ncFieldsHome">
           <div class="field"><label>Hora de inicio</label><div class="input"><input type="time" id="ncStart" value="22:00"></div></div>
@@ -81,7 +109,7 @@ export function nuevaCargaMarkup(): string {
           <div class="field"><label>Odómetro actual (opcional)</label><div class="input"><input type="number" step="1" min="0" id="ncOdoPublic" placeholder="km"><span class="unit">km</span></div></div>
         </div>
 
-        <div class="cost-preview">
+        <div class="cost-preview" id="ncCostPreview">
           <div class="label">Costo estimado</div>
           <div class="amount" id="ncAmount">$0</div>
           <div class="breakdown" id="ncBreakdown"></div>
@@ -114,6 +142,22 @@ function resolveChargeWindow(startTime: string, endTime: string, now: Date): { s
 
 function isoToTimeInput(iso: string): string {
   return new Date(iso).toTimeString().slice(0, 5);
+}
+
+/** Resuelve "HH:MM" a la próxima vez que ocurra esa hora — hoy si todavía no pasó, si no mañana. */
+function resolveFutureOrNowTime(timeStr: string, now: Date): Date {
+  const [h, m] = timeStr.split(':').map(Number);
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0, 0);
+  if (d.getTime() <= now.getTime()) d.setDate(d.getDate() + 1);
+  return d;
+}
+
+/** Resuelve "HH:MM" (hora de corte) relativo a un inicio ya conocido — mismo día si es posterior, si no al día siguiente. */
+function resolveStopTime(timeStr: string, start: Date): Date {
+  const [h, m] = timeStr.split(':').map(Number);
+  const d = new Date(start.getFullYear(), start.getMonth(), start.getDate(), h, m, 0, 0);
+  if (d.getTime() <= start.getTime()) d.setDate(d.getDate() + 1);
+  return d;
 }
 
 export function mountNuevaCarga(root: ParentNode): void {
@@ -175,10 +219,30 @@ export function mountNuevaCarga(root: ParentNode): void {
   const stripDeltaPublic = root.querySelector<HTMLElement>('#ncStripDeltaPublic')!;
   const computedKwhPublic = root.querySelector<HTMLElement>('#ncComputedKwhPublic')!;
 
+  const homeFlowSeg = root.querySelector<HTMLElement>('#ncHomeFlowSeg')!;
+  const programarBlock = root.querySelector<HTMLElement>('#ncProgramarBlock')!;
+  const backToProgramarLink = root.querySelector<HTMLElement>('#ncBackToProgramar')!;
+  const powerRefEl = root.querySelector<HTMLElement>('#ncPowerRef')!;
+  const whenSeg = root.querySelector<HTMLElement>('#ncWhenSeg')!;
+  const empiezaField = root.querySelector<HTMLElement>('#ncEmpiezaField')!;
+  const empiezaInput = root.querySelector<HTMLInputElement>('#ncEmpieza')!;
+  const bateriaInicialInput = root.querySelector<HTMLInputElement>('#ncBateriaInicial')!;
+  const cortaAInput = root.querySelector<HTMLInputElement>('#ncCortaA')!;
+  const estimateLabelEl = root.querySelector<HTMLElement>('#ncEstimateLabel')!;
+  const estimateValueEl = root.querySelector<HTMLElement>('#ncEstimateValue')!;
+  const estimateSubEl = root.querySelector<HTMLElement>('#ncEstimateSub')!;
+  const escapeLink = root.querySelector<HTMLElement>('#ncEscapeLink')!;
+  const costPreviewEl = root.querySelector<HTMLElement>('#ncCostPreview')!;
+
   let rates: TariffRates | null = null;
   let puntaStartHour = 19;
   let batteryKwh: number | null = null;
   let mode: ChargeMode = 'kwh';
+  let homeFlow: HomeFlow = 'programar';
+  let homeChargerAmps = 0;
+  let homeChargerVolts = 0;
+  let calibrationFactor = 1;
+  let calibrationSampleCount = 0;
   let editingId: number | null = null;
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
   let fixedFeeManualOpen = false;
@@ -344,16 +408,44 @@ export function mountNuevaCarga(root: ParentNode): void {
     errorEl.classList.add('show');
   }
 
+  function whenChoice(): WhenChoice {
+    return whenSeg.querySelector('.sel')?.getAttribute('data-when') === 'tarde' ? 'tarde' : 'ahora';
+  }
+
   function syncVisibility(): void {
     const isHome = origin() === 'home';
-    fieldsHome.style.display = isHome ? 'block' : 'none';
+    const isProgramar = isHome && homeFlow === 'programar';
+
+    homeFlowSeg.style.display = isHome ? 'flex' : 'none';
+    programarBlock.style.display = isProgramar ? 'block' : 'none';
+    backToProgramarLink.style.display = isHome && !isProgramar ? 'block' : 'none';
+    empiezaField.style.display = isProgramar && whenChoice() === 'tarde' ? 'block' : 'none';
+
+    // Modo rápido (kWh/%) y Público siguen igual que siempre — Programar reemplaza esa UI del todo para Casa.
+    fieldsHome.style.display = isHome && !isProgramar ? 'block' : 'none';
     fieldsPublic.style.display = isHome ? 'none' : 'block';
+    modeSeg.style.display = isProgramar ? 'none' : 'flex';
 
     const isPct = mode === 'pct';
-    kwhBlockHome.style.display = isHome && !isPct ? 'block' : 'none';
-    pctBlockHome.style.display = isHome && isPct ? 'block' : 'none';
+    kwhBlockHome.style.display = isHome && !isProgramar && !isPct ? 'block' : 'none';
+    pctBlockHome.style.display = isHome && !isProgramar && isPct ? 'block' : 'none';
     kwhBlockPublic.style.display = !isHome && !isPct ? 'block' : 'none';
     pctBlockPublic.style.display = !isHome && isPct ? 'block' : 'none';
+    costPreviewEl.style.display = isProgramar ? 'none' : 'block';
+    syncSaveButtonLabel();
+  }
+
+  /** El botón principal cambia de texto según el flujo — Programar/Ahora, Programar/Más tarde, o el guardar de siempre (modo rápido/público/edición). */
+  function syncSaveButtonLabel(): void {
+    if (editingId != null) {
+      saveBtn.textContent = 'Guardar cambios';
+      return;
+    }
+    if (origin() === 'home' && homeFlow === 'programar') {
+      saveBtn.textContent = whenChoice() === 'ahora' ? 'Empezar carga programada' : 'Programar carga';
+      return;
+    }
+    saveBtn.textContent = 'Guardar carga';
   }
 
   /** kWh = batería_kWh × (hasta% − desde%) / 100 — validado en Wireframe con el GAC Aion UT Max (60 kWh). */
@@ -442,6 +534,36 @@ export function mountNuevaCarga(root: ParentNode): void {
     }
   }
 
+  /** Recalcula el estimado en vivo del flujo Programar — física real (V×A×η) calibrada con el historial de Casa, nunca redondeada acá (solo al mostrar). */
+  function recalcProgramarEstimate(): void {
+    const startPctVal = parseFloat(bateriaInicialInput.value);
+    if (!batteryKwh || !cortaAInput.value || !isFinite(startPctVal)) {
+      estimateLabelEl.textContent = 'Estimado';
+      estimateValueEl.textContent = '—';
+      estimateSubEl.textContent = '';
+      return;
+    }
+    const now = new Date();
+    const tarde = whenChoice() === 'tarde';
+    if (tarde && !empiezaInput.value) {
+      estimateLabelEl.textContent = 'Estimado';
+      estimateValueEl.textContent = '—';
+      estimateSubEl.textContent = 'Falta la hora de inicio.';
+      return;
+    }
+    const start = tarde ? resolveFutureOrNowTime(empiezaInput.value, now) : now;
+    const stop = resolveStopTime(cortaAInput.value, start);
+    const nominalKw = chargerKw(homeChargerAmps, homeChargerVolts);
+    const { pct, kwhDelivered } = estimateAtTime(startPctVal, start, stop, nominalKw, batteryKwh, calibrationFactor);
+    estimateLabelEl.textContent = `Estimado para las ${cortaAInput.value}`;
+    estimateValueEl.textContent = `≈ ${Math.round(pct)}% · ${kwhDelivered.toFixed(1)} kWh`;
+    estimateSubEl.textContent = tarde
+      ? `No empieza a contar todavía — arranca a las ${empiezaInput.value}`
+      : calibrationSampleCount > 0
+        ? `Calibrado con ${calibrationSampleCount} carga${calibrationSampleCount === 1 ? '' : 's'} previa${calibrationSampleCount === 1 ? '' : 's'} en Casa`
+        : 'Empieza a contar ahora mismo';
+  }
+
   function resetForm(): void {
     editingId = null;
     titleEl.textContent = 'Nueva carga';
@@ -461,6 +583,12 @@ export function mountNuevaCarga(root: ParentNode): void {
     pctToPublic.value = '';
     mode = 'kwh';
     modeSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-mode') === 'kwh'));
+    homeFlow = 'programar';
+    homeFlowSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-flow') === 'programar'));
+    whenSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-when') === 'ahora'));
+    empiezaInput.value = '00:00';
+    bateriaInicialInput.value = '';
+    cortaAInput.value = '07:00';
     selectedGroupKey = null;
     selectedVariant = null;
     fixedFeeManualOpen = false;
@@ -474,14 +602,31 @@ export function mountNuevaCarga(root: ParentNode): void {
     amountEl.textContent = '$0';
     breakdownEl.innerHTML = '';
     syncVisibility();
+    recalcProgramarEstimate();
   }
 
   async function loadContext(): Promise<void> {
     try {
-      const [settings, vehicle] = await Promise.all([getSettings(), getVehicle()]);
+      const [settings, vehicle, homeCharges] = await Promise.all([getSettings(), getVehicle(), listCharges(200)]);
       rates = { valle: settings.tariffValle, llano: settings.tariffLlano, punta: settings.tariffPunta };
       puntaStartHour = settings.puntaStartHour;
       batteryKwh = vehicle?.batteryKwh ?? null;
+      homeChargerAmps = settings.homeChargerAmps;
+      homeChargerVolts = settings.homeChargerVolts;
+      const nominalKw = chargerKw(homeChargerAmps, homeChargerVolts);
+      powerRefEl.textContent = homeChargerAmps > 0 && homeChargerVolts > 0
+        ? `${homeChargerAmps}A · ${homeChargerVolts}V · ≈${nominalKw.toFixed(1)} kW`
+        : 'Configurá tu cargador en Ajustes';
+      if (batteryKwh) {
+        const calib = computeCalibrationFactor(
+          homeCharges.filter((c) => c.location === 'home'),
+          nominalKw,
+          batteryKwh,
+        );
+        calibrationFactor = calib.factor;
+        calibrationSampleCount = calib.sampleCount;
+      }
+      recalcProgramarEstimate();
       modePctBtn.disabled = !batteryKwh;
       noVehicleNote.style.display = batteryKwh ? 'none' : 'block';
     } catch (err) {
@@ -504,6 +649,9 @@ export function mountNuevaCarga(root: ParentNode): void {
 
     const isHome = charge.location === 'home';
     seg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-origin') === charge.location));
+    // Editar una carga ya guardada siempre usa el editor kWh/% de siempre — Programar es solo para crear una nueva.
+    homeFlow = 'rapido';
+    homeFlowSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-flow') === 'rapido'));
 
     if (isHome && charge.startAt && charge.endAt) {
       startInput.value = isoToTimeInput(charge.startAt);
@@ -535,6 +683,9 @@ export function mountNuevaCarga(root: ParentNode): void {
 
 /** Hay carga en curso con solo el "desde %" cargado (sin saber todavía con cuánto termina) — no exigir el rango completo para guardar el borrador, ver currentDraftSnapshot(). */
   function hasAnyMeaningfulInput(): boolean {
+    // Programar no genera borrador: su estado real y recuperable es la fila active_charge (recién
+    // se escribe al guardar), no un formulario a medio llenar — abandonarlo sin guardar no deja rastro.
+    if (origin() === 'home' && homeFlow === 'programar') return false;
     if (origin() === 'home') {
       return !!(kwhHomeInput.value || pctFromHome.value || pctToHome.value || odoHomeInput.value);
     }
@@ -602,6 +753,9 @@ export function mountNuevaCarga(root: ParentNode): void {
   async function openDraft(draft: ChargeDraft): Promise<void> {
     resetForm();
     seg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-origin') === draft.origin));
+    // Los borradores solo existen para el editor kWh/% de siempre — Programar no genera borradores (ver hasAnyMeaningfulInput).
+    homeFlow = 'rapido';
+    homeFlowSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-flow') === 'rapido'));
     mode = draft.mode;
     modeSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-mode') === draft.mode));
     startInput.value = draft.fields.start ?? startInput.value;
@@ -667,6 +821,7 @@ export function mountNuevaCarga(root: ParentNode): void {
       btn.classList.add('sel');
       syncVisibility();
       recalcPreview();
+      recalcProgramarEstimate();
     });
   });
 
@@ -681,6 +836,37 @@ export function mountNuevaCarga(root: ParentNode): void {
     });
   });
 
+  homeFlowSeg.querySelectorAll('button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      homeFlowSeg.querySelectorAll('button').forEach((b) => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      homeFlow = btn.getAttribute('data-flow') === 'rapido' ? 'rapido' : 'programar';
+      syncVisibility();
+      recalcPreview();
+      recalcProgramarEstimate();
+    });
+  });
+  escapeLink.addEventListener('click', () => {
+    homeFlow = 'rapido';
+    homeFlowSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-flow') === 'rapido'));
+    syncVisibility();
+    recalcPreview();
+  });
+  backToProgramarLink.addEventListener('click', () => {
+    homeFlow = 'programar';
+    homeFlowSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-flow') === 'programar'));
+    syncVisibility();
+    recalcProgramarEstimate();
+  });
+  whenSeg.querySelectorAll('button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      whenSeg.querySelectorAll('button').forEach((b) => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      syncVisibility();
+      recalcProgramarEstimate();
+    });
+  });
+
   fixedFeeToggle.addEventListener('click', () => {
     fixedFeeManualOpen = true;
     syncFixedFeeVisibility();
@@ -692,7 +878,57 @@ export function mountNuevaCarga(root: ParentNode): void {
     pctFromHome, pctToHome, pctFromPublic, pctToPublic, fixedFeeInput,
   ].forEach((el) => el.addEventListener('input', recalcPreview));
 
-  saveBtn.addEventListener('click', () => void handleSave());
+  [empiezaInput, bateriaInicialInput, cortaAInput].forEach((el) => el.addEventListener('input', recalcProgramarEstimate));
+
+  saveBtn.addEventListener('click', () => {
+    if (origin() === 'home' && homeFlow === 'programar' && editingId == null) void handleSaveProgramar();
+    else void handleSave();
+  });
+
+  async function handleSaveProgramar(): Promise<void> {
+    const startPctVal = parseFloat(bateriaInicialInput.value);
+    if (!isFinite(startPctVal) || startPctVal < 0 || startPctVal > 100) {
+      showError('Ingresá la batería al iniciar (0–100%).');
+      return;
+    }
+    if (!cortaAInput.value) {
+      showError('Ingresá a qué hora corta.');
+      return;
+    }
+    const tarde = whenChoice() === 'tarde';
+    if (tarde && !empiezaInput.value) {
+      showError('Ingresá a qué hora empieza.');
+      return;
+    }
+    const now = new Date();
+    const start = tarde ? resolveFutureOrNowTime(empiezaInput.value, now) : now;
+    const stop = resolveStopTime(cortaAInput.value, start);
+    if (stop.getTime() <= start.getTime()) {
+      showError('La hora de corte tiene que ser posterior al inicio.');
+      return;
+    }
+    showError(null);
+    saveBtn.disabled = true;
+    try {
+      await upsertActiveCharge({
+        mode: tarde ? 'scheduled' : 'live',
+        startAt: start.toISOString(),
+        targetStopAt: stop.toISOString(),
+        startPct: startPctVal,
+      });
+      notifyActiveChargeUpdated();
+      void scheduleActiveChargeNotifications(start, stop, cortaAInput.value);
+      close();
+      toastText.textContent = tarde ? 'Carga programada guardada' : 'Carga programada — empezó a contar';
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : String(err));
+    } finally {
+      saveBtn.disabled = false;
+    }
+  }
 
   async function handleSave(): Promise<void> {
     if (!rates) {

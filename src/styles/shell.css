@@ -453,7 +453,6 @@
 }
 
 /* Personalización — "Íconos": relleno sutil bajo el trazo, además del contorno. */
-[data-icons="relleno"] .row .icon-dot svg,
 [data-icons="relleno"] .settings-row .si svg,
 [data-icons="relleno"] .vehicle-photo svg,
 [data-icons="relleno"] .draft-card .ic svg {
@@ -523,31 +522,30 @@
 .list-group { background: var(--surface); border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-1); }
 .row {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 14px;
+  align-items: stretch;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
 }
 .row:last-child { border-bottom: none; }
 .row:active { background: var(--surface-2); }
-.row .icon-dot {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--r-sm);
-  background: var(--accent-soft);
-  flex: 0 0 auto;
+.row .row-left { flex: 1 1 75%; min-width: 0; padding: 12px 14px; }
+.row .row-meta-line { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: calc(13px * var(--font-scale)); font-weight: 600; text-transform: capitalize; }
+.row .row-place { font-size: calc(11px * var(--font-scale)); color: var(--text-muted); font-weight: 500; text-transform: none; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.row .pct-bar-wrap { margin-top: 8px; }
+.row .pct-bar-svg { width: 100%; height: 22px; display: block; }
+.row .row-right {
+  flex: 0 0 25%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
+  border-left: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+  padding: 12px 8px;
 }
-.row .icon-dot svg { width: 17px; height: 17px; stroke: var(--accent); }
-.row .meta { flex: 1; min-width: 0; }
-.row .meta .primary { font-size: calc(14px * var(--font-scale)); font-weight: 600; text-transform: capitalize; }
-.row .meta .secondary { font-size: calc(11.5px * var(--font-scale)); color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 6px; }
-.row .amount { text-align: right; font-variant-numeric: tabular-nums; }
-.row .amount .cost { font-size: calc(14px * var(--font-scale)); font-weight: 700; }
-.row .amount .kwh { font-size: calc(11px * var(--font-scale)); color: var(--text-muted); }
+.row .row-cost { font-size: calc(14px * var(--font-scale)); font-weight: 700; }
+.row .row-kwh { font-size: calc(10.5px * var(--font-scale)); color: var(--text-muted); }
 .row-delete {
   background: none;
   border: none;

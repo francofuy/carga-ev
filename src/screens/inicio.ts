@@ -1,10 +1,29 @@
 import type { Screen } from './types';
-import { getStatsSince, getMonthlyTotals, listCharges, getVehicle, getRealConsumption } from '../lib/db/api';
-import { bus, CHARGES_UPDATED, DRAFT_UPDATED, requestEditCharge, requestResumeDraft, notifyDraftUpdated } from '../lib/bus';
+import {
+  getStatsSince, getMonthlyTotals, listCharges, getVehicle, getRealConsumption,
+  getActiveCharge, deleteActiveCharge, insertCharge, getSettings,
+} from '../lib/db/api';
+import type { ActiveCharge } from '../lib/db/active-charge';
+import {
+  bus, CHARGES_UPDATED, DRAFT_UPDATED, ACTIVE_CHARGE_UPDATED,
+  requestEditCharge, requestResumeDraft, notifyDraftUpdated, notifyChargesUpdated, notifyActiveChargeUpdated,
+} from '../lib/bus';
 import { chargeRowHtml } from '../components/charge-row';
 import { renderOdometer } from '../lib/odometer';
 import { loadDraft, clearDraft, timeAgoLabel } from '../lib/draft';
 import { estimatedAutonomyKm } from '../lib/consumption';
+import { chargerKw, estimateAtTime } from '../lib/estimation';
+import { cancelActiveChargeNotifications } from '../lib/notifications';
+
+function isoToTimeLabel(iso: string): string {
+  return new Date(iso).toTimeString().slice(0, 5);
+}
+
+function bandColor(pct: number): string {
+  if (pct < 20) return 'var(--critical)';
+  if (pct < 80) return 'var(--warning-fill)';
+  return 'var(--good)';
+}
 
 function startOfMonthIso(): string {
   const d = new Date();
@@ -193,9 +212,159 @@ export const inicioScreen: Screen = {
       });
     }
 
+    let activeCardTimer: ReturnType<typeof setInterval> | undefined;
+
+    /** Al terminar la ventana programada (o al tocar "Terminar ahora"), congela el estimado a `atTime` y pide confirmar el real — se guarda recién acá (insertCharge), no antes. */
+    async function renderConfirmCard(ac: ActiveCharge, atTime: Date): Promise<void> {
+      clearInterval(activeCardTimer);
+      const [vehicle, settings] = await Promise.all([getVehicle(), getSettings()]);
+      const start = new Date(ac.startAt);
+      let estPct = ac.startPct;
+      let estKwh = 0;
+      if (vehicle?.batteryKwh) {
+        const nominalKw = chargerKw(settings.homeChargerAmps, settings.homeChargerVolts);
+        const est = estimateAtTime(ac.startPct, start, atTime, nominalKw, vehicle.batteryKwh, 1);
+        estPct = est.pct;
+        estKwh = est.kwhDelivered;
+      }
+      draftCardEl.innerHTML = `
+        <div class="draft-card">
+          <div class="tag">Confirmá tu carga</div>
+          <div class="row1">
+            <span class="ic"><svg><use href="#i-bolt"/></svg></span>
+            <span class="meta"><div class="m1">Casa · terminó</div><div class="m2">Estimado ≈${Math.round(estPct)}% · ${estKwh.toFixed(1)} kWh</div></span>
+          </div>
+          <div class="field" style="margin-top:8px;"><label>% final real</label><div class="input"><input type="number" step="0.1" min="0" max="100" id="confirmPct" value="${estPct.toFixed(1)}"><span class="unit">%</span></div></div>
+          <div class="field"><label>kWh reales</label><div class="input"><input type="number" step="0.1" min="0" id="confirmKwh" value="${estKwh.toFixed(1)}"><span class="unit">kWh</span></div></div>
+          <div class="form-error" id="confirmError"></div>
+          <div class="btnrow">
+            <button class="go" id="confirmSave">Guardar carga</button>
+            <button class="del" id="confirmDiscard">Descartar</button>
+          </div>
+        </div>`;
+      const confirmErrorEl = draftCardEl.querySelector<HTMLElement>('#confirmError')!;
+      draftCardEl.querySelector<HTMLButtonElement>('#confirmSave')!.addEventListener('click', () => {
+        void (async () => {
+          const realPct = parseFloat(draftCardEl.querySelector<HTMLInputElement>('#confirmPct')!.value);
+          const realKwh = parseFloat(draftCardEl.querySelector<HTMLInputElement>('#confirmKwh')!.value);
+          if (!isFinite(realPct) || realPct < 0 || realPct > 100) {
+            confirmErrorEl.textContent = 'Ingresá un % final válido (0–100).';
+            confirmErrorEl.classList.add('show');
+            return;
+          }
+          if (!isFinite(realKwh) || realKwh <= 0) {
+            confirmErrorEl.textContent = 'Los kWh reales tienen que ser mayores a cero.';
+            confirmErrorEl.classList.add('show');
+            return;
+          }
+          confirmErrorEl.classList.remove('show');
+          try {
+            await insertCharge({ location: 'home', startAt: start, endAt: atTime, kwh: realKwh, odometerKm: null, startPct: ac.startPct, endPct: realPct });
+            await deleteActiveCharge();
+            await cancelActiveChargeNotifications();
+            notifyActiveChargeUpdated();
+            notifyChargesUpdated();
+          } catch (err) {
+            confirmErrorEl.textContent = err instanceof Error ? err.message : String(err);
+            confirmErrorEl.classList.add('show');
+          }
+        })();
+      });
+      draftCardEl.querySelector<HTMLButtonElement>('#confirmDiscard')!.addEventListener('click', () => {
+        void (async () => {
+          await deleteActiveCharge();
+          await cancelActiveChargeNotifications();
+          notifyActiveChargeUpdated();
+        })();
+      });
+    }
+
+    /** Máquina de estados sobre el mismo slot del borrador — en espera / cargando en vivo / a confirmar, derivada solo de `active_charge` + la hora actual, sin bandera extra que mantener sincronizada. */
+    async function renderTopCard(): Promise<void> {
+      clearInterval(activeCardTimer);
+      const ac = await getActiveCharge();
+      if (!ac) {
+        renderDraftCard();
+        return;
+      }
+
+      // TS no arrastra el narrowing de `ac` (ActiveCharge | null) hacia adentro de la función
+      // anidada `paint` — se fija en una constante ya no-nula para el resto del closure.
+      const activeCharge: ActiveCharge = ac;
+      const [vehicle, settings] = await Promise.all([getVehicle(), getSettings()]);
+      const batteryKwh = vehicle?.batteryKwh ?? null;
+      const nominalKw = chargerKw(settings.homeChargerAmps, settings.homeChargerVolts);
+      const start = new Date(activeCharge.startAt);
+      const stop = new Date(activeCharge.targetStopAt);
+
+      function paint(): void {
+        const now = new Date();
+
+        if (now < start) {
+          const mins = Math.max(0, Math.round((start.getTime() - now.getTime()) / 60000));
+          const countdown = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+          draftCardEl.innerHTML = `
+            <div class="draft-card">
+              <div class="tag">Carga programada · En espera</div>
+              <div class="row1">
+                <span class="ic"><svg><use href="#i-bolt"/></svg></span>
+                <span class="meta"><div class="m1">Casa · ${isoToTimeLabel(activeCharge.startAt)} → ${isoToTimeLabel(activeCharge.targetStopAt)}</div><div class="m2">Batería al iniciar: ${activeCharge.startPct}%</div></span>
+              </div>
+              <div class="m2" style="margin-top:8px;color:var(--accent);font-weight:600;">Arranca en ${countdown}</div>
+              <div class="btnrow"><button class="del" id="activeCancel">Cancelar carga programada</button></div>
+            </div>`;
+          draftCardEl.querySelector<HTMLButtonElement>('#activeCancel')!.addEventListener('click', () => {
+            void (async () => {
+              await deleteActiveCharge();
+              await cancelActiveChargeNotifications();
+              notifyActiveChargeUpdated();
+            })();
+          });
+          return;
+        }
+
+        if (now < stop) {
+          // Sin vehículo configurado no hay con qué estimar el % — eso no significa que la
+          // carga ya terminó, solo que no podemos calcular el número (antes esto se confundía
+          // y saltaba directo a "confirmar" apenas guardabas sin tener el auto configurado).
+          const estimateHtml = batteryKwh
+            ? (() => {
+                const { pct, kwhDelivered } = estimateAtTime(activeCharge.startPct, start, now, nominalKw, batteryKwh, 1);
+                return `<div style="margin-top:8px;font-size:26px;font-weight:700;color:${bandColor(pct)};">${Math.round(pct)}%<span style="font-size:11px;color:var(--text-muted);font-weight:500;margin-left:6px;">estimado</span></div>
+                  <div class="m2" style="margin-top:2px;">${kwhDelivered.toFixed(1)} kWh entregados</div>`;
+              })()
+            : `<div class="m2" style="margin-top:8px;color:var(--text-muted);">Configurá tu vehículo en Ajustes para ver el % estimado.</div>`;
+          draftCardEl.innerHTML = `
+            <div class="draft-card">
+              <div class="tag">Cargando ahora · En vivo</div>
+              <div class="row1">
+                <span class="ic"><svg><use href="#i-bolt"/></svg></span>
+                <span class="meta"><div class="m1">Casa · corta a las ${isoToTimeLabel(activeCharge.targetStopAt)}</div></span>
+              </div>
+              ${estimateHtml}
+              <div class="btnrow"><button class="del" id="activeFinishNow">Terminar ahora</button></div>
+            </div>`;
+          draftCardEl.querySelector<HTMLButtonElement>('#activeFinishNow')!.addEventListener('click', () => {
+            void renderConfirmCard(activeCharge, new Date());
+          });
+          return;
+        }
+
+        void renderConfirmCard(activeCharge, stop);
+      }
+
+      // El intervalo se arranca ANTES del primer paint(): si ese primer paint ya cae en la rama
+      // de confirmación, renderConfirmCard hace clearInterval(activeCardTimer) — necesita que
+      // la variable ya tenga el id asignado, si no el setInterval de acá abajo lo pisa y sigue
+      // repintando la tarjeta de confirmación cada segundo, borrando lo que el usuario edite.
+      activeCardTimer = setInterval(paint, 1000);
+      paint();
+    }
+
     bus.addEventListener(CHARGES_UPDATED, () => void refresh());
-    bus.addEventListener(DRAFT_UPDATED, renderDraftCard);
-    renderDraftCard();
+    bus.addEventListener(DRAFT_UPDATED, () => void renderTopCard());
+    bus.addEventListener(ACTIVE_CHARGE_UPDATED, () => void renderTopCard());
+    void renderTopCard();
     await refresh();
   },
 };

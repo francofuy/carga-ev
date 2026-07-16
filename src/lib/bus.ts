@@ -7,6 +7,7 @@ export const CHARGES_UPDATED = 'charges-updated';
 export const OPEN_EDIT_CHARGE = 'open-edit-charge';
 export const DRAFT_UPDATED = 'draft-updated';
 export const RESUME_DRAFT = 'resume-draft';
+export const ACTIVE_CHARGE_UPDATED = 'active-charge-updated';
 
 export function notifyChargesUpdated(): void {
   bus.dispatchEvent(new Event(CHARGES_UPDATED));
@@ -22,4 +23,8 @@ export function notifyDraftUpdated(): void {
 
 export function requestResumeDraft(draft: ChargeDraft): void {
   bus.dispatchEvent(new CustomEvent<ChargeDraft>(RESUME_DRAFT, { detail: draft }));
+}
+
+export function notifyActiveChargeUpdated(): void {
+  bus.dispatchEvent(new Event(ACTIVE_CHARGE_UPDATED));
 }
