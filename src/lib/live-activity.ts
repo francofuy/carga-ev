@@ -29,9 +29,19 @@ export interface ChargeLiveActivityState {
   kwhTotal: number;
 }
 
+/**
+ * Devuelve el mensaje de error en vez de solo loguearlo: sin Mac no hay forma de ver la consola
+ * del WKWebView en el dispositivo, así que el error tiene que llegar a la UI para poder
+ * diagnosticar algo — ver el toast en nueva-carga.ts/inicio.ts que lo muestra.
+ */
+export interface LiveActivitySyncResult {
+  ok: boolean;
+  error?: string;
+}
+
 /** Crea la Activity si no existe todavía, o actualiza la existente — segura de llamar seguido. */
-export async function syncChargeLiveActivity(state: ChargeLiveActivityState): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return;
+export async function syncChargeLiveActivity(state: ChargeLiveActivityState): Promise<LiveActivitySyncResult> {
+  if (!Capacitor.isNativePlatform()) return { ok: true };
   try {
     await LiveActivity.sync({
       startPct: state.startPct,
@@ -41,16 +51,22 @@ export async function syncChargeLiveActivity(state: ChargeLiveActivityState): Pr
       kwhDelivered: state.kwhDelivered,
       kwhTotal: state.kwhTotal,
     });
+    return { ok: true };
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error('No se pudo sincronizar la Live Activity:', err);
+    return { ok: false, error: message };
   }
 }
 
-export async function endChargeLiveActivity(): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return;
+export async function endChargeLiveActivity(): Promise<LiveActivitySyncResult> {
+  if (!Capacitor.isNativePlatform()) return { ok: true };
   try {
     await LiveActivity.end();
+    return { ok: true };
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error('No se pudo terminar la Live Activity:', err);
+    return { ok: false, error: message };
   }
 }

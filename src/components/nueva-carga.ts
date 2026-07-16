@@ -931,8 +931,11 @@ export function mountNuevaCarga(root: ParentNode): void {
       // Solo tiene sentido prender la Live Activity si la carga ya arrancó ("Ahora") y hay
       // vehículo configurado (si no, no hay con qué estimar kWh) — "Más tarde" la prende
       // inicio.ts cuando llega la hora de inicio y repinta la tarjeta "Cargando ahora".
+      // Se espera el resultado (no fire-and-forget) para poder avisar en el toast si falla —
+      // sin Mac no hay forma de ver la consola del WKWebView en el dispositivo real.
+      let liveActivityWarning = '';
       if (!tarde && batteryKwh) {
-        void syncChargeLiveActivity({
+        const laResult = await syncChargeLiveActivity({
           startPct: startPctVal,
           targetStopAt: stop,
           networkLabel: `Casa · ${homeChargerAmps}A · ${homeChargerVolts}V`,
@@ -940,9 +943,10 @@ export function mountNuevaCarga(root: ParentNode): void {
           kwhDelivered: 0,
           kwhTotal: batteryKwh,
         });
+        if (!laResult.ok) liveActivityWarning = ` — Live Activity: ${laResult.error}`;
       }
       close();
-      toastText.textContent = tarde ? 'Carga programada guardada' : 'Carga programada — empezó a contar';
+      toastText.textContent = (tarde ? 'Carga programada guardada' : 'Carga programada — empezó a contar') + liveActivityWarning;
       toast.classList.add('show');
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);

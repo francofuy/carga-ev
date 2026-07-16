@@ -226,6 +226,9 @@ export const inicioScreen: Screen = {
     // Las Live Activities están pensadas para actualizarse cada tanto, no en cada tick del
     // intervalo de 1s de la tarjeta — Apple recomienda no más de ~1 actualización por minuto.
     let lastLiveActivitySyncAt = 0;
+    // Sin Mac no hay forma de ver la consola del WKWebView en el dispositivo real — el error
+    // (si lo hay) se guarda acá para mostrarlo en la propia tarjeta, no solo en console.error.
+    let lastLiveActivityError: string | null = null;
 
     /** Al terminar la ventana programada (o al tocar "Terminar ahora"), congela el estimado a `atTime` y pide confirmar el real — se guarda recién acá (insertCharge), no antes. */
     async function renderConfirmCard(ac: ActiveCharge, atTime: Date): Promise<void> {
@@ -348,6 +351,9 @@ export const inicioScreen: Screen = {
             ? `<div style="margin-top:8px;font-size:26px;font-weight:700;color:${bandColor(estimate.pct)};">${Math.round(estimate.pct)}%<span style="font-size:11px;color:var(--text-muted);font-weight:500;margin-left:6px;">estimado</span></div>
                   <div class="m2" style="margin-top:2px;">${estimate.kwhDelivered.toFixed(1)} kWh entregados</div>`
             : `<div class="m2" style="margin-top:8px;color:var(--text-muted);">Configurá tu vehículo en Ajustes para ver el % estimado.</div>`;
+          const liveActivityWarnHtml = lastLiveActivityError
+            ? `<div class="m2" style="margin-top:6px;color:var(--critical);">Live Activity: ${lastLiveActivityError}</div>`
+            : '';
           draftCardEl.innerHTML = `
             <div class="draft-card">
               <div class="tag live">Cargando ahora<span class="live-dot"></span>En vivo</div>
@@ -357,6 +363,7 @@ export const inicioScreen: Screen = {
               </div>
               ${coilSvg()}
               ${estimateHtml}
+              ${liveActivityWarnHtml}
               <div class="btnrow"><button class="del" id="activeFinishNow">Terminar ahora</button></div>
             </div>`;
           draftCardEl.querySelector<HTMLButtonElement>('#activeFinishNow')!.addEventListener('click', () => {
@@ -371,6 +378,8 @@ export const inicioScreen: Screen = {
               pct: estimate.pct,
               kwhDelivered: estimate.kwhDelivered,
               kwhTotal: batteryKwh,
+            }).then((result) => {
+              lastLiveActivityError = result.ok ? null : (result.error ?? 'error desconocido');
             });
           }
           return;
