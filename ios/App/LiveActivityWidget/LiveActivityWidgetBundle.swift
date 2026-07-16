@@ -8,11 +8,13 @@
 // actualiza sola — solo repinta cuando la app llama a Activity.update(...) (ver
 // LiveActivityPlugin.swift, método "sync"), y esa llamada solo pasa mientras la app está abierta
 // en primer plano (el JS del WKWebView no corre en background). Por eso el % quedaba estático al
-// minimizar. La barra de progreso usa ProgressView(timerInterval:) en vez de un valor fijo: esa
-// variante SÍ la anima el sistema solo, sin la app corriendo, interpolando entre startAt y
-// targetStopAt — es progreso por TIEMPO transcurrido, no el % real de batería (que no es lineal,
-// se achata después del 80%), así que puede no coincidir exacto con el número grande de abajo,
-// que sí es el estimado físico real pero solo se refresca cuando la app se abre.
+// minimizar. BatteryProgressBar usa ProgressView(timerInterval:) para el tramo que se agrega en
+// esta sesión: esa variante SÍ la anima el sistema solo, sin la app corriendo, interpolando entre
+// startAt y targetStopAt — es progreso por TIEMPO transcurrido, no el % real de batería (que no es
+// lineal, se achata después del 80%), así que puede no coincidir exacto con el número grande de
+// abajo, que sí es el estimado físico real pero solo se refresca cuando la app se abre. El tramo
+// hasta el % inicial (lo que la batería ya tenía antes de esta carga) es fijo, no un 0 — antes la
+// barra y el "0.0/60.0 kWh" arrancaban siempre como si la batería estuviera vacía.
 //
 // La forma "ondulada" (bobina) del wireframe web quedó simplificada a una barra recta: no pudimos
 // probar a tiempo un ProgressViewStyle con forma de onda que además soporte timerInterval — queda
@@ -37,19 +39,41 @@ private struct ChargeIcon: View {
     }
 }
 
-/** Barra que el sistema anima solo entre dos fechas (sin que la app tenga que estar corriendo). */
-private struct TimeProgressBar: View {
+/** kWh totales ya en la batería (lo que había al empezar + lo entregado en esta sesión) — no
+    solo lo entregado, que arrancaba siempre en 0.0 aunque la batería ya tuviera carga. */
+private func totalKwhSoFar(startPct: Double, kwhTotal: Double, kwhDelivered: Double) -> Double {
+    startPct / 100 * kwhTotal + kwhDelivered
+}
+
+/**
+ * Barra de batería: el tramo hasta el % inicial arranca ya relleno (fijo, no anima — es el % que
+ * ya tenía la batería antes de esta carga), y el tramo que sigue lo anima el sistema solo por
+ * tiempo transcurrido entre startAt y targetStopAt (sin que la app tenga que estar corriendo).
+ * Antes la barra arrancaba siempre vacía, como si la batería estuviera en 0%.
+ */
+private struct BatteryProgressBar: View {
+    var startPct: Double
     var startAt: Date
     var targetStopAt: Date
     var color: Color
+
     var body: some View {
-        if targetStopAt > startAt {
-            ProgressView(timerInterval: startAt...targetStopAt, countsDown: false)
-                .tint(color)
-                .labelsHidden()
-        } else {
-            ProgressView(value: 1, total: 1).tint(color)
+        GeometryReader { geo in
+            let startFrac = min(max(startPct / 100, 0), 1)
+            HStack(spacing: 0) {
+                Capsule()
+                    .fill(color.opacity(0.5))
+                    .frame(width: geo.size.width * startFrac)
+                if targetStopAt > startAt && startFrac < 1 {
+                    ProgressView(timerInterval: startAt...targetStopAt, countsDown: false)
+                        .tint(color)
+                        .labelsHidden()
+                }
+            }
+            .background(Capsule().fill(color.opacity(0.15)))
+            .clipShape(Capsule())
         }
+        .frame(height: 6)
     }
 }
 
@@ -71,7 +95,7 @@ private struct LockScreenView: View {
                 }
                 Spacer()
             }
-            TimeProgressBar(startAt: context.attributes.startAt, targetStopAt: context.attributes.targetStopAt, color: color)
+            BatteryProgressBar(startPct: context.attributes.startPct, startAt: context.attributes.startAt, targetStopAt: context.attributes.targetStopAt, color: color)
             HStack(alignment: .lastTextBaseline) {
                 HStack(alignment: .lastTextBaseline, spacing: 4) {
                     Text("\(Int(context.state.pct.rounded()))").font(.system(size: 25, weight: .bold))
@@ -79,7 +103,7 @@ private struct LockScreenView: View {
                     Text("estimado").font(.system(size: 10)).foregroundStyle(.secondary.opacity(0.7))
                 }
                 Spacer()
-                Text(String(format: "%.1f / %.1f kWh", context.state.kwhDelivered, context.state.kwhTotal))
+                Text(String(format: "%.1f / %.1f kWh", totalKwhSoFar(startPct: context.attributes.startPct, kwhTotal: context.state.kwhTotal, kwhDelivered: context.state.kwhDelivered), context.state.kwhTotal))
                     .font(.system(size: 10.5))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -124,9 +148,9 @@ struct ChargeLiveActivityWidget: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(alignment: .leading, spacing: 5) {
-                        TimeProgressBar(startAt: context.attributes.startAt, targetStopAt: context.attributes.targetStopAt, color: color)
+                        BatteryProgressBar(startPct: context.attributes.startPct, startAt: context.attributes.startAt, targetStopAt: context.attributes.targetStopAt, color: color)
                         HStack {
-                            Text(String(format: "%.1f/%.1f kWh", context.state.kwhDelivered, context.state.kwhTotal))
+                            Text(String(format: "%.1f/%.1f kWh", totalKwhSoFar(startPct: context.attributes.startPct, kwhTotal: context.state.kwhTotal, kwhDelivered: context.state.kwhDelivered), context.state.kwhTotal))
                             Spacer()
                             Text(context.attributes.targetStopAt, style: .time)
                         }
