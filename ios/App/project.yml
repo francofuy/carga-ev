@@ -24,6 +24,14 @@ targets:
       - path: App
         excludes:
           - Info.plist
+          - public
+      # "public" (los assets web de Capacitor) tiene que copiarse como carpeta entera
+      # (folder reference, preserva su estructura interna: public/index.html,
+      # public/assets/...), no como grupo de archivos sueltos — si no, Xcode los
+      # desarma en la raíz del bundle y Capacitor no encuentra su index.html al
+      # arrancar (causó un crash instantáneo al abrir, encontrado en el spike).
+      - path: App/public
+        type: folder
     configFiles:
       Debug: ../debug.xcconfig
     settings:
