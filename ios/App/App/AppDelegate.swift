@@ -7,7 +7,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // LiveActivityPlugin vive directo en este target (no es un plugin npm/SPM que pasa por
+        // "cap sync", como Geolocation o Local Notifications) — Capacitor no lo descubre solo,
+        // hay que registrarlo a mano. Sin esto, cualquier llamada desde JS devuelve
+        // "\"LiveActivity\" plugin is not implemented on ios" aunque el Swift compile bien.
+        if let bridgeVC = window?.rootViewController as? CAPBridgeViewController {
+            bridgeVC.bridge?.registerPluginInstance(LiveActivityPlugin())
+        }
         return true
     }
 
