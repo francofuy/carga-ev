@@ -1,0 +1,656 @@
+<title>Prototipo navegable — Instrumento (Carga EV)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    /* Mismo sistema de rediseno-instrumento.html, sin cambios — colores de sistema Apple
+       (HIG, modo oscuro), no inventados. */
+    --black: #000000;
+    --mat-1: rgba(28, 28, 30, 0.68);
+    --mat-2: rgba(44, 44, 46, 0.6);
+    --mat-3: rgba(58, 58, 60, 0.55);
+    --hairline: rgba(255, 255, 255, 0.09);
+    --label: rgba(255, 255, 255, 0.94);
+    --label-2: rgba(235, 235, 245, 0.6);
+    --label-3: rgba(235, 235, 245, 0.34);
+    --sys-orange: #FF9F0A;
+    --sys-orange-soft: rgba(255, 159, 10, 0.16);
+    --sys-green: #30D158;
+    --sys-green-soft: rgba(48, 209, 88, 0.16);
+    --sys-red: #FF453A;
+    --sys-red-soft: rgba(255, 69, 58, 0.16);
+    --page-bg: #0a0a0c;
+    --page-label: rgba(255, 255, 255, 0.5);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--page-bg); color: var(--label);
+    font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 32px 16px 60px;
+    position: relative;
+    overflow-x: hidden;
+  }
+  .mono { font-family: ui-monospace, "SF Mono", "Menlo", monospace; font-variant-numeric: tabular-nums; }
+  button { font: inherit; color: inherit; }
+
+  .ambient-glow {
+    position: fixed; top: -10%; left: 0; right: 0; height: 480px; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(circle at 25% 30%, rgba(255, 159, 10, 0.14), transparent 60%),
+      radial-gradient(circle at 75% 40%, rgba(48, 209, 88, 0.09), transparent 55%);
+    filter: blur(50px);
+  }
+
+  .page-head { max-width: 420px; text-align: center; margin-bottom: 26px; position: relative; z-index: 1; }
+  .eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--sys-orange); margin-bottom: 8px; }
+  h1.page-title { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; text-wrap: balance; }
+  .page-head p { font-size: 12.5px; line-height: 1.55; color: var(--page-label); margin: 0; }
+
+  /* ===== bezel del "dispositivo" ===== */
+  .phone {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 380px;
+    height: min(780px, 82vh);
+    min-height: 560px;
+    background: var(--black);
+    border-radius: 46px;
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 30px 70px -25px rgba(0,0,0,0.8), 0 0 0 6px rgba(255,255,255,0.03) inset;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .phone-island {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    width: 100px; height: 26px; background: #000; border-radius: 999px; z-index: 30;
+  }
+
+  .screens { position: relative; flex: 1; overflow: hidden; }
+  /* pista de que hay más contenido abajo (se le había sacado la scrollbar por estética,
+     sin esto no queda ninguna señal de que Inicio/Cargas siguen debajo del pliegue) */
+  .scroll-hint {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 70px; z-index: 15;
+    background: linear-gradient(to bottom, transparent, var(--black) 88%);
+    pointer-events: none;
+  }
+  .screen {
+    position: absolute; inset: 0;
+    padding: 54px 16px 90px;
+    overflow-y: auto;
+    -ms-overflow-style: none; scrollbar-width: none;
+    opacity: 0; pointer-events: none; transform: translateY(6px) scale(0.99);
+    transition: opacity 0.32s cubic-bezier(0.16,1,0.3,1), transform 0.32s cubic-bezier(0.16,1,0.3,1);
+  }
+  .screen::-webkit-scrollbar { display: none; }
+  .screen.active { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+  @media (prefers-reduced-motion: reduce) { .screen { transition: opacity 0.01s linear; transform: none; } }
+
+  .screen-title { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 16px; }
+
+  /* ===== paneles / componentes (mismas clases que rediseno-instrumento.html) ===== */
+  .gpanel {
+    position: relative; background: var(--mat-1); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--hairline); border-radius: 22px; padding: 18px;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 16px 30px -18px rgba(0, 0, 0, 0.6);
+    margin-bottom: 14px;
+  }
+  .gpanel .tick { position: absolute; top: 13px; left: 18px; width: 14px; height: 2px; background: var(--sys-orange); border-radius: 1px; opacity: 0.8; }
+  .panel-label { font-size: 11px; font-weight: 600; color: var(--label-3); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .readout-hero { text-align: center; padding: 6px; }
+  .readout-hero .l { font-size: 12px; font-weight: 600; color: var(--label-2); margin-bottom: 8px; }
+  .readout-hero .n { font-size: 42px; font-weight: 700; color: var(--label); letter-spacing: -0.01em; }
+  .readout-hero .n .unit { font-size: 16px; font-weight: 500; color: var(--label-3); margin-left: 6px; }
+  .readout-hero .s { font-size: 12px; color: var(--label-3); margin-top: 6px; }
+
+  .digit-wrap { display: inline-block; height: 1.1em; overflow: hidden; position: relative; width: 0.6em; vertical-align: bottom; }
+  .digit-track { position: absolute; left: 0; top: 0; transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1); }
+  .digit-track div { height: 1.1em; display: flex; align-items: center; justify-content: center; }
+  @media (prefers-reduced-motion: reduce) { .digit-track { transition: none; } }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .cell { background: var(--mat-1); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid var(--hairline); border-radius: 16px; padding: 12px 14px; }
+  .cell .l { font-size: 10.5px; color: var(--label-3); font-weight: 600; }
+  .cell .v { font-size: 18px; font-weight: 700; color: var(--label); margin-top: 3px; }
+
+  .waveform-panel svg { display: block; width: 100%; height: 46px; }
+  .waveform-panel .wave { fill: none; stroke: var(--sys-orange); stroke-width: 2; stroke-linecap: round; filter: drop-shadow(0 0 4px rgba(255,159,10,0.5)); stroke-dasharray: 400; animation: waveDraw 2.4s linear infinite; }
+  @keyframes waveDraw { from { stroke-dashoffset: 400; } to { stroke-dashoffset: 0; } }
+  @media (prefers-reduced-motion: reduce) { .waveform-panel .wave { animation: none; stroke-dashoffset: 0; } }
+
+  .bars-mock { display: flex; align-items: flex-end; gap: 6px; height: 60px; padding: 8px 2px 0; border-bottom: 1px solid var(--hairline); }
+  .bars-mock .b { flex: 1; background: rgba(48, 209, 88, 0.3); border-radius: 4px 4px 1px 1px; }
+  .bars-mock .b.hot { background: var(--sys-orange); }
+  .bars-mock .m { font-size: 8.5px; color: var(--label-3); text-align: center; margin-top: 5px; flex: 1; font-weight: 600; }
+
+  .list-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--hairline); font-size: 13px; }
+  .list-row:first-child { border-top: none; }
+  .list-row .ic { width: 28px; height: 28px; border-radius: 9px; background: var(--sys-orange-soft); display: flex; align-items: center; justify-content: center; color: var(--sys-orange); flex: 0 0 auto; }
+  .list-row .ic svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
+  .list-row .meta { flex: 1; color: var(--label-3); font-size: 11px; }
+  .list-row .meta b { color: var(--label); display: block; font-weight: 600; font-size: 13px; }
+  .list-row .amt { text-align: right; color: var(--label); font-weight: 700; }
+
+  .swipe-demo { position: relative; overflow: hidden; border-radius: 12px; }
+  .swipe-demo .action { position: absolute; inset: 0; background: var(--sys-red); display: flex; align-items: center; justify-content: flex-end; padding-right: 16px; }
+  .swipe-demo .action span { color: #fff; font-size: 12.5px; font-weight: 700; }
+  .swipe-demo .row-fg { position: relative; background: var(--mat-2); padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+
+  .month-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .month-head .m { font-size: 13px; font-weight: 700; }
+  .month-head .t { font-size: 11.5px; color: var(--label-3); }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip { font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 999px; background: var(--mat-2); color: var(--label-2); border: 1px solid transparent; cursor: pointer; transition: all 0.2s ease; user-select: none; }
+  .chip.on { background: var(--sys-orange-soft); color: var(--sys-orange); border-color: rgba(255, 159, 10, 0.4); }
+
+  .gauge-dome { position: relative; text-align: center; }
+  .gauge-dome .dome-shine { position: absolute; top: 4px; left: 50%; transform: translateX(-50%); width: 130px; height: 56px; border-radius: 50%; background: linear-gradient(180deg, rgba(255,255,255,0.12), transparent 70%); pointer-events: none; }
+  .needle-demo { position: relative; width: 100%; height: 92px; display: flex; align-items: flex-end; justify-content: center; }
+  .needle-demo svg { overflow: visible; }
+  .needle-demo .needle { transform-origin: 90px 90px; animation: needleSwing 2.8s cubic-bezier(0.34, 1.1, 0.64, 1) infinite alternate; }
+  @keyframes needleSwing { 0% { transform: rotate(-46deg); } 100% { transform: rotate(24deg); } }
+  @media (prefers-reduced-motion: reduce) { .needle-demo .needle { animation: none; transform: rotate(-6deg); } }
+  .gauge-cap { font-size: 11.5px; color: var(--label-3); margin-top: 4px; }
+
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 2px; border-top: 1px solid var(--hairline); font-size: 14px; gap: 12px; cursor: pointer; }
+  .setting-row:first-child { border-top: none; }
+  .setting-row .chev { color: var(--label-3); font-size: 13px; }
+  .setting-row.static { cursor: default; }
+
+  .toggle-ios { width: 44px; height: 26px; border-radius: 13px; background: var(--mat-2); position: relative; cursor: pointer; flex: 0 0 auto; transition: background 0.25s ease; }
+  .toggle-ios .knob { position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1); }
+  .toggle-ios.on { background: var(--sys-green); }
+  .toggle-ios.on .knob { transform: translateX(18px); }
+
+  .segmented { display: flex; position: relative; background: var(--mat-2); border-radius: 12px; padding: 3px; margin-bottom: 4px; }
+  .segmented .seg-pill { position: absolute; top: 3px; bottom: 3px; left: 3px; border-radius: 9px; background: var(--sys-orange); transition: transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1), width 0.35s cubic-bezier(0.34,1.3,0.64,1); }
+  .segmented .seg { flex: 1; text-align: center; padding: 8px 4px; font-size: 12.5px; font-weight: 600; color: var(--label-3); position: relative; z-index: 1; cursor: pointer; transition: color 0.2s ease; }
+  .segmented .seg.on { color: #1A0F00; }
+
+  .slider-ios { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; background: var(--mat-2); outline: none; margin-top: 12px; }
+  .slider-ios::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--hairline); cursor: pointer; }
+
+  .hue-bar { height: 12px; border-radius: 6px; background: linear-gradient(90deg, #ff3b30, #ff9f0a, #ffd60a, #30d158, #64d2ff, #0a84ff, #bf5af2, #ff3b30); position: relative; margin: 10px 4px 2px; }
+  .hue-bar .knob { position: absolute; top: 50%; width: 20px; height: 20px; border-radius: 50%; border: 3px solid #000; transform: translate(-50%, -50%); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); }
+
+  /* ===== back-nav (Ajustes -> Personalización) ===== */
+  .subscreen-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .back-btn { display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 600; color: var(--sys-orange); background: none; border: none; padding: 4px 2px; cursor: pointer; }
+  .back-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; }
+  #screen-ajustes-list, #screen-personalizacion { transition: transform 0.36s cubic-bezier(0.32,0.9,0.44,1), opacity 0.3s ease; }
+  .ajustes-stack { position: relative; height: 100%; }
+  .ajustes-pane { position: absolute; inset: 0; transition: transform 0.36s cubic-bezier(0.32,0.9,0.44,1), opacity 0.3s ease; }
+  .ajustes-pane.list-out { transform: translateX(-28%); opacity: 0; pointer-events: none; }
+  .ajustes-pane.detail-in { transform: translateX(0); }
+  .ajustes-pane.detail-hidden { transform: translateX(100%); opacity: 0; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { .ajustes-pane { transition: opacity 0.01s linear; } }
+
+  /* ===== tab bar flotante ===== */
+  .tabbar-wrap { position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 20; }
+  .tabbar { display: flex; position: relative; background: var(--mat-1); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%); border: 1px solid var(--hairline); border-radius: 20px; padding: 6px; box-shadow: 0 10px 26px -12px rgba(0,0,0,0.6); }
+  .tabbar .pill { position: absolute; top: 6px; bottom: 6px; background: var(--sys-orange); border-radius: 14px; transition: transform 0.42s cubic-bezier(0.34, 1.2, 0.64, 1), width 0.3s ease; }
+  .tabbar .t { flex: 1; text-align: center; padding: 9px 4px; font-size: 10px; font-weight: 600; color: var(--label-3); position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; background: none; border: none; }
+  .tabbar .t.on { color: #1A0F00; }
+  .tabbar .t svg { width: 19px; height: 19px; stroke: currentColor; fill: none; }
+  @media (prefers-reduced-motion: reduce) { .tabbar .pill { transition: none; } }
+
+  /* ===== FAB (Nueva carga) ===== */
+  .fab {
+    position: absolute; right: 14px; bottom: 82px; z-index: 21;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--sys-orange); color: #1A0F00;
+    border: none; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 24px -8px rgba(255,159,10,0.6);
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
+  }
+  .fab:active { transform: scale(0.92); }
+  .fab svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2.2; fill: none; }
+
+  .draft-banner { display: flex; align-items: center; gap: 10px; background: var(--sys-orange-soft); border: 1px solid rgba(255, 159, 10, 0.3); border-radius: 16px; padding: 12px 14px; margin-bottom: 14px; }
+  .draft-banner .ic { color: var(--sys-orange); flex: 0 0 auto; display: flex; }
+  .draft-banner .tx { flex: 1; font-size: 11.5px; color: var(--label-2); }
+  .draft-banner .tx b { display: block; font-size: 13px; font-weight: 700; color: var(--label); }
+  .draft-banner .x { color: var(--label-3); font-size: 13px; font-weight: 700; cursor: pointer; padding: 4px; }
+
+  /* ===== sheet "Nueva carga" ===== */
+  .scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .scrim.show { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 41;
+    background: #141416; border-radius: 26px 26px 0 0; border: 1px solid var(--hairline); border-bottom: none;
+    padding: 10px 18px 22px; max-height: 88%; overflow-y: auto;
+    transform: translateY(100%); transition: transform 0.42s cubic-bezier(0.32,0.9,0.44,1);
+  }
+  .sheet.show { transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) { .sheet, .scrim { transition: opacity 0.01s linear; } }
+  .sheet-grabber { width: 36px; height: 4px; border-radius: 2px; background: var(--mat-3); margin: 4px auto 14px; }
+  .sheet-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+
+  .afield { display: flex; flex-direction: column; gap: 6px; }
+  .afield .lbl { font-size: 12px; font-weight: 600; color: var(--label-2); }
+  .afield .box { background: var(--mat-2); border-radius: 12px; padding: 11px 13px; display: flex; justify-content: space-between; align-items: baseline; border: 1px solid transparent; }
+  .afield .box input { background: none; border: none; outline: none; color: var(--label); font-family: ui-monospace, monospace; font-size: 15px; width: 100%; }
+  .afield .box .unit { font-size: 12px; color: var(--label-3); }
+  .field-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 18px; }
+
+  .abtn {
+    font-size: 15px; font-weight: 600; width: 100%;
+    background: var(--sys-orange); color: #1A0F00; border: none; border-radius: 14px; padding: 13px 22px;
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1); cursor: pointer;
+  }
+  .abtn:active { transform: scale(0.97); }
+
+  .confirm-overlay {
+    position: absolute; inset: 0; z-index: 42; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    background: rgba(10,10,12,0.85); backdrop-filter: blur(6px);
+    opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+  }
+  .confirm-overlay.show { opacity: 1; pointer-events: auto; }
+  .confirm-morph { width: 56px; height: 56px; }
+  .confirm-morph circle { fill: none; stroke: var(--sys-green); stroke-width: 3; stroke-dasharray: 150; stroke-dashoffset: 150; }
+  .confirm-morph path { fill: none; stroke: var(--sys-green); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 30; stroke-dashoffset: 30; }
+  .confirm-overlay.show .confirm-morph circle { animation: circleDraw 0.5s ease-out forwards; }
+  .confirm-overlay.show .confirm-morph path { animation: checkDraw 0.35s ease-out 0.45s forwards; }
+  @keyframes circleDraw { to { stroke-dashoffset: 0; } }
+  @keyframes checkDraw { to { stroke-dashoffset: 0; } }
+  .confirm-overlay .txt { font-size: 13.5px; color: var(--label-2); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) {
+    .confirm-overlay.show .confirm-morph circle, .confirm-overlay.show .confirm-morph path { animation-duration: 0.01s; }
+  }
+
+  .foot-note { max-width: 380px; margin-top: 22px; text-align: center; font-size: 11.5px; line-height: 1.6; color: var(--page-label); position: relative; z-index: 1; }
+  .foot-note b { color: var(--label-2); }
+</style>
+
+<div class="ambient-glow"></div>
+
+<div class="page-head">
+  <div class="eyebrow">Prototipo navegable · design-lab, nada aplicado a producción</div>
+  <h1 class="page-title">Instrumento — flujo real de la app</h1>
+  <p>Mismos materiales y colores que <code class="mono">rediseno-instrumento.html</code> (todavía sin aprobar del todo), pero ahora como un dispositivo tocable: navegá entre Inicio, Cargas, Vehículo y Ajustes con la tab bar de abajo, y registrá una carga con el botón naranja.</p>
+</div>
+
+<div class="phone">
+  <div class="phone-island"></div>
+  <div class="screens">
+
+    <!-- ===== INICIO ===== -->
+    <section class="screen active" id="screen-inicio">
+      <h2 class="screen-title">Inicio</h2>
+
+      <div class="gpanel">
+        <div class="tick"></div>
+        <div class="readout-hero">
+          <div class="l">Gasto — este mes</div>
+          <div class="n mono" id="heroNum"></div>
+          <div class="s">5 lecturas registradas</div>
+        </div>
+      </div>
+
+      <div class="gpanel waveform-panel">
+        <div class="panel-label">Corriente en vivo — cargando ahora</div>
+        <svg viewBox="0 0 400 46" preserveAspectRatio="none">
+          <polyline class="wave" points="0,23 20,23 30,8 40,38 50,23 90,23 100,11 110,34 120,23 160,23 170,6 180,40 190,23 230,23 240,14 250,32 260,23 300,23 310,9 320,36 330,23 400,23" vector-effect="non-scaling-stroke"/>
+        </svg>
+      </div>
+
+      <div class="row2">
+        <div class="cell"><div class="l">$/kWh prom.</div><div class="v mono" style="color:var(--sys-orange);">2.44</div></div>
+        <div class="cell"><div class="l">% en Valle</div><div class="v mono" style="color:var(--sys-green);">100</div></div>
+      </div>
+
+      <div class="gpanel">
+        <div class="panel-label">Tendencia — 6 meses</div>
+        <div class="bars-mock">
+          <div class="b" style="height:18%;"></div><div class="b" style="height:12%;"></div>
+          <div class="b" style="height:22%;"></div><div class="b" style="height:15%;"></div>
+          <div class="b" style="height:10%;"></div><div class="b hot" style="height:100%;"></div>
+        </div>
+        <div style="display:flex;">
+          <span class="m">FEB</span><span class="m">MAR</span><span class="m">ABR</span><span class="m">MAY</span><span class="m">JUN</span><span class="m">JUL</span>
+        </div>
+      </div>
+
+      <div class="gpanel">
+        <div class="panel-label">Últimas lecturas</div>
+        <div class="swipe-demo">
+          <div class="action"><span>Eliminar</span></div>
+          <div class="row-fg">
+            <span class="ic">⚡</span>
+            <span class="meta"><b>Dom 12 Jul · 01:24</b>Casa · Valle</span><span class="amt mono">$58</span>
+          </div>
+        </div>
+        <div class="list-row">
+          <span class="ic">⚡</span>
+          <span class="meta"><b>Mié 08 Jul · 00:00</b>Casa · Valle</span><span class="amt mono">$61</span>
+        </div>
+        <div class="list-row">
+          <span class="ic">⚡</span>
+          <span class="meta"><b>Lun 06 Jul · 22:10</b>UTE · Pública</span><span class="amt mono">$84</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CARGAS ===== -->
+    <section class="screen" id="screen-cargas">
+      <h2 class="screen-title">Cargas</h2>
+      <div class="chip-row js-chip-group" style="margin-bottom:14px;">
+        <span class="chip on">Todas</span><span class="chip">Privada</span><span class="chip">Pública</span>
+      </div>
+      <div class="gpanel">
+        <div class="month-head"><span class="m">Julio 2026</span><span class="t mono">$330 · 5 cargas</span></div>
+        <div class="swipe-demo" style="margin-bottom:2px;">
+          <div class="action"><span>Eliminar</span></div>
+          <div class="row-fg">
+            <span class="ic">⚡</span>
+            <span class="meta"><b>Dom 12 Jul · 01:24</b>Casa · Valle</span><span class="amt mono">$58</span>
+          </div>
+        </div>
+        <div class="list-row">
+          <span class="ic">⚡</span>
+          <span class="meta"><b>Mié 08 Jul · 00:00</b>Casa · Valle</span><span class="amt mono">$61</span>
+        </div>
+        <div class="list-row">
+          <span class="ic">⚡</span>
+          <span class="meta"><b>Lun 06 Jul · 22:10</b>UTE · Pública</span><span class="amt mono">$84</span>
+        </div>
+        <div class="list-row">
+          <span class="ic">⚡</span>
+          <span class="meta"><b>Vie 03 Jul · 23:40</b>Casa · Valle</span><span class="amt mono">$52</span>
+        </div>
+      </div>
+      <div class="gpanel">
+        <div class="month-head"><span class="m">Junio 2026</span><span class="t mono">$298 · 6 cargas</span></div>
+        <div class="list-row">
+          <span class="ic">⚡</span>
+          <span class="meta"><b>Mar 30 Jun · 23:15</b>Casa · Valle</span><span class="amt mono">$49</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== VEHÍCULO ===== -->
+    <section class="screen" id="screen-vehiculo">
+      <h2 class="screen-title">Vehículo</h2>
+      <div class="gpanel">
+        <div class="tick"></div>
+        <div class="readout-hero">
+          <div class="l">Consumo real</div>
+          <div class="n mono">14.2<span class="unit">kWh/100km</span></div>
+          <div class="s">Autonomía estimada · 380 km</div>
+        </div>
+      </div>
+      <div class="gpanel gauge-dome">
+        <div class="dome-shine"></div>
+        <div class="needle-demo">
+          <svg width="180" height="92" viewBox="0 0 180 100">
+            <path d="M20 90 A70 70 0 0 1 160 90" fill="none" stroke="var(--hairline)" stroke-width="3"/>
+            <line class="needle" x1="90" y1="90" x2="90" y2="24" stroke="var(--sys-orange)" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="90" cy="90" r="6" fill="var(--sys-orange)"/>
+          </svg>
+        </div>
+        <div class="gauge-cap">Autonomía sobre 60 kWh útiles</div>
+      </div>
+      <div class="gpanel">
+        <div class="panel-label">Ficha técnica</div>
+        <div class="setting-row static"><span>Marca y modelo</span><span style="color:var(--label-2);">GAC Aion UT Max</span></div>
+        <div class="setting-row static"><span>Batería</span><span class="mono" style="color:var(--label-2);">60 kWh</span></div>
+        <div class="setting-row static"><span>Consumo homologado</span><span class="mono" style="color:var(--label-2);">135 Wh/km</span></div>
+      </div>
+    </section>
+
+    <!-- ===== AJUSTES (lista + Personalización, con push-nav) ===== -->
+    <section class="screen" id="screen-ajustes">
+      <div class="ajustes-stack">
+        <div class="ajustes-pane" id="paneAjustesList">
+          <h2 class="screen-title">Ajustes</h2>
+          <div class="gpanel">
+            <div class="setting-row static"><span>Tarifas</span><span class="chev">›</span></div>
+            <div class="setting-row static"><span>Notificaciones</span><span class="chev">›</span></div>
+            <div class="setting-row static"><span>Tema</span><span class="chev">›</span></div>
+            <div class="setting-row" id="rowPersonalizacion"><span style="color:var(--sys-orange);font-weight:700;">Personalización</span><span class="chev">›</span></div>
+          </div>
+        </div>
+
+        <div class="ajustes-pane detail-hidden" id="panePersonalizacion">
+          <div class="subscreen-head">
+            <button class="back-btn" id="btnBackAjustes"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Ajustes</button>
+          </div>
+          <h2 class="screen-title" style="font-size:18px;">Personalización</h2>
+
+          <div class="gpanel">
+            <div class="panel-label">Tono de acento</div>
+            <div class="hue-bar"><div class="knob" style="left:8%;background:var(--sys-orange);"></div></div>
+            <div style="display:flex;align-items:center;gap:12px;margin-top:14px;">
+              <div style="width:40px;height:40px;border-radius:12px;background:var(--sys-orange);flex:0 0 auto;"></div>
+              <div style="font-size:11.5px;color:var(--label-3);">Contraste: <b style="color:var(--sys-green);">AA · 5.2:1</b></div>
+            </div>
+          </div>
+          <div class="gpanel">
+            <div class="panel-label">Tipografía</div>
+            <div class="chip-row js-chip-group"><span class="chip">Compacta</span><span class="chip on">Estándar</span><span class="chip">Grande</span></div>
+          </div>
+          <div class="gpanel">
+            <div class="panel-label">Forma y contenedores</div>
+            <div class="chip-row js-chip-group"><span class="chip on">Plano</span><span class="chip">Redondeado</span></div>
+          </div>
+          <div class="gpanel">
+            <div class="setting-row static" style="border-top:none;">
+              <span>Fondo animado (aurora)</span>
+              <div class="toggle-ios on js-toggle"><div class="knob"></div></div>
+            </div>
+            <input type="range" class="slider-ios" min="0" max="100" value="30">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="scroll-hint"></div>
+  </div>
+
+  <!-- ===== FAB + Sheet Nueva carga ===== -->
+  <button class="fab" id="fabNuevaCarga" aria-label="Nueva carga">
+    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+  </button>
+
+  <div class="scrim" id="scrim"></div>
+  <div class="sheet" id="sheetNuevaCarga">
+    <div class="sheet-grabber"></div>
+    <div class="sheet-title">Nueva carga</div>
+
+    <div class="draft-banner" id="draftBanner">
+      <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/></svg></span>
+      <span class="tx"><b>Recuperamos tu borrador</b>Desde 20% · hace 12 min</span>
+      <span class="x" id="draftClose">✕</span>
+    </div>
+
+    <div class="segmented" data-sel="1" style="margin-bottom:14px;">
+      <div class="seg-pill" style="width:calc(50% - 3px);transform:translateX(100%);"></div>
+      <div class="seg">Privada</div>
+      <div class="seg on">Pública</div>
+    </div>
+
+    <div class="gpanel" style="margin-bottom:12px;">
+      <div class="panel-label">Red</div>
+      <div class="chip-row js-chip-group" style="margin-bottom:14px;">
+        <span class="chip on">UTE</span><span class="chip">eOne</span><span class="chip">DMC</span><span class="chip">Evergo</span>
+      </div>
+      <div class="panel-label">Variante</div>
+      <div class="chip-row js-chip-group">
+        <span class="chip on">Diurno</span><span class="chip">Nocturno</span>
+      </div>
+    </div>
+
+    <div class="field-row2">
+      <div class="afield">
+        <span class="lbl">kWh cargados</span>
+        <div class="box"><input value="18.4" inputmode="decimal"><span class="unit">kWh</span></div>
+      </div>
+      <div class="afield">
+        <span class="lbl">Cargo fijo</span>
+        <div class="box"><input value="120" inputmode="decimal"><span class="unit">$</span></div>
+      </div>
+    </div>
+
+    <button class="abtn" id="btnGuardarCarga">Guardar</button>
+  </div>
+
+  <div class="confirm-overlay" id="confirmOverlay">
+    <svg class="confirm-morph" viewBox="0 0 52 52">
+      <circle cx="26" cy="26" r="22"/>
+      <path d="M15 27l7 7 15-15"/>
+    </svg>
+    <div class="txt">Carga guardada</div>
+  </div>
+
+  <!-- ===== tab bar ===== -->
+  <div class="tabbar-wrap">
+    <div class="tabbar" id="tabbar">
+      <div class="pill" id="tabPill"></div>
+      <button class="t on" data-screen="inicio"><svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9h12v-9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Inicio</button>
+      <button class="t" data-screen="cargas"><svg viewBox="0 0 24 24"><line x1="5" y1="7" x2="19" y2="7" stroke-width="1.8" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke-width="1.8" stroke-linecap="round"/><line x1="5" y1="17" x2="19" y2="17" stroke-width="1.8" stroke-linecap="round"/></svg>Cargas</button>
+      <button class="t" data-screen="vehiculo"><svg viewBox="0 0 24 24"><path d="M4 16V11.5L6.2 6.8A2 2 0 0 1 8 5.6h8a2 2 0 0 1 1.8 1.2L20 11.5V16" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><rect x="3" y="13" width="18" height="5.5" rx="2" stroke-width="1.7"/></svg>Vehículo</button>
+      <button class="t" data-screen="ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1" stroke-width="1.7"/><path d="M12 3.5v2.4M12 18.1v2.4M20.5 12h-2.4M5.9 12H3.5M17.7 6.3l-1.7 1.7M8 16l-1.7 1.7M17.7 17.7 16 16M8 8 6.3 6.3" stroke-width="1.7" stroke-linecap="round"/></svg>Ajustes</button>
+    </div>
+  </div>
+</div>
+
+<p class="foot-note">Tocable de verdad: cambiá de pestaña, deslizá el dedo (mouse) sobre una lectura para ver "Eliminar", entrá a <b>Ajustes → Personalización</b> y volvé, o registrá una carga con el botón naranja. Ningún dato es real ni se guarda — es <b>navegación</b>, no la app.</p>
+
+<script>
+  // ---- número tipo "rueda de dígitos" (mismo mecanismo que el real) ----
+  function renderDigit(el, text) {
+    el.innerHTML = '';
+    for (const ch of text) {
+      if (/[0-9]/.test(ch)) {
+        const wrap = document.createElement('span');
+        wrap.className = 'digit-wrap';
+        const track = document.createElement('span');
+        track.className = 'digit-track';
+        for (let d = 0; d <= 9; d++) {
+          const div = document.createElement('div');
+          div.textContent = String(d);
+          track.appendChild(div);
+        }
+        wrap.appendChild(track);
+        el.appendChild(wrap);
+        const digit = Number(ch);
+        requestAnimationFrame(() => { track.style.transform = 'translateY(-' + (digit * 1.1) + 'em)'; });
+      } else {
+        const span = document.createElement('span');
+        span.textContent = ch;
+        el.appendChild(span);
+      }
+    }
+  }
+  renderDigit(document.getElementById('heroNum'), '$330');
+
+  // ---- chips seleccionables (grupo por contenedor) ----
+  document.querySelectorAll('.js-chip-group').forEach((row) => {
+    row.querySelectorAll('.chip').forEach((c) => {
+      c.addEventListener('click', () => {
+        row.querySelectorAll('.chip').forEach((x) => x.classList.remove('on'));
+        c.classList.add('on');
+      });
+    });
+  });
+
+  // ---- toggles ----
+  document.querySelectorAll('.js-toggle').forEach((t) => {
+    t.addEventListener('click', () => t.classList.toggle('on'));
+  });
+
+  // ---- segmented (Privada/Pública) ----
+  document.querySelectorAll('.segmented').forEach((seg) => {
+    const pill = seg.querySelector('.seg-pill');
+    const segs = seg.querySelectorAll('.seg');
+    segs.forEach((s, i) => {
+      s.addEventListener('click', () => {
+        segs.forEach((x) => x.classList.remove('on'));
+        s.classList.add('on');
+        pill.style.transform = i === 0 ? 'translateX(0)' : 'translateX(100%)';
+      });
+    });
+  });
+
+  // ---- borrador: cerrar ----
+  document.getElementById('draftClose').addEventListener('click', () => {
+    document.getElementById('draftBanner').style.display = 'none';
+  });
+
+  // ---- navegación principal (tab bar) ----
+  const screens = document.querySelectorAll('.screen');
+  const tabs = document.querySelectorAll('.tabbar .t');
+  const pill = document.getElementById('tabPill');
+
+  function positionPill(tabEl) {
+    // Píxeles reales vía getBoundingClientRect, no porcentaje — el bug documentado del
+    // proyecto real es que translateX(N%) se resuelve contra el propio ancho del tab,
+    // no un cuarto real de la tabbar, y el error se acumula tab por tab.
+    const bar = document.getElementById('tabbar');
+    const barRect = bar.getBoundingClientRect();
+    const tabRect = tabEl.getBoundingClientRect();
+    pill.style.width = tabRect.width - 8 + 'px';
+    pill.style.transform = 'translateX(' + (tabRect.left - barRect.left + 4) + 'px)';
+  }
+
+  function goToScreen(name) {
+    screens.forEach((s) => s.classList.toggle('active', s.id === 'screen-' + name));
+    tabs.forEach((t) => t.classList.toggle('on', t.dataset.screen === name));
+    const activeTab = [...tabs].find((t) => t.dataset.screen === name);
+    if (activeTab) positionPill(activeTab);
+  }
+
+  tabs.forEach((t) => t.addEventListener('click', () => goToScreen(t.dataset.screen)));
+  window.addEventListener('resize', () => {
+    const current = [...tabs].find((t) => t.classList.contains('on'));
+    if (current) positionPill(current);
+  });
+  // posición inicial (esperar layout)
+  requestAnimationFrame(() => positionPill(tabs[0]));
+
+  // ---- Ajustes -> Personalización (push nav) ----
+  const paneList = document.getElementById('paneAjustesList');
+  const panePers = document.getElementById('panePersonalizacion');
+  document.getElementById('rowPersonalizacion').addEventListener('click', () => {
+    paneList.classList.add('list-out');
+    panePers.classList.remove('detail-hidden');
+    panePers.classList.add('detail-in');
+  });
+  document.getElementById('btnBackAjustes').addEventListener('click', () => {
+    paneList.classList.remove('list-out');
+    panePers.classList.remove('detail-in');
+    panePers.classList.add('detail-hidden');
+  });
+
+  // ---- Sheet "Nueva carga" ----
+  const scrim = document.getElementById('scrim');
+  const sheet = document.getElementById('sheetNuevaCarga');
+  const fab = document.getElementById('fabNuevaCarga');
+  const confirmOverlay = document.getElementById('confirmOverlay');
+
+  function openSheet() {
+    scrim.classList.add('show');
+    sheet.classList.add('show');
+  }
+  function closeSheet() {
+    scrim.classList.remove('show');
+    sheet.classList.remove('show');
+  }
+  fab.addEventListener('click', openSheet);
+  scrim.addEventListener('click', closeSheet);
+
+  document.getElementById('btnGuardarCarga').addEventListener('click', () => {
+    closeSheet();
+    setTimeout(() => {
+      confirmOverlay.classList.add('show');
+      setTimeout(() => {
+        confirmOverlay.classList.remove('show');
+        goToScreen('inicio');
+      }, 1100);
+    }, 420);
+  });
+</script>

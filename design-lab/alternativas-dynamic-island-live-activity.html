@@ -1,0 +1,275 @@
+<title>Alternativas — Dynamic Island y Live Activity</title>
+<style>
+  :root {
+    /* Mismos tokens reales de tokens.css que el wireframe anterior — acento celeste
+       personalizable + verde/ámbar/rojo semántico de Valle/Llano/Punta. */
+    --bg: #F3F5F8; --surface: #FFFFFF; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0; --border: #DCE1E8;
+    --r-lg: 18px; --r-pill: 999px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 760px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 27px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14.5px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+  .page-head b { color: var(--text); }
+
+  h2.opt-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 50px 0 6px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h2.opt-h:first-of-type { margin-top: 0; }
+  h2.opt-h .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.opt-h .title { font-size: 19px; font-weight: 700; }
+  .opt-tagline { font-size: 13.5px; color: var(--text-secondary); max-width: 700px; margin: 0 0 20px; }
+  .opt-tagline b { color: var(--text); }
+
+  .mock-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 14px; }
+  .mock-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
+  .sys-black-frame { background: #050505; border-radius: 28px; padding: 16px; box-shadow: var(--shadow-2); min-height: 90px; display: flex; align-items: center; justify-content: center; }
+
+  .verdict-box { background: var(--surface); border-radius: var(--r-lg); padding: 16px 20px; box-shadow: var(--shadow-1); max-width: 900px; margin-top: 4px; }
+  .verdict-box .row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; font-size: 13px; line-height: 1.55; color: var(--text-secondary); }
+  .verdict-box .row:last-child { margin-bottom: 0; }
+  .verdict-box .row b { color: var(--text); }
+  .verdict-box .ic { flex: 0 0 auto; font-size: 13px; margin-top: 1px; }
+
+  /* ===== Compact island (todas las opciones) ===== */
+  .dyisland { display: flex; align-items: center; gap: 9px; background: #000; border-radius: 999px; padding: 8px 16px 8px 8px; width: fit-content; }
+  .dyisland .txt { font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; }
+  .dyisland .txt .dim { color: rgba(255,255,255,0.5); font-weight: 500; margin-left: 4px; }
+  .dyisland .txt .num { color: var(--accent); }
+
+  /* ---- Opción 1: batería real ---- */
+  .batt-ic { width: 26px; height: 15px; border: 2px solid rgba(255,255,255,0.5); border-radius: 4px; position: relative; flex: 0 0 auto; }
+  .batt-ic::after { content:''; position:absolute; top:50%; right:-4px; transform:translateY(-50%); width:2px; height:6px; background:rgba(255,255,255,0.5); border-radius:0 1px 1px 0; }
+  .batt-ic .fill { position: absolute; top: 1px; left: 1px; bottom: 1px; border-radius: 2px; background: var(--good); }
+  .batt-ic.lg { width: 46px; height: 24px; border-width: 3px; border-radius: 6px; }
+  .batt-ic.lg::after { right: -6px; width: 3px; height: 10px; }
+
+  .lock-screen-frame { background: linear-gradient(180deg, #1a1a2e, #0d0d1a); border-radius: 40px; padding: 46px 16px 22px; box-shadow: var(--shadow-2); position: relative; overflow: hidden; }
+  .lock-screen-frame::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.08), transparent 55%); }
+  .lock-clock { text-align: center; color: #fff; margin-bottom: 20px; position: relative; }
+  .lock-clock .t { font-size: 46px; font-weight: 600; font-family: var(--num-font); line-height: 1; }
+  .lock-clock .d { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+  .lock-activity { background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); border-radius: 22px; padding: 14px 16px; position: relative; }
+  .lock-activity .head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .lock-activity b { color: #fff; font-size: 13.5px; display: block; }
+  .lock-activity .netw { color: rgba(255,255,255,0.55); font-size: 11px; }
+  .lock-activity .franja-pill { margin-left: auto; font-size: 10px; font-weight: 700; padding: 4px 9px; border-radius: 999px; flex: 0 0 auto; }
+  .lock-activity .foot { display: flex; justify-content: space-between; font-size: 11.5px; color: rgba(255,255,255,0.6); margin-top: 10px; }
+  .lock-activity .foot .num { color: #fff; font-weight: 700; font-size: 13px; }
+
+  /* ---- Opción 2: anillo de progreso ---- */
+  .ring-wrap { position: relative; width: 26px; height: 26px; flex: 0 0 auto; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-wrap .bg { stroke: rgba(255,255,255,0.18); }
+  .ring-wrap .fg { stroke: var(--accent); stroke-linecap: round; }
+  .ring-wrap.lg { width: 84px; height: 84px; }
+  .ring-wrap .pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; }
+  .ring-wrap.lg .pct { font-size: 20px; }
+  .ring-wrap:not(.lg) .pct { font-size: 8px; }
+  .ring-expanded-row { display: flex; align-items: center; gap: 16px; }
+
+  /* ---- Opción 3: franja protagonista ---- */
+  .tint-island { border-radius: 999px; padding: 2px; width: fit-content; }
+  .tint-card { border-radius: 20px; padding: 14px 16px; position: relative; overflow: hidden; }
+  .tint-card::before { content:''; position:absolute; inset:0; opacity:0.85; }
+  .tint-card > * { position: relative; z-index: 1; }
+  .tint-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .tint-head .ic { width: 30px; height: 30px; border-radius: 9px; background: rgba(255,255,255,0.16); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .tint-head .ic svg { width: 15px; height: 15px; stroke: #fff; fill: #fff; fill-opacity: 0.3; }
+  .tint-head b { color: #fff; font-size: 13.5px; display: block; }
+  .tint-head span.netw { color: rgba(255,255,255,0.7); font-size: 11px; }
+  .tint-badge { margin-left: auto; font-size: 10px; font-weight: 700; color: #fff; background: rgba(255,255,255,0.22); padding: 4px 9px; border-radius: 999px; }
+  .tint-bar-track { height: 7px; border-radius: 4px; background: rgba(255,255,255,0.22); overflow: hidden; margin-bottom: 8px; }
+  .tint-bar-fill { height: 100%; border-radius: 4px; background: #fff; width: 62%; }
+  .tint-foot { display: flex; justify-content: space-between; font-size: 11.5px; color: rgba(255,255,255,0.75); }
+  .tint-foot .num { color: #fff; font-weight: 700; font-size: 13px; }
+
+  .verdict-final { max-width: 900px; margin: 50px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe · alternativas para las secciones 1 y 2 ya aprobadas</div>
+    <h1>Dynamic Island y Live Activity — 3 direcciones</h1>
+    <p>Misma base (acento celeste real, verde/ámbar/rojo de Valle/Llano/Punta, material negro de sistema que no elige la app) — lo que cambia en cada opción es <b>cómo se representa el progreso de la carga</b>. La barra lineal del wireframe anterior queda como punto de comparación.</p>
+  </div>
+
+  <!-- ===== OPCIÓN 1 ===== -->
+  <h2 class="opt-h"><span class="n">1</span><span class="title">Batería real</span></h2>
+  <p class="opt-tagline">En vez de un rayo + barra, una <b>pila que se dibuja llenándose</b> — lectura instantánea sin necesidad de leer números, y el color de la franja tiñe el relleno de la batería en vez de vivir aparte en una pill.</p>
+  <div class="mock-wrap">
+    <div>
+      <div class="mock-label">Compacta</div>
+      <div class="sys-black-frame">
+        <div class="dyisland">
+          <div class="batt-ic"><div class="fill" style="width:60%;"></div></div>
+          <span class="txt">Cargando <span class="num">45%</span></span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock-label">Expandida</div>
+      <div class="sys-black-frame">
+        <div style="width:100%;">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+            <div class="batt-ic lg"><div class="fill" style="width:60%;"></div></div>
+            <div>
+              <b style="color:#fff;font-size:13.5px;display:block;">Cargando en Casa</b>
+              <span style="color:rgba(255,255,255,0.55);font-size:11px;">UTE Lentos · Valle</span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11.5px;color:rgba(255,255,255,0.6);">
+            <span class="num" style="color:#fff;font-weight:700;">17.0 kWh</span><span>3h 20m restantes</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock-label">Pantalla bloqueada</div>
+      <div class="lock-screen-frame" style="padding:30px 14px 16px;">
+        <div class="lock-clock" style="margin-bottom:12px;"><div class="t" style="font-size:34px;">23:41</div></div>
+        <div class="lock-activity">
+          <div class="head">
+            <div class="batt-ic lg"><div class="fill" style="width:60%;"></div></div>
+            <div><b>Cargando en Casa</b><span class="netw">UTE Lentos · $2,44/kWh</span></div>
+            <span class="franja-pill" style="background:rgba(12,163,12,0.28);color:#7CE87C;">Valle</span>
+          </div>
+          <div class="foot"><span class="num">17.0 / 27.4 kWh</span><span class="num">Listo 02:20</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span class="ic">👍</span><div><b>A favor:</b> se entiende de un vistazo sin leer nada, y encaja perfecto con que la app ya habla de "batería"/autonomía en Vehículo.</div></div>
+    <div class="row"><span class="ic">👎</span><div><b>En contra:</b> un ícono de batería es genérico — lo usa cualquier app de carga, no aporta identidad propia de Carga EV.</div></div>
+  </div>
+
+  <!-- ===== OPCIÓN 2 ===== -->
+  <h2 class="opt-h"><span class="n">2</span><span class="title">Anillo de progreso</span></h2>
+  <p class="opt-tagline">El patrón más "Apple" de los tres — mismo lenguaje que los anillos de Fitness o la pantalla de carga del Watch. El % vive en el centro del anillo, no al lado.</p>
+  <div class="mock-wrap">
+    <div>
+      <div class="mock-label">Compacta</div>
+      <div class="sys-black-frame">
+        <div class="dyisland">
+          <div class="ring-wrap">
+            <svg width="26" height="26" viewBox="0 0 26 26"><circle class="bg" cx="13" cy="13" r="11" fill="none" stroke-width="3"/><circle class="fg" cx="13" cy="13" r="11" fill="none" stroke-width="3" stroke-dasharray="69.1" stroke-dashoffset="27.6"/></svg>
+          </div>
+          <span class="txt">Cargando</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock-label">Expandida</div>
+      <div class="sys-black-frame">
+        <div class="ring-expanded-row">
+          <div class="ring-wrap lg">
+            <svg width="84" height="84" viewBox="0 0 84 84"><circle class="bg" cx="42" cy="42" r="36" fill="none" stroke-width="7"/><circle class="fg" cx="42" cy="42" r="36" fill="none" stroke-width="7" stroke-dasharray="226" stroke-dashoffset="90"/></svg>
+            <span class="pct">62%</span>
+          </div>
+          <div>
+            <b style="color:#fff;font-size:13.5px;display:block;">Cargando en Casa</b>
+            <span style="color:rgba(255,255,255,0.55);font-size:11px;display:block;margin-bottom:6px;">UTE Lentos · Valle</span>
+            <span class="num" style="color:#fff;font-weight:700;font-size:13px;">17.0 kWh</span><span style="color:rgba(255,255,255,0.55);font-size:11px;"> · 3h 20m</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock-label">Pantalla bloqueada</div>
+      <div class="lock-screen-frame" style="padding:30px 14px 16px;">
+        <div class="lock-clock" style="margin-bottom:12px;"><div class="t" style="font-size:34px;">23:41</div></div>
+        <div class="lock-activity">
+          <div class="head">
+            <div class="ring-wrap" style="width:38px;height:38px;">
+              <svg width="38" height="38" viewBox="0 0 38 38"><circle class="bg" cx="19" cy="19" r="16" fill="none" stroke-width="4"/><circle class="fg" cx="19" cy="19" r="16" fill="none" stroke-width="4" stroke-dasharray="100.5" stroke-dashoffset="40"/></svg>
+              <span class="pct" style="font-size:10px;">62%</span>
+            </div>
+            <div><b>Cargando en Casa</b><span class="netw">UTE Lentos · $2,44/kWh</span></div>
+            <span class="franja-pill" style="background:rgba(12,163,12,0.28);color:#7CE87C;">Valle</span>
+          </div>
+          <div class="foot"><span class="num">17.0 / 27.4 kWh</span><span class="num">Listo 02:20</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span class="ic">👍</span><div><b>A favor:</b> el más "de sistema" de los tres — se siente nativo de verdad, no como algo dibujado a mano.</div></div>
+    <div class="row"><span class="ic">👎</span><div><b>En contra:</b> un anillo comunica "% completo" mejor que "tiempo restante" — para esta app, el dato que más importa (cuándo termina) queda en texto chico al costado, no en la forma principal.</div></div>
+  </div>
+
+  <!-- ===== OPCIÓN 3 ===== -->
+  <h2 class="opt-h"><span class="n">3</span><span class="title">Franja protagonista</span></h2>
+  <p class="opt-tagline">En vez de un detalle chico, el color de Valle/Llano/Punta <b>tiñe toda la tarjeta</b> — el mensaje "estás cargando barato ahora mismo" pasa a ser lo primero que se lee, antes que el kWh o la hora.</p>
+  <div class="mock-wrap">
+    <div>
+      <div class="mock-label">Compacta</div>
+      <div class="sys-black-frame">
+        <div class="tint-island" style="background:linear-gradient(90deg, #0ca30c, #087d08);">
+          <div class="dyisland" style="background:transparent;">
+            <span class="txt" style="color:#fff;">Cargando · Valle <span class="num" style="color:#fff;">45%</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock-label">Expandida</div>
+      <div class="sys-black-frame">
+        <div class="tint-card" style="width:100%;background:linear-gradient(135deg, #0ca30c, #076807);">
+          <div class="tint-head">
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <div><b>Cargando en Casa</b><span class="netw">UTE Lentos</span></div>
+            <span class="tint-badge">Valle</span>
+          </div>
+          <div class="tint-bar-track"><div class="tint-bar-fill"></div></div>
+          <div class="tint-foot"><span class="num">17.0 kWh</span><span>3h 20m restantes</span></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock-label">Pantalla bloqueada</div>
+      <div class="lock-screen-frame" style="padding:30px 14px 16px;">
+        <div class="lock-clock" style="margin-bottom:12px;"><div class="t" style="font-size:34px;">23:41</div></div>
+        <div class="tint-card" style="background:linear-gradient(135deg, #0ca30c, #076807);">
+          <div class="tint-head">
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <div><b>Cargando en Casa</b><span class="netw">UTE Lentos · $2,44/kWh</span></div>
+            <span class="tint-badge">Valle</span>
+          </div>
+          <div class="tint-bar-track"><div class="tint-bar-fill"></div></div>
+          <div class="tint-foot"><span class="num">17.0 / 27.4 kWh</span><span class="num">Listo 02:20</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span class="ic">👍</span><div><b>A favor:</b> es la opción con más identidad de Carga EV — ninguna otra app de carga comunica la tarifa horaria así de fuerte, y es justo el diferencial real de esta app.</div></div>
+    <div class="row"><span class="ic">👎</span><div><b>En contra:</b> el HIG de Apple pide que el material de Dynamic Island se mantenga mayormente neutro — teñir toda la tarjeta es lo menos "nativo" de las tres, y en Punta (rojo fuerte) puede sentirse como una alerta de error en vez de solo informativo.</div></div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Mi lectura</div>
+    <p>Si el objetivo es que se sienta 100% como una app de Apple, <b>Opción 2 (anillo)</b> es la más segura — pero pierde el foco en "cuándo termina", que es el dato que de verdad importa a las 2 de la mañana. <b>Opción 1 (batería)</b> es el término medio: lectura instantánea, cero riesgo de sentirse "fuera de lugar", aunque menos distintiva. <b>Opción 3 (franja protagonista)</b> es la más fiel a lo que hace única a esta app, pero es la que más se aleja del HIG — la dejaría solo si el objetivo es priorizar identidad por encima de "sentirse nativo al 100%".</p>
+    <p>¿Alguna te cierra tal cual, o combinamos partes (ej. anillo de la Opción 2 con el tinte de franja de la Opción 3 solo en el borde, no en toda la tarjeta)?</p>
+  </div>
+</div>

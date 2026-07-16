@@ -1,0 +1,224 @@
+<title>Ubicación de Casa + rango de batería en el historial</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-pill: 999px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34; --border: #2A2F38;
+      --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C;
+      --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+      --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+      --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 780px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .page-head p:last-child { margin-bottom: 0; }
+  .page-head b { color: var(--text); }
+
+  h2.step-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 46px 0 6px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h2.step-h:first-of-type { margin-top: 0; }
+  h2.step-h .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.step-h .title { font-size: 18px; font-weight: 700; }
+  h2.step-h .sub { margin-left: auto; font-size: 11.5px; color: var(--text-muted); font-weight: 600; }
+  .step-tagline { font-size: 13px; color: var(--text-secondary); max-width: 700px; margin: 0 0 20px; }
+  .step-tagline b { color: var(--text); }
+
+  .device { max-width: 340px; margin: 0 auto; }
+
+  /* ===== Ubicación de Casa ===== */
+  .settings-card { background: var(--surface); border-radius: var(--r-lg); padding: 20px 22px; box-shadow: var(--shadow-1); }
+  .settings-card .stitle { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .settings-card .sdesc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 16px; }
+  .map-mock { position: relative; height: 140px; border-radius: var(--r-md); overflow: hidden; margin-bottom: 14px; background: var(--surface-2); }
+  .map-mock .grid-lines { position: absolute; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 22px 22px; opacity: 0.6; }
+  .map-mock .street { position: absolute; background: var(--surface-3); }
+  .map-mock .geofence-ring { position: absolute; top: 50%; left: 50%; width: 88px; height: 88px; margin: -44px 0 0 -44px; border-radius: 50%; border: 2px dashed var(--accent); background: var(--accent-soft); }
+  .map-mock .pin { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -100%); }
+  .map-mock .pin svg { width: 26px; height: 26px; fill: var(--accent); stroke: var(--surface); stroke-width: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3)); }
+  .map-mock .radius-label { position: absolute; bottom: 8px; right: 10px; font-size: 9.5px; font-weight: 700; color: var(--text-muted); background: var(--surface); padding: 3px 8px; border-radius: 999px; }
+
+  .primary-btn-mock { display: block; width: 100%; text-align: center; background: var(--accent); color: var(--accent-ink); font-size: 14.5px; font-weight: 700; padding: 12px; border-radius: var(--r-md); border: none; margin-bottom: 10px; }
+  .saved-tag { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--good); margin-bottom: 6px; }
+  .saved-tag svg { width: 15px; height: 15px; stroke: var(--good); }
+  .perm-note { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+
+  /* ===== historial: dos alternativas para el rango ===== */
+  .versions { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 720px) { .versions { grid-template-columns: 1fr; max-width: 360px; margin: 0 auto; } }
+  .col-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
+  .col-label.rec { color: var(--accent); }
+
+  .list-group-mock { background: var(--surface); border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-1); }
+  .row-mock { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--border); }
+  .row-mock:first-child { border-top: none; }
+  .row-mock .meta { flex: 1; min-width: 0; }
+  .row-mock .primary { font-size: 13px; font-weight: 600; }
+  .row-mock .secondary { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+  .row-mock .amount { text-align: right; flex: 0 0 auto; }
+  .row-mock .cost { font-size: 13px; font-weight: 700; }
+
+  /* Alternativa A: batería ribbon con dos tonos + números en los bordes */
+  .batt-ribbon-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 0 0 auto; }
+  .batt-ribbon { position: relative; width: 46px; height: 18px; border: 1.5px solid var(--border); border-radius: 5px; overflow: hidden; background: var(--surface-2); }
+  .batt-ribbon::after { content: ''; position: absolute; top: 50%; right: -3.5px; transform: translateY(-50%); width: 2.5px; height: 8px; background: var(--border); border-radius: 0 1px 1px 0; }
+  .batt-ribbon .base-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--surface-3); }
+  .batt-ribbon .gain-fill { position: absolute; top: 0; bottom: 0; background: var(--good); }
+  .batt-ribbon-lbls { display: flex; justify-content: space-between; width: 46px; font-size: 8px; font-weight: 700; color: var(--text-muted); }
+  .batt-ribbon-lbls .end { color: var(--good); }
+
+  /* Alternativa B: arco de rango */
+  .arc-wrap { position: relative; width: 46px; height: 46px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
+  .arc-wrap svg { transform: rotate(-90deg); }
+  .arc-bg { stroke: var(--surface-3); }
+  .arc-base { stroke: var(--border); stroke-linecap: round; }
+  .arc-gain { stroke: var(--good); stroke-linecap: round; }
+  .arc-center { position: absolute; display: flex; flex-direction: column; align-items: center; font-size: 8px; font-weight: 700; line-height: 1.15; }
+  .arc-center .end { font-size: 10px; color: var(--good); }
+  .arc-center .start { color: var(--text-muted); }
+
+  .verdict-box { background: var(--surface); border-radius: var(--r-lg); padding: 16px 20px; box-shadow: var(--shadow-1); max-width: 900px; margin-top: 14px; }
+  .verdict-box .row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; font-size: 13px; line-height: 1.55; color: var(--text-secondary); }
+  .verdict-box .row:last-child { margin-bottom: 0; }
+  .verdict-box .row b { color: var(--text); }
+
+  .verdict-final { max-width: 900px; margin: 46px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe · respuesta a tu pregunta + una idea nueva</div>
+    <h1>La app no sabe dónde vivís — se lo enseñás una vez</h1>
+    <p>No hay forma de que la app "adivine" tu casa. El único método real es: parado físicamente en tu casa, tocás un botón en Ajustes que captura tu posición GPS <b>en ese momento</b> y la guarda como el centro de una zona circular chica (unos 150m de radio). iOS avisa a la app cuando cruzás ese círculo — nunca antes, nunca en otro lugar.</p>
+  </div>
+
+  <!-- ===== UBICACIÓN DE CASA ===== -->
+  <h2 class="step-h"><span class="n">1</span><span class="title">Ajustes → Ubicación de Casa</span></h2>
+  <p class="step-tagline">El "mapa" de acá es solo ilustrativo (calles/cuadrícula dibujadas, no un mapa real cargado) — mostrando dónde vive esto en la app, no simulando Apple Maps de verdad.</p>
+  <div class="device">
+    <div class="settings-card">
+      <div class="stitle">Ubicación de Casa</div>
+      <div class="sdesc">Se usa para avisarte cuando llegás y sugerirte programar la carga. Nunca se comparte ni se sube a ningún lado — vive solo en tu teléfono.</div>
+
+      <div class="map-mock">
+        <div class="grid-lines"></div>
+        <div class="street" style="top:40%; left:0; right:0; height:6px;"></div>
+        <div class="street" style="left:35%; top:0; bottom:0; width:6px;"></div>
+        <div class="geofence-ring"></div>
+        <div class="pin"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.6" fill="var(--surface)"/></svg></div>
+        <span class="radius-label">radio ~150m</span>
+      </div>
+
+      <div class="saved-tag"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg>Guardada</div>
+      <button class="primary-btn-mock">Actualizar con mi ubicación actual</button>
+      <div class="perm-note">La primera vez, iOS va a pedir permiso de ubicación "Siempre" — sin ese permiso (solo "Mientras uso la app"), esto no puede funcionar con la app cerrada.</div>
+    </div>
+  </div>
+
+  <!-- ===== RANGO DE BATERÍA EN EL HISTORIAL ===== -->
+  <h2 class="step-h"><span class="n">2</span><span class="title">% inicial → % final en el historial</span><span class="sub">dos formas no genéricas</span></h2>
+  <p class="step-tagline">Nada de "24.7% → 91%" en texto plano — un objeto chico que muestra las dos cosas a la vez: cuánto ya tenía, y cuánto ganó.</p>
+  <div class="versions">
+    <div>
+      <div class="col-label">A — Batería ribbon</div>
+      <div class="list-group-mock">
+        <div class="row-mock">
+          <div class="batt-ribbon-wrap">
+            <div class="batt-ribbon">
+              <div class="base-fill" style="width:24.7%;"></div>
+              <div class="gain-fill" style="left:24.7%; width:66.3%;"></div>
+            </div>
+            <div class="batt-ribbon-lbls"><span>25</span><span class="end">91</span></div>
+          </div>
+          <div class="meta"><div class="primary">Mié 08 Jul</div><div class="secondary">Casa · Valle</div></div>
+          <div class="amount"><div class="cost num">$61</div></div>
+        </div>
+        <div class="row-mock">
+          <div class="batt-ribbon-wrap">
+            <div class="batt-ribbon">
+              <div class="base-fill" style="width:41%;"></div>
+              <div class="gain-fill" style="left:41%; width:38%;"></div>
+            </div>
+            <div class="batt-ribbon-lbls"><span>41</span><span class="end">79</span></div>
+          </div>
+          <div class="meta"><div class="primary">Lun 06 Jul</div><div class="secondary">DMC · Pública</div></div>
+          <div class="amount"><div class="cost num">$84</div></div>
+        </div>
+      </div>
+      <div class="verdict-box">
+        <div class="row"><span>👍</span><div><b>A favor:</b> es literalmente una batería en miniatura — se entiende sin leer ningún número, y el ícono ya "es" el dato.</div></div>
+        <div class="row"><span>👎</span><div><b>En contra:</b> a 46px de ancho, los números en los bordes (25/91) pueden quedar apretados en pantallas chicas o con letra grande (Ajustes → Personalización → Tipografía "Grande").</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="col-label rec">B — Arco de rango</div>
+      <div class="list-group-mock">
+        <div class="row-mock">
+          <div class="arc-wrap">
+            <svg width="46" height="46" viewBox="0 0 46 46">
+              <circle class="arc-bg" cx="23" cy="23" r="19" fill="none" stroke-width="4"/>
+              <circle class="arc-base" cx="23" cy="23" r="19" fill="none" stroke-width="4" stroke-dasharray="29.8 89.6" stroke-dashoffset="0"/>
+              <circle class="arc-gain" cx="23" cy="23" r="19" fill="none" stroke-width="4" stroke-dasharray="78.8 40.6" stroke-dashoffset="-29.8"/>
+            </svg>
+            <div class="arc-center"><span class="end num">91</span><span class="start num">·25</span></div>
+          </div>
+          <div class="meta"><div class="primary">Mié 08 Jul</div><div class="secondary">Casa · Valle</div></div>
+          <div class="amount"><div class="cost num">$61</div></div>
+        </div>
+        <div class="row-mock">
+          <div class="arc-wrap">
+            <svg width="46" height="46" viewBox="0 0 46 46">
+              <circle class="arc-bg" cx="23" cy="23" r="19" fill="none" stroke-width="4"/>
+              <circle class="arc-base" cx="23" cy="23" r="19" fill="none" stroke-width="4" stroke-dasharray="49.0 70.4" stroke-dashoffset="0"/>
+              <circle class="arc-gain" cx="23" cy="23" r="19" fill="none" stroke-width="4" stroke-dasharray="45.4 74.0" stroke-dashoffset="-49.0"/>
+            </svg>
+            <div class="arc-center"><span class="end num">79</span><span class="start num">·41</span></div>
+          </div>
+          <div class="meta"><div class="primary">Lun 06 Jul</div><div class="secondary">DMC · Pública</div></div>
+          <div class="amount"><div class="cost num">$84</div></div>
+        </div>
+      </div>
+      <div class="verdict-box">
+        <div class="row"><span>👍</span><div><b>A favor:</b> mismo lenguaje visual que ya elegiste para la Live Activity (el anillo de la bobina/franjas) — el historial y la carga en vivo comparten una identidad, no son dos sistemas separados.</div></div>
+        <div class="row"><span>👎</span><div><b>En contra:</b> un arco es un poco menos "literal" que una batería — pide un segundo de aprendizaje la primera vez que lo ves.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Mi lectura</div>
+    <p>Me inclino por la <b>B (arco)</b> — no por ser "más linda", sino porque crea una <b>línea visual continua</b> entre la Live Activity (que ya definimos con anillos/bobina) y el historial. La A (batería) es más inmediata de entender la primera vez, pero introduce una tercera forma visual (bobina en vivo, batería en historial, más lo que sea que quede en Vehículo) en vez de reforzar una sola.</p>
+    <p>¿Vamos con el arco para mantener todo coherente, o preferís la batería por ser más literal aunque sea una forma nueva?</p>
+  </div>
+</div>

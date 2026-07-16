@@ -1,0 +1,285 @@
+<title>Fila de Cargas — barra 3/4 + precio 1/4</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  :root[data-theme="dark"] {
+    --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34; --border: #2A2F38;
+    --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+    --accent: #4FB0F5; --accent-ink: #04121C;
+    --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+    --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+    --page-surface: #0B0E13;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 700px; margin-bottom: 26px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 23px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+
+  .theme-toggle-row { display: flex; gap: 8px; margin-bottom: 18px; }
+  .theme-btn { font-size: 11.5px; font-weight: 700; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); cursor: pointer; }
+  .theme-btn.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  h2.opt-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 40px 0 6px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h2.opt-h:first-of-type { margin-top: 0; }
+  h2.opt-h .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.opt-h .title { font-size: 17px; font-weight: 700; }
+  .opt-tagline { font-size: 13px; color: var(--text-secondary); max-width: 650px; margin: 0 0 16px; }
+
+  .device { max-width: 380px; }
+  .list-group { background: var(--surface); border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-1); }
+
+  /* ===== Variante 1: texto arriba, barra abajo, precio en columna 1/4 con separador ===== */
+  .row-v1 { display: flex; align-items: stretch; border-top: 1px solid var(--border); }
+  .row-v1:first-child { border-top: none; }
+  .row-v1 .left { flex: 0 0 75%; padding: 12px 14px; min-width: 0; }
+  .row-v1 .meta-line { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 7px; }
+  .row-v1 .meta-line .place { color: var(--text-muted); font-size: 10.5px; }
+  .row-v1 .right { flex: 0 0 25%; display: flex; align-items: center; justify-content: center; border-left: 1px solid var(--border); }
+  .row-v1 .price { font-size: 16px; font-weight: 700; }
+
+  /* ===== Variante 2: barra grande como hero, texto chico debajo, precio+kwh apilados ===== */
+  .row-v2 { display: flex; align-items: center; gap: 0; border-top: 1px solid var(--border); }
+  .row-v2:first-child { border-top: none; }
+  .row-v2 .left { flex: 0 0 75%; padding: 13px 14px; min-width: 0; }
+  .row-v2 .caption { font-size: 10.5px; color: var(--text-muted); margin-top: 7px; }
+  .row-v2 .caption b { color: var(--text); font-weight: 600; }
+  .row-v2 .right { flex: 0 0 25%; text-align: right; padding: 13px 14px 13px 8px; }
+  .row-v2 .price { font-size: 15px; font-weight: 700; display: block; }
+  .row-v2 .kwh-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+  /* barra segmentada grande */
+  .big-batt-wrap { position: relative; }
+  .big-batt-svg { width: 100%; height: 28px; display: block; }
+  .big-lbl { position: absolute; top: 50%; transform: translateY(-50%); font-size: 10px; font-weight: 700; }
+  .big-lbl.s { left: 8px; color: rgba(255,255,255,0.7); }
+  .big-lbl.e { color: #fff; }
+
+  /* barra continua (variante de comparación) */
+  .cont-bar-wrap { position: relative; height: 26px; border-radius: 8px; overflow: hidden; background: var(--surface-2); border: 1px solid var(--border); }
+  .cont-bar-base { position: absolute; top: 0; bottom: 0; left: 0; background: var(--surface-3); }
+  .cont-bar-gain { position: absolute; top: 0; bottom: 0; background: var(--good); }
+  .cont-bar-lbl { position: absolute; top: 50%; transform: translateY(-50%); font-size: 10.5px; font-weight: 700; }
+  .cont-bar-lbl.s { left: 8px; color: var(--text-muted); }
+  .cont-bar-lbl.e { color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.2); }
+
+  /* ===== Variante 4: combinada (1 + texto "empezó con" + kWh de la 2) ===== */
+  .row-v4 { display: flex; align-items: stretch; border-top: 1px solid var(--border); }
+  .row-v4:first-child { border-top: none; }
+  .row-v4 .left { flex: 0 0 75%; padding: 12px 14px; min-width: 0; }
+  .row-v4 .meta-line { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .row-v4 .meta-line .place { color: var(--text-muted); font-size: 10.5px; }
+  .row-v4 .start-line { font-size: 10.5px; color: var(--text-secondary); margin-bottom: 7px; }
+  .row-v4 .start-line b { color: var(--text); font-weight: 700; }
+  .row-v4 .right { flex: 0 0 25%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-left: 1px solid var(--border); }
+  .row-v4 .price { font-size: 16px; font-weight: 700; }
+  .row-v4 .kwh-sub { font-size: 10px; color: var(--text-muted); }
+
+  .verdict-box { background: var(--surface); border-radius: var(--r-lg); padding: 16px 20px; box-shadow: var(--shadow-1); max-width: 700px; margin-top: 14px; }
+  .verdict-box .row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; font-size: 13px; line-height: 1.55; color: var(--text-secondary); }
+  .verdict-box .row:last-child { margin-bottom: 0; }
+  .verdict-box .row b { color: var(--text); }
+
+  .verdict-final { max-width: 900px; margin: 44px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe · la barra pasa a ser la protagonista de la fila</div>
+    <h1>Barra ocupando 3/4, precio aislado en el cuarto restante</h1>
+    <p>En vez de un ícono chico + texto + monto en una sola línea apretada, la barra de rango crece hasta ser el elemento principal de la fila, y el precio vive en su propio espacio separado.</p>
+  </div>
+  <div class="theme-toggle-row">
+    <button class="theme-btn active" data-theme-btn="light">Claro</button>
+    <button class="theme-btn" data-theme-btn="dark">Oscuro</button>
+  </div>
+
+  <!-- ===== VARIANTE 1 ===== -->
+  <h2 class="opt-h"><span class="n">1</span><span class="title">Texto arriba, barra grande abajo, precio con separador</span></h2>
+  <p class="opt-tagline">Fecha/lugar como encabezado de la fila, la barra (segmentada, la que ya elegiste) abajo ocupando todo el ancho de la columna izquierda. El precio queda en su propio cuarto, con una línea vertical que lo separa del resto.</p>
+  <div class="device">
+    <div class="list-group">
+      <div class="row-v1">
+        <div class="left">
+          <div class="meta-line"><span>Hoy</span><span class="place">Casa · Valle</span></div>
+          <div class="big-batt-wrap">
+            <svg class="big-batt-svg" viewBox="0 0 220 28">
+              <rect x="1" y="1" width="200" height="26" rx="6" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>
+              <rect x="204" y="9" width="4" height="10" rx="1.5" fill="var(--border)"/>
+              <rect x="4" y="4" width="45" height="20" rx="3" fill="var(--surface-3)"/>
+              <rect x="52" y="4" width="144" height="20" rx="3" fill="var(--good)"/>
+            </svg>
+            <span class="big-lbl s num">25</span><span class="big-lbl e num" style="left:180px;">91</span>
+          </div>
+        </div>
+        <div class="right"><span class="price num">$97</span></div>
+      </div>
+      <div class="row-v1">
+        <div class="left">
+          <div class="meta-line"><span>Mié 08 Jul</span><span class="place">Casa · Valle</span></div>
+          <div class="big-batt-wrap">
+            <svg class="big-batt-svg" viewBox="0 0 220 28">
+              <rect x="1" y="1" width="200" height="26" rx="6" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>
+              <rect x="204" y="9" width="4" height="10" rx="1.5" fill="var(--border)"/>
+              <rect x="4" y="4" width="76" height="20" rx="3" fill="var(--surface-3)"/>
+              <rect x="83" y="4" width="70" height="20" rx="3" fill="var(--good)"/>
+            </svg>
+            <span class="big-lbl s num">41</span><span class="big-lbl e num" style="left:143px;">79</span>
+          </div>
+        </div>
+        <div class="right"><span class="price num">$84</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> el separador vertical hace que el precio se lea como un dato aparte y no compita con la barra por atención.</div></div>
+    <div class="row"><span>👎</span><div><b>En contra:</b> son dos líneas de altura por fila (texto + barra) — la lista se hace más larga que la actual de una sola línea.</div></div>
+  </div>
+
+  <!-- ===== VARIANTE 2 ===== -->
+  <h2 class="opt-h"><span class="n">2</span><span class="title">Barra como hero, texto chico debajo, precio+kWh apilados</span></h2>
+  <p class="opt-tagline">La barra es lo primero que se ve (más alta, sin compartir línea con nada), la fecha/lugar queda como caption chico debajo. El precio y los kWh se apilan en el cuarto derecho, sin separador.</p>
+  <div class="device">
+    <div class="list-group">
+      <div class="row-v2">
+        <div class="left">
+          <div class="big-batt-wrap">
+            <svg class="big-batt-svg" viewBox="0 0 220 30" style="height:30px;">
+              <rect x="1" y="1" width="200" height="28" rx="7" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>
+              <rect x="204" y="10" width="4" height="10" rx="1.5" fill="var(--border)"/>
+              <rect x="4" y="4" width="45" height="22" rx="3" fill="var(--surface-3)"/>
+              <rect x="52" y="4" width="144" height="22" rx="3" fill="var(--good)"/>
+            </svg>
+            <span class="big-lbl s num">25</span><span class="big-lbl e num" style="left:180px;">91</span>
+          </div>
+          <div class="caption"><b>Hoy</b> · Casa · Valle</div>
+        </div>
+        <div class="right"><span class="price num">$97</span><span class="kwh-sub num">27.4 kWh</span></div>
+      </div>
+      <div class="row-v2">
+        <div class="left">
+          <div class="big-batt-wrap">
+            <svg class="big-batt-svg" viewBox="0 0 220 30" style="height:30px;">
+              <rect x="1" y="1" width="200" height="28" rx="7" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>
+              <rect x="204" y="10" width="4" height="10" rx="1.5" fill="var(--border)"/>
+              <rect x="4" y="4" width="76" height="22" rx="3" fill="var(--surface-3)"/>
+              <rect x="83" y="4" width="70" height="22" rx="3" fill="var(--good)"/>
+            </svg>
+            <span class="big-lbl s num">41</span><span class="big-lbl e num" style="left:143px;">79</span>
+          </div>
+          <div class="caption"><b>Lun 06 Jul</b> · DMC · Pública</div>
+        </div>
+        <div class="right"><span class="price num">$84</span><span class="kwh-sub num">22.8 kWh</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> el precio gana un dato extra (kWh) sin ensuciar la barra — y al no tener separador se siente más integrado, menos "tabla".</div></div>
+    <div class="row"><span>👎</span><div><b>En contra:</b> sin la línea vertical, el ojo tarda un poco más en encontrar dónde "empieza" la columna de precio.</div></div>
+  </div>
+
+  <!-- ===== VARIANTE 3 (comparación) ===== -->
+  <h2 class="opt-h"><span class="n">3</span><span class="title">Misma idea, con barra continua en vez de segmentada</span></h2>
+  <p class="opt-tagline">A este tamaño (mucho más grande que el ícono chico de antes), vale la pena comparar contra una barra de relleno continuo — capaz los segmentos ya no hacen falta cuando hay tanto espacio.</p>
+  <div class="device">
+    <div class="list-group">
+      <div class="row-v1">
+        <div class="left">
+          <div class="meta-line"><span>Hoy</span><span class="place">Casa · Valle</span></div>
+          <div class="cont-bar-wrap">
+            <div class="cont-bar-base" style="width:22.7%;"></div>
+            <div class="cont-bar-gain" style="left:22.7%; width:61.4%;"></div>
+            <span class="cont-bar-lbl s">25</span><span class="cont-bar-lbl e" style="left:80%;">91</span>
+          </div>
+        </div>
+        <div class="right"><span class="price num">$97</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> más limpia, menos "técnica" — a este ancho la info de 25→91 ya se lee clara sin necesitar segmentos.</div></div>
+    <div class="row"><span>👎</span><div><b>En contra:</b> pierde la identidad "batería real" que te gustó de la segmentada — vuelve a ser una barra de progreso genérica, el mismo problema que tenías con las opciones que no te convencían antes.</div></div>
+  </div>
+
+  <!-- ===== VARIANTE 4: combinada ===== -->
+  <h2 class="opt-h"><span class="n">4</span><span class="title">Combinada — la definitiva</span></h2>
+  <p class="opt-tagline">Base de la Opción 1 (separador vertical) + una línea explícita de texto "Empezó con X%" (no solo el numerito flotando en la barra) + kWh debajo del precio, como en la Opción 2.</p>
+  <div class="device">
+    <div class="list-group">
+      <div class="row-v4">
+        <div class="left">
+          <div class="meta-line"><span>Hoy</span><span class="place">Casa · Valle</span></div>
+          <div class="start-line">Empezó con <b class="num">25%</b></div>
+          <div class="big-batt-wrap">
+            <svg class="big-batt-svg" viewBox="0 0 220 28">
+              <rect x="1" y="1" width="200" height="26" rx="6" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>
+              <rect x="204" y="9" width="4" height="10" rx="1.5" fill="var(--border)"/>
+              <rect x="4" y="4" width="45" height="20" rx="3" fill="var(--surface-3)"/>
+              <rect x="52" y="4" width="144" height="20" rx="3" fill="var(--good)"/>
+            </svg>
+            <span class="big-lbl e num" style="left:180px;">91</span>
+          </div>
+        </div>
+        <div class="right"><span class="price num">$97</span><span class="kwh-sub num">27.4 kWh</span></div>
+      </div>
+      <div class="row-v4">
+        <div class="left">
+          <div class="meta-line"><span>Lun 06 Jul</span><span class="place">DMC · Pública</span></div>
+          <div class="start-line">Empezó con <b class="num">41%</b></div>
+          <div class="big-batt-wrap">
+            <svg class="big-batt-svg" viewBox="0 0 220 28">
+              <rect x="1" y="1" width="200" height="26" rx="6" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>
+              <rect x="204" y="9" width="4" height="10" rx="1.5" fill="var(--border)"/>
+              <rect x="4" y="4" width="76" height="20" rx="3" fill="var(--surface-3)"/>
+              <rect x="83" y="4" width="70" height="20" rx="3" fill="var(--good)"/>
+            </svg>
+            <span class="big-lbl e num" style="left:143px;">79</span>
+          </div>
+        </div>
+        <div class="right"><span class="price num">$84</span><span class="kwh-sub num">22.8 kWh</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> el "empezó con 25%" se lee como una frase real, no como un numerito que hay que buscar sobre la barra — y la plata ahora dice a cuántos kWh corresponde sin tener que ir a abrir la carga.</div></div>
+    <div class="row"><span>💭</span><div><b>Nota:</b> saqué el número chico de arranque que estaba flotando sobre la barra (el "25" a la izquierda) porque ya lo dice el texto de arriba — quedó solo el "91" final sobre la barra, como remate visual. Si preferís mantener los dos (texto Y número sobre la barra), lo agrego de nuevo.</div></div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Mi lectura</div>
+    <p>La <b>4 (combinada)</b> queda como definitiva a pedido: separador vertical de la 1, "Empezó con X%" en texto explícito en vez de un numerito sobre la barra, y kWh debajo del precio como en la 2. La <b>3</b> quedó solo de referencia — confirma que la segmentada sigue siendo mejor que una barra continua incluso a este tamaño.</p>
+    <p>¿La 4 queda aprobada tal cual, o el detalle de sacar el "25" flotante de la barra (nota arriba) hay que revertirlo?</p>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('[data-theme-btn]').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-theme-btn]').forEach((x) => x.classList.remove('active'));
+    b.classList.add('active');
+    document.documentElement.setAttribute('data-theme', b.dataset.themeBtn);
+  }));
+</script>

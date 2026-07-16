@@ -1,0 +1,289 @@
+<title>Creativo — corriente con vueltas + franjas de carga</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0; --border: #DCE1E8;
+    --r-lg: 18px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 720px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 25px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .page-head p:last-child { margin-bottom: 0; }
+  .page-head b { color: var(--text); }
+  .band-legend { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
+  .band-legend .li { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .band-legend .dot { width: 9px; height: 9px; border-radius: 50%; }
+
+  h2.opt-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 46px 0 6px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h2.opt-h:first-of-type { margin-top: 0; }
+  h2.opt-h .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.opt-h .title { font-size: 18px; font-weight: 700; }
+  .opt-tagline { font-size: 13px; color: var(--text-secondary); max-width: 660px; margin: 0 0 20px; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 760px) { .row2, .row3 { grid-template-columns: 1fr; max-width: 340px; margin: 0 auto; } }
+  .mock-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
+  .sys-black-frame { background: #050505; border-radius: 24px; padding: 18px; box-shadow: var(--shadow-2); min-height: 100px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+
+  .bolt-ic { width: 26px; height: 26px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 22%, transparent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; position: relative; z-index: 2; }
+  .bolt-ic svg { width: 14px; height: 14px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.2; }
+  .row-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; width: 100%; }
+  .row-head .lbl { color: #fff; font-size: 12px; font-weight: 600; }
+  .row-head .pct { margin-left: auto; color: #fff; font-weight: 700; font-size: 13px; }
+
+  @media (prefers-reduced-motion: reduce) { .anim-el { animation: none !important; } }
+
+  /* ===== Sección A: cometa con recorrido ondulado + franja de color ===== */
+  .bar-track { height: 10px; border-radius: 5px; background: rgba(255,255,255,0.12); overflow: visible; position: relative; width: 100%; }
+  .bar-fill-band { height: 100%; border-radius: 5px; position: absolute; left: 0; top: 0; transition: background 0.6s ease; }
+  .comet-wiggle { position: absolute; top: 50%; width: 16px; height: 16px; margin-top: -8px; animation: cometWiggle 1.8s linear infinite; }
+  @keyframes cometWiggle {
+    0%   { left: -6%; transform: translateY(0); }
+    8%   { transform: translateY(-9px); }
+    16%  { transform: translateY(9px); }
+    24%  { transform: translateY(-9px); }
+    32%  { transform: translateY(9px); }
+    40%  { transform: translateY(-9px); }
+    48%  { transform: translateY(9px); }
+    56%  { transform: translateY(-9px); }
+    64%  { transform: translateY(9px); }
+    72%  { transform: translateY(-9px); }
+    80%  { transform: translateY(9px); }
+    88%  { transform: translateY(-6px); }
+    100% { left: 106%; transform: translateY(0); }
+  }
+  .comet-wiggle .core { position: absolute; inset: 5px; border-radius: 50%; background: #fff; box-shadow: 0 0 7px 2px rgba(255,255,255,0.85); }
+  .comet-wiggle .tail { position: absolute; right: 8px; top: 50%; width: 14px; height: 3px; transform: translateY(-50%); background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6)); border-radius: 2px; }
+
+  .ring-wrap { position: relative; width: 76px; height: 76px; }
+  .ring-wrap svg { overflow: visible; }
+  .ring-wrap .bg { stroke: rgba(255,255,255,0.16); }
+  .ring-wrap .fg { stroke-linecap: round; transition: stroke 0.6s ease; }
+  .ring-wrap .pct-c { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 15px; flex-direction: column; }
+  .ring-wrap .pct-c .kwh-mini { font-size: 8.5px; color: rgba(255,255,255,0.55); font-weight: 600; margin-top: 1px; }
+  .ring-spin { transform-origin: 38px 38px; animation: ringSpin 1.7s linear infinite; }
+  @keyframes ringSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .ring-spin .core { filter: drop-shadow(0 0 3px rgba(255,255,255,0.75)); }
+  /* "vuelta" extra: la distancia al centro respira, como si el punto entrara y saliera de una espiral */
+  .ring-breathe { animation: ringBreathe 1.7s ease-in-out infinite; transform-origin: center; }
+  @keyframes ringBreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.72); } }
+
+  /* ===== Sección B1: bobina ===== */
+  .coil-svg { width: 100%; height: 60px; }
+  .coil-base { fill: none; stroke-width: 4; stroke-linecap: round; transition: stroke 0.6s ease; }
+  .coil-pulse { fill: none; stroke: #fff; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 26 300; animation: coilFlow 2.1s linear infinite; filter: drop-shadow(0 0 4px rgba(255,255,255,0.7)); }
+  @keyframes coilFlow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -326; } }
+
+  /* ===== Sección B2: ondas concéntricas ===== */
+  .ripple-wrap { position: relative; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; }
+  .ripple-ring { position: absolute; width: 34px; height: 34px; border-radius: 50%; border-width: 2px; border-style: solid; animation: rippleOut 2.4s cubic-bezier(0.2,0.6,0.4,1) infinite; }
+  @keyframes rippleOut { 0% { transform: scale(0.6); opacity: 0.9; } 100% { transform: scale(2.5); opacity: 0; } }
+  .ripple-r2 { animation-delay: 0.8s; }
+  .ripple-r3 { animation-delay: 1.6s; }
+  .ripple-core { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; transition: background 0.6s ease; }
+  .ripple-core svg { width: 16px; height: 16px; stroke: #fff; fill: #fff; fill-opacity: 0.25; }
+
+  /* ===== Sección B3: onda sinusoidal viva ===== */
+  .wave-svg { width: 100%; height: 54px; display: block; }
+  .wave-line { fill: none; stroke-width: 2.4; stroke-linecap: round; transition: stroke 0.6s ease; filter: drop-shadow(0 0 3px currentColor); stroke-dasharray: 340; animation: waveDraw 1.6s linear infinite; }
+  @keyframes waveDraw { from { stroke-dashoffset: 340; } to { stroke-dashoffset: 0; } }
+
+  .info-line { font-size: 11px; color: rgba(255,255,255,0.55); text-align: center; margin-top: 10px; }
+  .info-line .num { color: #fff; font-weight: 700; }
+
+  .verdict-box { background: var(--surface); border-radius: var(--r-lg); padding: 16px 20px; box-shadow: var(--shadow-1); max-width: 900px; margin-top: 16px; }
+  .verdict-box .row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; font-size: 13px; line-height: 1.55; color: var(--text-secondary); }
+  .verdict-box .row:last-child { margin-bottom: 0; }
+  .verdict-box .row b { color: var(--text); }
+
+  .verdict-final { max-width: 900px; margin: 46px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe animado · vueltas + franjas de color + exploración creativa</div>
+    <h1>Corriente con recorrido propio, coloreada por nivel de batería</h1>
+    <p>No hay un estándar único de la industria para esto — iOS mismo solo marca rojo por debajo del 20%, sin banda intermedia formal. En vez de inventar colores nuevos, usé los <b>semánticos que la app ya tiene</b>: <code>--critical</code> (0-20%), <code>--warning-fill</code> (20-80%) y <code>--good</code> (80-100%) — los mismos que hoy pintan Punta/Llano/Valle.</p>
+    <div class="band-legend">
+      <span class="li"><span class="dot" style="background:#d03b3b;"></span>0–20% crítico</span>
+      <span class="li"><span class="dot" style="background:#fab219;"></span>20–80% medio</span>
+      <span class="li"><span class="dot" style="background:#0ca30c;"></span>80–100% óptimo</span>
+    </div>
+    <p>Todo lo de abajo corre con el % real subiendo (curva CC/CV) — mirá cómo el color de fondo cambia solo al cruzar cada franja.</p>
+  </div>
+
+  <!-- ===== SECCIÓN A: cometa con vueltas ===== -->
+  <h2 class="opt-h"><span class="n">A</span><span class="title">Cometa — con recorrido, no línea recta</span></h2>
+  <p class="opt-tagline">En la barra, el punto ya no viaja plano: sube y baja como una serpentina mientras avanza. En el anillo, además de girar rápido, "respira" acercándose y alejándose del centro — como una espiral vista de frente, no un simple círculo.</p>
+  <div class="row2">
+    <div>
+      <div class="mock-label">Barra</div>
+      <div class="sys-black-frame">
+        <div style="width:100%;">
+          <div class="row-head"><span class="bolt-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span><span class="lbl">Cargando</span><span class="pct" id="a-pct">0%</span></div>
+          <div class="bar-track">
+            <div class="bar-fill-band" id="a-fill" style="width:0%;"></div>
+            <div class="comet-wiggle anim-el"><div class="tail"></div><div class="core"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="info-line"><span class="num" id="a-kwh">0.0</span> kWh</div>
+    </div>
+    <div>
+      <div class="mock-label">Anillo</div>
+      <div class="sys-black-frame">
+        <div class="ring-wrap">
+          <svg width="76" height="76" viewBox="0 0 76 76">
+            <circle class="bg" cx="38" cy="38" r="31" fill="none" stroke-width="5.5"/>
+            <circle class="fg" id="a-ring" cx="38" cy="38" r="31" fill="none" stroke-width="5.5" stroke-dasharray="194.8" stroke-dashoffset="194.8"/>
+            <g class="ring-spin anim-el">
+              <g class="ring-breathe anim-el">
+                <circle class="core" cx="38" cy="4" r="3.6" fill="#fff"/>
+              </g>
+            </g>
+          </svg>
+          <div class="pct-c"><span id="a-ring-pct">0%</span><span class="kwh-mini" id="a-ring-kwh">0.0 kWh</span></div>
+        </div>
+      </div>
+      <div class="info-line" id="a-eta">3h 20m restantes</div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> ya no se siente "de barra de progreso genérica" — el zigzag + la espiral que respira le dan personalidad propia sin perder legibilidad.</div></div>
+    <div class="row"><span>👎</span><div><b>En contra:</b> es el más elaborado de construir en Swift de verdad (dos animaciones independientes combinadas) — no imposible, pero más trabajo que un solo giro simple.</div></div>
+  </div>
+
+  <!-- ===== SECCIÓN B: 3 ideas nuevas ===== -->
+  <h2 class="opt-h"><span class="n">B</span><span class="title">Tres ideas nuevas, más allá del cometa</span></h2>
+  <p class="opt-tagline">Mismo concepto de fondo (algo vivo + franja de color por nivel), ejecutado de formas bien distintas.</p>
+  <div class="row3">
+    <div>
+      <div class="mock-label">Bobina — pulso viajando por una espiral</div>
+      <div class="sys-black-frame">
+        <svg class="coil-svg" viewBox="0 0 200 60" preserveAspectRatio="none">
+          <path class="coil-base" id="b1-coil" d="M4,30 Q 16,4 28,30 T 52,30 T 76,30 T 100,30 T 124,30 T 148,30 T 172,30 T 196,30"/>
+          <path class="coil-pulse" d="M4,30 Q 16,4 28,30 T 52,30 T 76,30 T 100,30 T 124,30 T 148,30 T 172,30 T 196,30"/>
+        </svg>
+      </div>
+      <div class="info-line">el pulso blanco recorre la bobina sin parar — la bobina misma cambia de color por franja</div>
+    </div>
+    <div>
+      <div class="mock-label">Ondas concéntricas</div>
+      <div class="sys-black-frame">
+        <div class="ripple-wrap">
+          <div class="ripple-ring anim-el" id="b2-r1" style="border-color:#0ca30c;"></div>
+          <div class="ripple-ring ripple-r2 anim-el" id="b2-r2" style="border-color:#0ca30c;"></div>
+          <div class="ripple-ring ripple-r3 anim-el" id="b2-r3" style="border-color:#0ca30c;"></div>
+          <div class="ripple-core" id="b2-core" style="background:#0ca30c;">
+            <svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="info-line">energía irradiando del rayo hacia afuera, en loop</div>
+    </div>
+    <div>
+      <div class="mock-label">Onda sinusoidal viva</div>
+      <div class="sys-black-frame">
+        <svg class="wave-svg" viewBox="0 0 200 54" preserveAspectRatio="none">
+          <polyline class="wave-line" id="b3-wave" points="0,27 10,27 16,10 22,44 28,27 44,27 50,14 56,40 62,27 78,27 84,8 90,46 96,27 112,27 118,16 124,38 130,27 146,27 152,11 158,43 164,27 180,27 186,17 192,37 200,27" vector-effect="non-scaling-stroke"/>
+        </svg>
+      </div>
+      <div class="info-line">retoma la idea original de "corriente en vivo" del primer wireframe, con los colores reales de la app</div>
+    </div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Mi lectura</div>
+    <p>De estas tres, <b>la bobina</b> es la que mejor conecta con "jugar con las vueltas" que pediste — es literalmente una vuelta tras otra, y el pulso viajando por ella se explica solo. La <b>onda sinusoidal</b> es la más "iOS" de las tres (se parece a un ecualizador/monitor de signos vitales, un lenguaje que Apple ya usa en Salud). Las <b>ondas concéntricas</b> son las más tranquilas de las tres — buena opción si el objetivo es que se sienta "presente" sin competir por atención con el número.</p>
+    <p>¿Alguna de estas se combina bien con el cometa de la sección A, o preferís quedarte con una sola dirección final?</p>
+  </div>
+</div>
+
+<script>
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TOTAL_KWH = 27.4;
+  const TOTAL_MIN = 200;
+
+  function bandColor(pct) {
+    if (pct < 20) return '#d03b3b';
+    if (pct < 80) return '#fab219';
+    return '#0ca30c';
+  }
+
+  const RING_CIRC = 2 * Math.PI * 31; // 194.8
+
+  const aFill = document.getElementById('a-fill');
+  const aPct = document.getElementById('a-pct');
+  const aKwh = document.getElementById('a-kwh');
+  const aRing = document.getElementById('a-ring');
+  const aRingPct = document.getElementById('a-ring-pct');
+  const aRingKwh = document.getElementById('a-ring-kwh');
+  const aEta = document.getElementById('a-eta');
+  const b1Coil = document.getElementById('b1-coil');
+  const b2Core = document.getElementById('b2-core');
+  const b2Rings = [document.getElementById('b2-r1'), document.getElementById('b2-r2'), document.getElementById('b2-r3')];
+  const b3Wave = document.getElementById('b3-wave');
+
+  function paint(pct) {
+    const p = Math.min(pct, 100);
+    const color = bandColor(p);
+    const kwh = (TOTAL_KWH * p / 100).toFixed(1);
+    const minsLeft = Math.max(0, Math.round(TOTAL_MIN * (1 - p / 100)));
+    const etaTxt = p >= 100 ? 'Completa' : (minsLeft >= 60 ? Math.floor(minsLeft / 60) + 'h ' + (minsLeft % 60) + 'm restantes' : minsLeft + 'm restantes');
+
+    aFill.style.width = p + '%';
+    aFill.style.background = color;
+    aPct.textContent = Math.round(p) + '%';
+    aKwh.textContent = kwh;
+
+    aRing.style.strokeDashoffset = String(RING_CIRC * (1 - p / 100));
+    aRing.style.stroke = color;
+    aRingPct.textContent = Math.round(p) + '%';
+    aRingKwh.textContent = kwh + ' kWh';
+    aEta.textContent = etaTxt;
+
+    b1Coil.style.stroke = color;
+    b2Core.style.background = color;
+    b2Rings.forEach((r) => { r.style.borderColor = color; });
+    b3Wave.style.stroke = color;
+  }
+
+  if (reduceMotion) {
+    paint(62);
+  } else {
+    let pct = 0;
+    let pauseUntil = 0;
+    setInterval(() => {
+      const now = Date.now();
+      if (now < pauseUntil) return;
+      if (pct >= 100) { pct = 0; }
+      pct += pct < 80 ? 2.2 : 0.6;
+      paint(pct);
+      if (pct >= 100) pauseUntil = now + 1100;
+    }, 90);
+    paint(0);
+  }
+</script>

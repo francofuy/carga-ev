@@ -1,0 +1,229 @@
+<title>Variantes — batería en el historial</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-pill: 999px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34; --border: #2A2F38;
+      --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C;
+      --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+      --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 720px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+  .page-head b { color: var(--text); }
+
+  h2.opt-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 44px 0 6px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h2.opt-h:first-of-type { margin-top: 0; }
+  h2.opt-h .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.opt-h .title { font-size: 18px; font-weight: 700; }
+  .opt-tagline { font-size: 13px; color: var(--text-secondary); max-width: 650px; margin: 0 0 18px; }
+
+  .list-group-mock { background: var(--surface); border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-1); max-width: 380px; }
+  .row-mock { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--border); }
+  .row-mock:first-child { border-top: none; }
+  .row-mock .meta { flex: 1; min-width: 0; }
+  .row-mock .primary { font-size: 13px; font-weight: 600; }
+  .row-mock .secondary { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+  .row-mock .amount { text-align: right; flex: 0 0 auto; }
+  .row-mock .cost { font-size: 13px; font-weight: 700; }
+
+  /* ===== Variante 1: horizontal clásica (ya vista) ===== */
+  .v1-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 0 0 auto; }
+  .v1-batt { position: relative; width: 46px; height: 18px; border: 1.5px solid var(--border); border-radius: 5px; overflow: hidden; background: var(--surface-2); }
+  .v1-batt::after { content: ''; position: absolute; top: 50%; right: -3.5px; transform: translateY(-50%); width: 2.5px; height: 8px; background: var(--border); border-radius: 0 1px 1px 0; }
+  .v1-batt .base { position: absolute; left: 0; top: 0; bottom: 0; background: var(--surface-3); }
+  .v1-batt .gain { position: absolute; top: 0; bottom: 0; background: var(--good); }
+  .v1-lbls { display: flex; justify-content: space-between; width: 46px; font-size: 8px; font-weight: 700; color: var(--text-muted); }
+  .v1-lbls .end { color: var(--good); }
+
+  /* ===== Variante 2: vertical (pila parada) ===== */
+  .v2-wrap { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+  .v2-batt { position: relative; width: 16px; height: 32px; border: 1.5px solid var(--border); border-radius: 4px; overflow: hidden; background: var(--surface-2); }
+  .v2-batt::before { content: ''; position: absolute; top: -3.5px; left: 50%; transform: translateX(-50%); width: 8px; height: 2.5px; background: var(--border); border-radius: 1px 1px 0 0; }
+  .v2-batt .base { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface-3); }
+  .v2-batt .gain { position: absolute; left: 0; right: 0; background: var(--good); }
+  .v2-lbls { display: flex; flex-direction: column; justify-content: space-between; height: 32px; font-size: 8px; font-weight: 700; color: var(--text-muted); }
+  .v2-lbls .end { color: var(--good); }
+
+  /* ===== Variante 3: segmentada (5 barras) ===== */
+  .v3-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 0 0 auto; }
+  .v3-batt { display: flex; gap: 2px; width: 48px; height: 16px; border: 1.5px solid var(--border); border-radius: 5px; padding: 2px; position: relative; }
+  .v3-batt::after { content: ''; position: absolute; top: 50%; right: -3.5px; transform: translateY(-50%); width: 2.5px; height: 7px; background: var(--border); border-radius: 0 1px 1px 0; }
+  .v3-seg { flex: 1; border-radius: 2px; background: var(--surface-2); }
+  .v3-seg.muted { background: var(--surface-3); }
+  .v3-seg.gain { background: var(--good); }
+  .v3-lbls { font-size: 8px; font-weight: 700; color: var(--text-muted); }
+  .v3-lbls .end { color: var(--good); }
+
+  /* ===== Variante 4: color por franja + números adentro ===== */
+  .v4-wrap { flex: 0 0 auto; }
+  .v4-batt { position: relative; width: 52px; height: 20px; border: 1.5px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--surface-2); }
+  .v4-batt::after { content: ''; position: absolute; top: 50%; right: -3.5px; transform: translateY(-50%); width: 2.5px; height: 9px; background: var(--border); border-radius: 0 1px 1px 0; }
+  .v4-batt .base { position: absolute; left: 0; top: 0; bottom: 0; background: var(--surface-3); }
+  .v4-batt .gain { position: absolute; top: 0; bottom: 0; }
+  .v4-batt .in-lbl { position: absolute; top: 50%; transform: translateY(-50%); font-size: 8.5px; font-weight: 700; }
+  .v4-batt .in-lbl.s { left: 3px; color: var(--text-muted); }
+  .v4-batt .in-lbl.e { right: 6px; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.25); }
+
+  .verdict-box { background: var(--surface); border-radius: var(--r-lg); padding: 16px 20px; box-shadow: var(--shadow-1); max-width: 700px; margin-top: 14px; }
+  .verdict-box .row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; font-size: 13px; line-height: 1.55; color: var(--text-secondary); }
+  .verdict-box .row:last-child { margin-bottom: 0; }
+  .verdict-box .row b { color: var(--text); }
+
+  .verdict-final { max-width: 900px; margin: 46px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe · variantes de la batería ribbon</div>
+    <h1>Cuatro formas de ejecutar la misma idea</h1>
+    <p>Misma base (relleno en dos tonos: lo que ya tenía + lo que ganó) — cambia la orientación, si es continua o segmentada, y si el color es fijo o depende de a qué banda llegaste (rojo/naranja/verde, la misma que ya usamos en la Live Activity).</p>
+  </div>
+
+  <!-- ===== VARIANTE 1 ===== -->
+  <h2 class="opt-h"><span class="n">1</span><span class="title">Horizontal clásica — la que ya viste</span></h2>
+  <p class="opt-tagline">De referencia, para comparar contra las nuevas.</p>
+  <div class="list-group-mock">
+    <div class="row-mock">
+      <div class="v1-wrap">
+        <div class="v1-batt"><div class="base" style="width:24.7%;"></div><div class="gain" style="left:24.7%; width:66.3%;"></div></div>
+        <div class="v1-lbls"><span>25</span><span class="end">91</span></div>
+      </div>
+      <div class="meta"><div class="primary">Mié 08 Jul</div><div class="secondary">Casa · Valle</div></div>
+      <div class="amount"><div class="cost num">$61</div></div>
+    </div>
+    <div class="row-mock">
+      <div class="v1-wrap">
+        <div class="v1-batt"><div class="base" style="width:41%;"></div><div class="gain" style="left:41%; width:38%;"></div></div>
+        <div class="v1-lbls"><span>41</span><span class="end">79</span></div>
+      </div>
+      <div class="meta"><div class="primary">Lun 06 Jul</div><div class="secondary">DMC · Pública</div></div>
+      <div class="amount"><div class="cost num">$84</div></div>
+    </div>
+  </div>
+
+  <!-- ===== VARIANTE 2 ===== -->
+  <h2 class="opt-h"><span class="n">2</span><span class="title">Vertical — pila parada</span></h2>
+  <p class="opt-tagline">Como una pila de verdad, de pie — se lee de abajo (lo que tenía) hacia arriba (a dónde llegó).</p>
+  <div class="list-group-mock">
+    <div class="row-mock">
+      <div class="v2-wrap">
+        <div class="v2-batt"><div class="base" style="height:24.7%;"></div><div class="gain" style="height:66.3%; bottom:24.7%;"></div></div>
+        <div class="v2-lbls"><span class="end">91</span><span>25</span></div>
+      </div>
+      <div class="meta"><div class="primary">Mié 08 Jul</div><div class="secondary">Casa · Valle</div></div>
+      <div class="amount"><div class="cost num">$61</div></div>
+    </div>
+    <div class="row-mock">
+      <div class="v2-wrap">
+        <div class="v2-batt"><div class="base" style="height:41%;"></div><div class="gain" style="height:38%; bottom:41%;"></div></div>
+        <div class="v2-lbls"><span class="end">79</span><span>41</span></div>
+      </div>
+      <div class="meta"><div class="primary">Lun 06 Jul</div><div class="secondary">DMC · Pública</div></div>
+      <div class="amount"><div class="cost num">$84</div></div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> es la forma más parecida a un ícono de batería "de verdad" — de pie es como la gente ya se imagina una pila.</div></div>
+    <div class="row"><span>👎</span><div><b>En contra:</b> ocupa menos ancho pero pide más alto — en una fila de lista ya ajustada (con ícono + texto + monto) puede quedar apretado verticalmente.</div></div>
+  </div>
+
+  <!-- ===== VARIANTE 3 ===== -->
+  <h2 class="opt-h"><span class="n">3</span><span class="title">Segmentada — 5 barras</span></h2>
+  <p class="opt-tagline">En vez de un relleno continuo, barras discretas (como el ícono de señal) — cada barra son 20 puntos de batería.</p>
+  <div class="list-group-mock">
+    <div class="row-mock">
+      <div class="v3-wrap">
+        <div class="v3-batt">
+          <div class="v3-seg muted"></div><div class="v3-seg gain"></div><div class="v3-seg gain"></div><div class="v3-seg gain"></div><div class="v3-seg gain"></div>
+        </div>
+        <div class="v3-lbls">25 → <span class="end">91</span></div>
+      </div>
+      <div class="meta"><div class="primary">Mié 08 Jul</div><div class="secondary">Casa · Valle</div></div>
+      <div class="amount"><div class="cost num">$61</div></div>
+    </div>
+    <div class="row-mock">
+      <div class="v3-wrap">
+        <div class="v3-batt">
+          <div class="v3-seg muted"></div><div class="v3-seg muted"></div><div class="v3-seg gain"></div><div class="v3-seg gain"></div><div class="v3-seg"></div>
+        </div>
+        <div class="v3-lbls">41 → <span class="end">79</span></div>
+      </div>
+      <div class="meta"><div class="primary">Lun 06 Jul</div><div class="secondary">DMC · Pública</div></div>
+      <div class="amount"><div class="cost num">$84</div></div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> lectura instantánea sin mirar números — "3 de 5 barras verdes" se entiende más rápido que leer un %.</div></div>
+    <div class="row"><span>👎</span><div><b>En contra:</b> pierde precisión a propósito (todo queda redondeado a bloques de 20%) — para una app que se trata justamente de medir con precisión, puede sentirse como un paso atrás.</div></div>
+  </div>
+
+  <!-- ===== VARIANTE 4 ===== -->
+  <h2 class="opt-h"><span class="n">4</span><span class="title">Color por franja + números adentro</span></h2>
+  <p class="opt-tagline">Mismo tono continuo de la Variante 1, pero el color ya no es siempre verde — depende de a qué banda llegaste (rojo/naranja/verde, igual que la Live Activity), y los números viven dentro del ícono en vez de debajo.</p>
+  <div class="list-group-mock">
+    <div class="row-mock">
+      <div class="v4-wrap">
+        <div class="v4-batt">
+          <div class="base" style="width:24.7%;"></div>
+          <div class="gain" style="left:24.7%; width:66.3%; background:#0ca30c;"></div>
+          <span class="in-lbl s num">25</span><span class="in-lbl e num">91</span>
+        </div>
+      </div>
+      <div class="meta"><div class="primary">Mié 08 Jul</div><div class="secondary">Casa · Valle</div></div>
+      <div class="amount"><div class="cost num">$61</div></div>
+    </div>
+    <div class="row-mock">
+      <div class="v4-wrap">
+        <div class="v4-batt">
+          <div class="base" style="width:41%;"></div>
+          <div class="gain" style="left:41%; width:38%; background:#fab219;"></div>
+          <span class="in-lbl s num">41</span><span class="in-lbl e num">79</span>
+        </div>
+      </div>
+      <div class="meta"><div class="primary">Lun 06 Jul</div><div class="secondary">DMC · Pública</div></div>
+      <div class="amount"><div class="cost num">$84</div></div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> conecta directo con la Live Activity — mismas 3 franjas de color en los dos lugares, y es más compacta en alto al meter los números adentro.</div></div>
+    <div class="row"><span>👎</span><div><b>En contra:</b> el número blanco sobre naranja/verde necesita buen contraste — con colores de acento personalizados (no estos por defecto) habría que verificar legibilidad caso por caso.</div></div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Mi lectura</div>
+    <p>La <b>4</b> es la que más suma de las tres nuevas: mantiene la horizontal que ya te gustó (Variante 1) pero la conecta con el sistema de franjas de la Live Activity, sin perder precisión como la segmentada ni pedir más alto como la vertical. Si el contraste del número in-line preocupa, siempre se puede volver a los números debajo (como la 1) mantenendo el color por franja.</p>
+    <p>¿Te cierra la 4, preferís la 1 tal cual estaba, o combinamos (color por franja + números abajo, sin meterlos adentro)?</p>
+  </div>
+</div>

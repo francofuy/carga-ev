@@ -1,0 +1,235 @@
+<title>Corrección — hora de inicio programable</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0; --border: #DCE1E8;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-pill: 999px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C;
+      --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+      --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+      --border: #2A2F38; --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 760px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .page-head p:last-child { margin-bottom: 0; }
+  .page-head b { color: var(--text); }
+
+  h2.step-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 46px 0 6px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h2.step-h:first-of-type { margin-top: 0; }
+  h2.step-h .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.step-h .title { font-size: 18px; font-weight: 700; }
+  h2.step-h .sub { margin-left: auto; font-size: 11.5px; color: var(--text-muted); font-weight: 600; }
+  .step-tagline { font-size: 13px; color: var(--text-secondary); max-width: 700px; margin: 0 0 20px; }
+  .step-tagline b { color: var(--text); }
+
+  .versions { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  @media (max-width: 760px) { .versions { grid-template-columns: 1fr; max-width: 360px; margin: 0 auto; } }
+  .col-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
+  .col-label.on { color: var(--accent); }
+  .device { max-width: 340px; margin: 0 auto; }
+
+  .sheet-mock { background: var(--surface); border-radius: 26px; box-shadow: var(--shadow-2); padding: 20px 20px 22px; }
+  .sheet-title { font-size: 17px; font-weight: 700; margin-bottom: 14px; }
+
+  .segmented-real { display: flex; background: var(--surface-2); border-radius: var(--r-md); padding: 3px; margin-bottom: 14px; position: relative; }
+  .segmented-real .seg-pill { position: absolute; top: 3px; bottom: 3px; width: calc(50% - 3px); background: var(--surface); border-radius: 11px; box-shadow: var(--shadow-1); transition: transform 0.25s ease; }
+  .segmented-real.on2 .seg-pill { transform: translateX(100%); }
+  .segmented-real .seg { flex: 1; text-align: center; padding: 8px 4px; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); position: relative; z-index: 1; }
+  .segmented-real .seg.on { color: var(--text); }
+
+  .power-ref { display: flex; align-items: center; gap: 8px; background: var(--surface-2); border-radius: var(--r-sm); padding: 9px 12px; margin-bottom: 14px; font-size: 11.5px; color: var(--text-secondary); }
+  .power-ref b { color: var(--text); font-weight: 700; }
+  .power-ref a { margin-left: auto; color: var(--accent); font-weight: 600; text-decoration: none; white-space: nowrap; }
+
+  .field-label { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin: 2px 0 8px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .chip-mock { font-size: 11.5px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: var(--surface-2); color: var(--text-secondary); }
+  .chip-mock.on { background: var(--accent); color: var(--accent-ink); }
+  .suggest-box { background: color-mix(in srgb, var(--good) 14%, var(--surface)); border-radius: var(--r-sm); padding: 9px 11px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .suggest-box .sl { font-size: 9.5px; font-weight: 700; color: var(--good); text-transform: uppercase; letter-spacing: 0.03em; }
+  .suggest-box .sa { font-size: 13px; font-weight: 700; }
+  .suggest-box .su { font-size: 10px; font-weight: 700; color: #fff; background: var(--good); padding: 3px 9px; border-radius: 999px; }
+  .field-row-2 { display: flex; gap: 8px; margin-bottom: 12px; }
+  .field-box { flex: 1; background: var(--surface-2); border-radius: 10px; padding: 9px 11px; }
+  .field-box .l { font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+  .field-box .v { font-size: 13px; font-weight: 700; margin-top: 2px; }
+
+  .time-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .time-field { flex: 1; background: var(--surface-2); border-radius: var(--r-md); padding: 10px 11px; min-width: 0; }
+  .time-field .l { font-size: 9.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .time-field .v { font-size: 16px; font-weight: 700; color: var(--text); }
+  .time-field.pct .v { color: var(--warning-fill); }
+  .time-field.new { box-shadow: 0 0 0 2px var(--accent) inset; }
+
+  .estimate-box { background: var(--accent-soft); border-radius: var(--r-md); padding: 11px 12px; margin-bottom: 14px; }
+  .estimate-box .l { font-size: 10px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+  .estimate-box .v { font-size: 13.5px; font-weight: 700; color: var(--text); }
+  .estimate-box .s { font-size: 10.5px; color: var(--text-secondary); margin-top: 1px; }
+
+  .primary-btn-mock { display: block; width: 100%; text-align: center; background: var(--accent); color: var(--accent-ink); font-size: 14.5px; font-weight: 700; padding: 12px; border-radius: var(--r-md); border: none; margin-bottom: 4px; }
+  .escape-link { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--text-muted); padding: 10px 4px 2px; text-align: center; }
+
+  .toggle-mini { display: flex; background: var(--surface-2); border-radius: 10px; padding: 3px; margin-bottom: 12px; }
+  .toggle-mini .opt { flex: 1; text-align: center; padding: 7px 4px; font-size: 12px; font-weight: 600; color: var(--text-secondary); border-radius: 8px; }
+  .toggle-mini .opt.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow-1); }
+  .quick-field { background: var(--surface-2); border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 14px; }
+  .quick-field .l { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+  .quick-field .v { font-size: 19px; font-weight: 700; }
+
+  /* ===== card "programada, en espera" ===== */
+  .app-card { background: var(--surface); border-radius: var(--r-lg); padding: 16px 18px; box-shadow: var(--shadow-1); }
+  .app-card .row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .app-card .ic { width: 34px; height: 34px; border-radius: var(--r-sm); background: var(--accent-soft); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .app-card .ic svg { width: 17px; height: 17px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.2; }
+  .app-card b { font-size: 14.5px; display: block; }
+  .app-card .waiting-tag { margin-left: auto; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); background: var(--surface-2); padding: 4px 9px; border-radius: 999px; }
+  .app-card .meta-row { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 4px; }
+  .app-card .countdown { font-size: 12.5px; color: var(--accent); font-weight: 600; margin-top: 8px; }
+  .app-card .cancel-link { font-size: 12px; color: var(--critical); font-weight: 600; margin-top: 10px; display: inline-block; }
+
+  .callout { background: var(--surface); border-radius: var(--r-lg); padding: 16px 18px; box-shadow: var(--shadow-1); margin-top: 18px; max-width: 900px; }
+  .callout .row { display: flex; gap: 9px; align-items: flex-start; font-size: 12.5px; line-height: 1.55; color: var(--text-secondary); margin-bottom: 8px; }
+  .callout .row:last-child { margin-bottom: 0; }
+  .callout .row b { color: var(--text); }
+
+  .verdict-final { max-width: 900px; margin: 46px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Corrección · dos cambios sobre el wireframe anterior</div>
+    <h1>Hora de inicio programable + sin el aviso de prueba</h1>
+    <p>Agregado: un toggle <b>"Ahora / Más tarde"</b> — si elegís "Más tarde", se suma el campo "Empieza a las" y la carga queda guardada como <b>programada, sin arrancar a contar todavía</b> (tu propio cargador ya tiene este mismo concepto: en tu foto decía "En espera..."). Sacado: el aviso amarillo de Pública — quitado, era solo para este entorno de revisión.</p>
+  </div>
+
+  <!-- ===== NUEVA CARGA — CASA, con hora de inicio ===== -->
+  <h2 class="step-h"><span class="n">1</span><span class="title">Nueva carga — Privada</span><span class="sub">"Ahora" vs "Más tarde"</span></h2>
+  <div class="versions">
+    <div>
+      <div class="col-label on">Ahora (como estaba)</div>
+      <div class="device">
+        <div class="sheet-mock">
+          <div class="sheet-title">Nueva carga</div>
+          <div class="segmented-real">
+            <div class="seg-pill"></div>
+            <div class="seg on">Privada</div>
+            <div class="seg">Pública</div>
+          </div>
+          <div class="power-ref"><span>Cargando a <b class="num">24A · 226V</b> · <b class="num">≈5,0 kW</b></span><a>Editar</a></div>
+
+          <div class="field-label">¿Cuándo empieza?</div>
+          <div class="segmented-real" style="margin-bottom:14px;">
+            <div class="seg-pill"></div>
+            <div class="seg on">Ahora</div>
+            <div class="seg">Más tarde</div>
+          </div>
+
+          <div class="time-row">
+            <div class="time-field pct"><div class="l">Batería al iniciar</div><div class="v num">24.7%</div></div>
+            <div class="time-field"><div class="l">Corta a las</div><div class="v num">07:00</div></div>
+          </div>
+          <div class="estimate-box">
+            <div class="l">Estimado para las 07:00</div>
+            <div class="v num">≈ 91% · 39.8 kWh</div>
+            <div class="s">Empieza a contar ahora mismo (21:14)</div>
+          </div>
+          <button class="primary-btn-mock">Empezar carga programada</button>
+          <div class="escape-link">¿Fue una carga rápida? <u>Anotar el resultado directo</u></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="col-label">Más tarde — nuevo</div>
+      <div class="device">
+        <div class="sheet-mock">
+          <div class="sheet-title">Nueva carga</div>
+          <div class="segmented-real">
+            <div class="seg-pill"></div>
+            <div class="seg on">Privada</div>
+            <div class="seg">Pública</div>
+          </div>
+          <div class="power-ref"><span>Cargando a <b class="num">24A · 226V</b> · <b class="num">≈5,0 kW</b></span><a>Editar</a></div>
+
+          <div class="field-label">¿Cuándo empieza?</div>
+          <div class="segmented-real on2" style="margin-bottom:14px;">
+            <div class="seg-pill"></div>
+            <div class="seg">Ahora</div>
+            <div class="seg on">Más tarde</div>
+          </div>
+
+          <div class="time-row">
+            <div class="time-field new"><div class="l">Empieza a las</div><div class="v num">00:00</div></div>
+            <div class="time-field pct"><div class="l">Batería estimada ahí</div><div class="v num">24.7%</div></div>
+            <div class="time-field"><div class="l">Corta a las</div><div class="v num">07:00</div></div>
+          </div>
+          <div class="estimate-box">
+            <div class="l">Estimado para las 07:00</div>
+            <div class="v num">≈ 91% · 39.8 kWh</div>
+            <div class="s">No empieza a contar todavía — arranca a las 00:00</div>
+          </div>
+          <button class="primary-btn-mock">Programar carga</button>
+          <div class="escape-link">¿Fue una carga rápida? <u>Anotar el resultado directo</u></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== INICIO: card mientras espera ===== -->
+  <h2 class="step-h"><span class="n">2</span><span class="title">Mientras tanto, en Inicio</span><span class="sub">antes de que arranque</span></h2>
+  <p class="step-tagline">Guardaste "Más tarde" a las 21:14 — la app no empieza ninguna Live Activity todavía. En Inicio aparece esto hasta que llegue la hora de inicio real:</p>
+  <div class="device">
+    <div class="app-card">
+      <div class="row1">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <b>Carga programada</b>
+        <span class="waiting-tag">En espera</span>
+      </div>
+      <div class="meta-row">Casa · 00:00 → 07:00</div>
+      <div class="meta-row">Batería al iniciar: <b class="num" style="color:var(--text);">24.7%</b></div>
+      <div class="countdown">Arranca en 2h 46m</div>
+      <div class="cancel-link">Cancelar carga programada</div>
+    </div>
+  </div>
+  <p class="step-tagline" style="margin-top:14px;">A las 00:00 en punto, esta tarjeta se convierte sola en la Live Activity (Dynamic Island + pantalla bloqueada) que ya vimos, ahora sí contando de verdad hacia las 07:00.</p>
+
+  <div class="callout">
+    <div class="row"><span>💡</span><div><b>Por qué "En espera" y no otro texto:</b> es literalmente la misma palabra que ya usa tu cargador físico en la pantalla que me mostraste — no hace falta inventar un estado nuevo, el usuario ya conoce ese concepto de memoria.</div></div>
+    <div class="row"><span>💡</span><div><b>Aviso de Pública:</b> eliminado del sheet — quedó documentado acá en el wireframe (arriba de este mensaje, en el texto) como para qué servía, pero no aparece más en la pantalla en sí.</div></div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Algo para confirmar</div>
+    <p>Dejé "Batería estimada ahí" como campo editable en el modo "Más tarde" — asumiendo que a las 21:14 (cuando llenás el formulario) todavía no sabés el % exacto que va a tener el auto a las 00:00. Si en la práctica vos SÍ sabés ese número de antemano (por ejemplo, porque no vas a tocar el auto entre ahora y la medianoche), este campo podría no hacer falta y calcularse solo. ¿Cómo es en tu caso real?</p>
+  </div>
+</div>

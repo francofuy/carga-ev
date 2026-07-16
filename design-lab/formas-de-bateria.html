@@ -1,0 +1,241 @@
+<title>Formas de batería — explorando la silueta</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34; --border: #2A2F38;
+      --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C;
+      --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+      --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 700px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+  .page-head b { color: var(--text); }
+
+  h2.opt-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 44px 0 6px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h2.opt-h:first-of-type { margin-top: 0; }
+  h2.opt-h .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.opt-h .title { font-size: 18px; font-weight: 700; }
+  .opt-tagline { font-size: 13px; color: var(--text-secondary); max-width: 650px; margin: 0 0 18px; }
+
+  .list-group-mock { background: var(--surface); border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-1); max-width: 380px; }
+  .row-mock { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--border); }
+  .row-mock:first-child { border-top: none; }
+  .row-mock .meta { flex: 1; min-width: 0; }
+  .row-mock .primary { font-size: 13px; font-weight: 600; }
+  .row-mock .secondary { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+  .row-mock .amount { text-align: right; flex: 0 0 auto; }
+  .row-mock .cost { font-size: 13px; font-weight: 700; }
+  .lbl-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 0 0 auto; }
+  .lbls { font-size: 8.5px; font-weight: 700; color: var(--text-muted); }
+  .lbls .end { color: var(--good); }
+
+  .verdict-box { background: var(--surface); border-radius: var(--r-lg); padding: 16px 20px; box-shadow: var(--shadow-1); max-width: 700px; margin-top: 14px; }
+  .verdict-box .row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; font-size: 13px; line-height: 1.55; color: var(--text-secondary); }
+  .verdict-box .row:last-child { margin-bottom: 0; }
+  .verdict-box .row b { color: var(--text); }
+
+  .verdict-final { max-width: 900px; margin: 46px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe · no era el relleno, era la silueta</div>
+    <h1>Cuatro siluetas distintas de batería</h1>
+    <p>Las variantes anteriores (1, 2, 4) compartían la misma forma de fondo: cápsula redondeada + una muesca chica de terminal — esa silueta es la que no convenció, no el mecanismo de relleno. Acá pruebo formas de verdad distintas, todas con el mismo relleno en dos tonos.</p>
+  </div>
+
+  <!-- ===== A ===== -->
+  <h2 class="opt-h"><span class="n">A</span><span class="title">Estilo iOS auténtico</span></h2>
+  <p class="opt-tagline">Las proporciones exactas del ícono de batería que ya usa iOS en la barra de estado — más ancha y chata que las versiones anteriores, terminal más gruesa.</p>
+  <div class="list-group-mock">
+    <div class="row-mock">
+      <div class="lbl-wrap">
+        <svg width="48" height="22" viewBox="0 0 48 22">
+          <defs><clipPath id="clipA1"><rect x="1" y="1" width="42" height="20" rx="5" ry="5"/></clipPath></defs>
+          <rect x="1" y="1" width="42" height="20" rx="5" ry="5" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>
+          <rect x="44" y="7" width="3.5" height="8" rx="1.2" fill="var(--border)"/>
+          <g clip-path="url(#clipA1)">
+            <rect x="1" y="1" width="10.4" height="20" fill="var(--surface-3)"/>
+            <rect x="11.4" y="1" width="27.9" height="20" fill="var(--good)"/>
+          </g>
+        </svg>
+        <div class="lbls">25 → <span class="end">91</span></div>
+      </div>
+      <div class="meta"><div class="primary">Mié 08 Jul</div><div class="secondary">Casa · Valle</div></div>
+      <div class="amount"><div class="cost num">$61</div></div>
+    </div>
+    <div class="row-mock">
+      <div class="lbl-wrap">
+        <svg width="48" height="22" viewBox="0 0 48 22">
+          <defs><clipPath id="clipA2"><rect x="1" y="1" width="42" height="20" rx="5" ry="5"/></clipPath></defs>
+          <rect x="1" y="1" width="42" height="20" rx="5" ry="5" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>
+          <rect x="44" y="7" width="3.5" height="8" rx="1.2" fill="var(--border)"/>
+          <g clip-path="url(#clipA2)">
+            <rect x="1" y="1" width="17.2" height="20" fill="var(--surface-3)"/>
+            <rect x="18.2" y="1" width="15.9" height="20" fill="var(--good)"/>
+          </g>
+        </svg>
+        <div class="lbls">41 → <span class="end">79</span></div>
+      </div>
+      <div class="meta"><div class="primary">Lun 06 Jul</div><div class="secondary">DMC · Pública</div></div>
+      <div class="amount"><div class="cost num">$84</div></div>
+    </div>
+  </div>
+
+  <!-- ===== B ===== -->
+  <h2 class="opt-h"><span class="n">B</span><span class="title">Segmentada refinada</span></h2>
+  <p class="opt-tagline">La lógica de barras que te gustó de la opción 3, pero con la silueta exterior más prolija (esquinas más suaves, terminal integrada al cuerpo, no pegada como un parche).</p>
+  <div class="list-group-mock">
+    <div class="row-mock">
+      <div class="lbl-wrap">
+        <svg width="50" height="20" viewBox="0 0 50 20">
+          <rect x="1" y="1" width="44" height="18" rx="3" ry="3" fill="none" stroke="var(--border)" stroke-width="1.5"/>
+          <rect x="46" y="6" width="3" height="8" rx="1.2" fill="var(--border)"/>
+          <rect x="3" y="4.5" width="6.5" height="11" rx="2" fill="var(--surface-3)"/>
+          <rect x="11.5" y="4.5" width="6.5" height="11" rx="2" fill="var(--good)"/>
+          <rect x="20" y="4.5" width="6.5" height="11" rx="2" fill="var(--good)"/>
+          <rect x="28.5" y="4.5" width="6.5" height="11" rx="2" fill="var(--good)"/>
+          <rect x="37" y="4.5" width="6.5" height="11" rx="2" fill="var(--good)"/>
+        </svg>
+        <div class="lbls">25 → <span class="end">91</span></div>
+      </div>
+      <div class="meta"><div class="primary">Mié 08 Jul</div><div class="secondary">Casa · Valle</div></div>
+      <div class="amount"><div class="cost num">$61</div></div>
+    </div>
+    <div class="row-mock">
+      <div class="lbl-wrap">
+        <svg width="50" height="20" viewBox="0 0 50 20">
+          <rect x="1" y="1" width="44" height="18" rx="3" ry="3" fill="none" stroke="var(--border)" stroke-width="1.5"/>
+          <rect x="46" y="6" width="3" height="8" rx="1.2" fill="var(--border)"/>
+          <rect x="3" y="4.5" width="6.5" height="11" rx="2" fill="var(--surface-3)"/>
+          <rect x="11.5" y="4.5" width="6.5" height="11" rx="2" fill="var(--surface-3)"/>
+          <rect x="20" y="4.5" width="6.5" height="11" rx="2" fill="var(--good)"/>
+          <rect x="28.5" y="4.5" width="6.5" height="11" rx="2" fill="var(--good)"/>
+          <rect x="37" y="4.5" width="6.5" height="11" rx="2" fill="var(--surface-2)"/>
+        </svg>
+        <div class="lbls">41 → <span class="end">79</span></div>
+      </div>
+      <div class="meta"><div class="primary">Lun 06 Jul</div><div class="secondary">DMC · Pública</div></div>
+      <div class="amount"><div class="cost num">$84</div></div>
+    </div>
+  </div>
+
+  <!-- ===== C ===== -->
+  <h2 class="opt-h"><span class="n">C</span><span class="title">Cápsula sin terminal — con muesca</span></h2>
+  <p class="opt-tagline">Sin la piecita que sobresale (la "terminal" de las anteriores) — un óvalo completo, con una muesca chica cortada adentro en vez de algo que sobresalga afuera.</p>
+  <div class="list-group-mock">
+    <div class="row-mock">
+      <div class="lbl-wrap">
+        <svg width="48" height="20" viewBox="0 0 48 20">
+          <defs><clipPath id="clipC1"><rect x="1" y="1" width="46" height="18" rx="9" ry="9"/></clipPath></defs>
+          <g clip-path="url(#clipC1)">
+            <rect x="1" y="1" width="11.6" height="18" fill="var(--surface-3)"/>
+            <rect x="12.6" y="1" width="31.1" height="18" fill="var(--good)"/>
+          </g>
+          <rect x="1" y="1" width="46" height="18" rx="9" ry="9" fill="none" stroke="var(--border)" stroke-width="1.5"/>
+          <path d="M40,1 L44,1 A9,9 0 0 1 44,19 L40,19 Z" fill="var(--page-surface)" opacity="0.001"/>
+          <rect x="41" y="6.5" width="3" height="7" rx="1.5" fill="var(--surface)" stroke="var(--border)" stroke-width="1"/>
+        </svg>
+        <div class="lbls">25 → <span class="end">91</span></div>
+      </div>
+      <div class="meta"><div class="primary">Mié 08 Jul</div><div class="secondary">Casa · Valle</div></div>
+      <div class="amount"><div class="cost num">$61</div></div>
+    </div>
+    <div class="row-mock">
+      <div class="lbl-wrap">
+        <svg width="48" height="20" viewBox="0 0 48 20">
+          <defs><clipPath id="clipC2"><rect x="1" y="1" width="46" height="18" rx="9" ry="9"/></clipPath></defs>
+          <g clip-path="url(#clipC2)">
+            <rect x="1" y="1" width="19.3" height="18" fill="var(--surface-3)"/>
+            <rect x="20.3" y="1" width="17.8" height="18" fill="var(--good)"/>
+          </g>
+          <rect x="1" y="1" width="46" height="18" rx="9" ry="9" fill="none" stroke="var(--border)" stroke-width="1.5"/>
+          <rect x="41" y="6.5" width="3" height="7" rx="1.5" fill="var(--surface)" stroke="var(--border)" stroke-width="1"/>
+        </svg>
+        <div class="lbls">41 → <span class="end">79</span></div>
+      </div>
+      <div class="meta"><div class="primary">Lun 06 Jul</div><div class="secondary">DMC · Pública</div></div>
+      <div class="amount"><div class="cost num">$84</div></div>
+    </div>
+  </div>
+
+  <!-- ===== D ===== -->
+  <h2 class="opt-h"><span class="n">D</span><span class="title">Celda hexagonal — menos literal</span></h2>
+  <p class="opt-tagline">Se aleja del cliché "batería de dibujo animado" — una celda de energía con puntas, más parecida a un módulo técnico que a un ícono genérico.</p>
+  <div class="list-group-mock">
+    <div class="row-mock">
+      <div class="lbl-wrap">
+        <svg width="48" height="20" viewBox="0 0 48 20">
+          <defs><clipPath id="clipD1"><polygon points="8,1 40,1 47,10 40,19 8,19 1,10"/></clipPath></defs>
+          <g clip-path="url(#clipD1)">
+            <rect x="0" y="1" width="11.6" height="18" fill="var(--surface-3)"/>
+            <rect x="12.6" y="1" width="35" height="18" fill="var(--good)"/>
+          </g>
+          <polygon points="8,1 40,1 47,10 40,19 8,19 1,10" fill="none" stroke="var(--border)" stroke-width="1.5"/>
+        </svg>
+        <div class="lbls">25 → <span class="end">91</span></div>
+      </div>
+      <div class="meta"><div class="primary">Mié 08 Jul</div><div class="secondary">Casa · Valle</div></div>
+      <div class="amount"><div class="cost num">$61</div></div>
+    </div>
+    <div class="row-mock">
+      <div class="lbl-wrap">
+        <svg width="48" height="20" viewBox="0 0 48 20">
+          <defs><clipPath id="clipD2"><polygon points="8,1 40,1 47,10 40,19 8,19 1,10"/></clipPath></defs>
+          <g clip-path="url(#clipD2)">
+            <rect x="0" y="1" width="19.3" height="18" fill="var(--surface-3)"/>
+            <rect x="20.3" y="1" width="27" height="18" fill="var(--good)"/>
+          </g>
+          <polygon points="8,1 40,1 47,10 40,19 8,19 1,10" fill="none" stroke="var(--border)" stroke-width="1.5"/>
+        </svg>
+        <div class="lbls">41 → <span class="end">79</span></div>
+      </div>
+      <div class="meta"><div class="primary">Lun 06 Jul</div><div class="secondary">DMC · Pública</div></div>
+      <div class="amount"><div class="cost num">$84</div></div>
+    </div>
+  </div>
+
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A (iOS auténtico):</b> el más reconocible al toque — es literalmente la forma que ya tenés en la barra de estado de tu iPhone todos los días.</div></div>
+    <div class="row"><span>👍</span><div><b>B (segmentada refinada):</b> mantiene lo que te gustó de la opción 3, con mejor terminación.</div></div>
+    <div class="row"><span>👍</span><div><b>C (sin terminal):</b> la más "limpia" — si la terminal chica era parte de lo que no convencía, esta la saca del todo.</div></div>
+    <div class="row"><span>👍</span><div><b>D (celda hexagonal):</b> la más distinta a un ícono de batería genérico — pero también la que más se aleja de "batería" como concepto reconocible.</div></div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Para ir más rápido</div>
+    <p>No te pregunto por qué no convencía la silueta anterior — mejor que reacciones directo a estas cuatro. ¿Alguna ya se siente bien, o seguimos probando en otra dirección todavía?</p>
+  </div>
+</div>

@@ -1,0 +1,300 @@
+<title>Animadas — Dynamic Island y Live Activity en movimiento</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0; --border: #DCE1E8;
+    --r-lg: 18px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 720px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+  .page-head b { color: var(--text); }
+
+  h2.opt-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 48px 0 6px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h2.opt-h:first-of-type { margin-top: 0; }
+  h2.opt-h .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.opt-h .title { font-size: 19px; font-weight: 700; }
+  h2.opt-h .fav { margin-left: auto; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 4px 10px; border-radius: 999px; background: var(--good); color: #fff; }
+  .opt-tagline { font-size: 13px; color: var(--text-secondary); max-width: 680px; margin: 0 0 20px; }
+
+  .demo-row { display: grid; grid-template-columns: minmax(180px, 260px) 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 640px) { .demo-row { grid-template-columns: 1fr; } }
+  .mock-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
+  .sys-black-frame { background: #050505; border-radius: 28px; padding: 18px; box-shadow: var(--shadow-2); min-height: 90px; display: flex; align-items: center; justify-content: center; }
+
+  .status-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); margin-top: 10px; justify-content: center; width: 100%; }
+  .status-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good); animation: pulseLed 1.3s ease-in-out infinite; }
+  @keyframes pulseLed { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.8); } }
+  @media (prefers-reduced-motion: reduce) { .status-chip .dot { animation: none; } }
+
+  /* ---- digit roll (mismo mecanismo que el contador real de la app) ---- */
+  .digit-wrap { display: inline-block; height: 1.1em; overflow: hidden; position: relative; width: 0.6em; vertical-align: bottom; }
+  .digit-track { position: absolute; left: 0; top: 0; transition: transform 0.35s cubic-bezier(0.3, 1, 0.4, 1); }
+  .digit-track div { height: 1.1em; display: flex; align-items: center; justify-content: center; }
+  @media (prefers-reduced-motion: reduce) { .digit-track { transition: none; } }
+
+  /* ===== compact island ===== */
+  .dyisland { display: flex; align-items: center; gap: 9px; background: #000; border-radius: 999px; padding: 8px 16px 8px 8px; width: fit-content; }
+  .dyisland .txt { font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; }
+  .dyisland .txt .dim { color: rgba(255,255,255,0.5); font-weight: 500; margin-left: 4px; }
+
+  /* ===== opción original: barra lineal ===== */
+  .bolt-ic { width: 26px; height: 26px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 22%, transparent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .bolt-ic svg { width: 14px; height: 14px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.2; }
+  .expanded-card { width: 100%; }
+  .expanded-card .head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .expanded-card b { color: #fff; font-size: 13.5px; display: block; }
+  .expanded-card .netw { color: rgba(255,255,255,0.55); font-size: 11px; }
+  .expanded-card .franja-pill { margin-left: auto; font-size: 10px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: rgba(12,163,12,0.28); color: #7CE87C; flex: 0 0 auto; }
+  .bar-track { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.12); overflow: hidden; margin-bottom: 8px; }
+  .bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 55%, white)); width: 0%; }
+  .foot-row { display: flex; justify-content: space-between; font-size: 11.5px; color: rgba(255,255,255,0.6); }
+  .foot-row .num { color: #fff; font-weight: 700; font-size: 13px; }
+
+  /* ===== opción anillo ===== */
+  .ring-wrap { position: relative; width: 26px; height: 26px; flex: 0 0 auto; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-wrap .bg { stroke: rgba(255,255,255,0.18); }
+  .ring-wrap .fg { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 0.35s cubic-bezier(0.3,1,0.4,1); }
+  @media (prefers-reduced-motion: reduce) { .ring-wrap .fg { transition: none; } }
+  .ring-wrap.lg { width: 84px; height: 84px; }
+  .ring-wrap .pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; }
+  .ring-wrap.lg .pct { font-size: 20px; }
+  .ring-wrap:not(.lg) .pct { font-size: 8px; }
+  .ring-expanded-row { display: flex; align-items: center; gap: 16px; width: 100%; }
+
+  /* ===== opción franja protagonista ===== */
+  .tint-card { border-radius: 20px; padding: 14px 16px; position: relative; overflow: hidden; width: 100%; background: linear-gradient(135deg, #0ca30c, #076807); box-shadow: 0 0 0 0 rgba(12,163,12,0.5); animation: tintGlow 2.6s ease-in-out infinite; }
+  @keyframes tintGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(12,163,12,0.35); } 50% { box-shadow: 0 0 22px 2px rgba(12,163,12,0.35); } }
+  @media (prefers-reduced-motion: reduce) { .tint-card { animation: none; } }
+  .tint-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .tint-head .ic { width: 30px; height: 30px; border-radius: 9px; background: rgba(255,255,255,0.16); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .tint-head .ic svg { width: 15px; height: 15px; stroke: #fff; fill: #fff; fill-opacity: 0.3; }
+  .tint-head b { color: #fff; font-size: 13.5px; display: block; }
+  .tint-head .netw { color: rgba(255,255,255,0.7); font-size: 11px; }
+  .tint-badge { margin-left: auto; font-size: 10px; font-weight: 700; color: #fff; background: rgba(255,255,255,0.22); padding: 4px 9px; border-radius: 999px; }
+  .tint-bar-track { height: 7px; border-radius: 4px; background: rgba(255,255,255,0.22); overflow: hidden; margin-bottom: 8px; }
+  .tint-bar-fill { height: 100%; border-radius: 4px; background: #fff; width: 0%; }
+  .tint-foot { display: flex; justify-content: space-between; font-size: 11.5px; color: rgba(255,255,255,0.75); }
+  .tint-foot .num { color: #fff; font-weight: 700; font-size: 13px; }
+  .tint-island-outer { border-radius: 999px; padding: 2px; background: linear-gradient(90deg, #0ca30c, #087d08); }
+
+  .verdict-final { max-width: 900px; margin: 50px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe animado · las 3 direcciones que más te gustaron</div>
+    <h1>En movimiento: barra original, anillo y franja protagonista</h1>
+    <p>Las tres corren en vivo y en loop (kWh y % suben con la misma curva que ya definimos para el motor de estimación: rápido hasta 80%, se achata después — CC/CV real del litio). Nada está tocado en <code>src/</code>, es un HTML autocontenido.</p>
+  </div>
+
+  <!-- ===== ORIGINAL — barra lineal ===== -->
+  <h2 class="opt-h"><span class="n">A</span><span class="title">Original — barra lineal</span><span class="fav">Tu favorita</span></h2>
+  <p class="opt-tagline">La primera versión que viste, ahora con el % y el kWh subiendo de verdad, la barra rellenándose, y el punto "en vivo" pulsando.</p>
+  <div class="demo-row">
+    <div>
+      <div class="mock-label">Compacta</div>
+      <div class="sys-black-frame">
+        <div class="dyisland">
+          <span class="bolt-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+          <span class="txt">Cargando <span class="num" id="a-compact-pct"></span></span>
+        </div>
+      </div>
+      <div class="status-chip"><span class="dot"></span>En vivo</div>
+    </div>
+    <div>
+      <div class="mock-label">Pantalla bloqueada / expandida</div>
+      <div class="sys-black-frame">
+        <div class="expanded-card">
+          <div class="head">
+            <span class="bolt-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <div><b>Cargando en Casa</b><span class="netw">UTE Lentos · $2,44/kWh</span></div>
+            <span class="franja-pill">Valle</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" id="a-bar"></div></div>
+          <div class="foot-row"><span class="num" id="a-kwh">0.0 kWh</span><span class="num" id="a-eta">3h 20m restantes</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== OPCIÓN 2 — anillo ===== -->
+  <h2 class="opt-h"><span class="n">B</span><span class="title">Anillo de progreso</span><span class="fav">Te gustó</span></h2>
+  <p class="opt-tagline">El aro se dibuja en tiempo real — mismo trazo que un anillo de Fitness llenándose, con el % en el centro.</p>
+  <div class="demo-row">
+    <div>
+      <div class="mock-label">Compacta</div>
+      <div class="sys-black-frame">
+        <div class="dyisland">
+          <div class="ring-wrap">
+            <svg width="26" height="26" viewBox="0 0 26 26"><circle class="bg" cx="13" cy="13" r="11" fill="none" stroke-width="3"/><circle class="fg" id="b-compact-ring" cx="13" cy="13" r="11" fill="none" stroke-width="3" stroke-dasharray="69.1" stroke-dashoffset="69.1"/></svg>
+          </div>
+          <span class="txt">Cargando</span>
+        </div>
+      </div>
+      <div class="status-chip"><span class="dot"></span>En vivo</div>
+    </div>
+    <div>
+      <div class="mock-label">Pantalla bloqueada / expandida</div>
+      <div class="sys-black-frame">
+        <div class="ring-expanded-row">
+          <div class="ring-wrap lg">
+            <svg width="84" height="84" viewBox="0 0 84 84"><circle class="bg" cx="42" cy="42" r="36" fill="none" stroke-width="7"/><circle class="fg" id="b-big-ring" cx="42" cy="42" r="36" fill="none" stroke-width="7" stroke-dasharray="226.2" stroke-dashoffset="226.2"/></svg>
+            <span class="pct" id="b-pct">0%</span>
+          </div>
+          <div>
+            <b style="color:#fff;font-size:13.5px;display:block;">Cargando en Casa</b>
+            <span style="color:rgba(255,255,255,0.55);font-size:11px;display:block;margin-bottom:6px;">UTE Lentos · Valle</span>
+            <span class="num" id="b-kwh" style="color:#fff;font-weight:700;font-size:13px;">0.0 kWh</span><span style="color:rgba(255,255,255,0.55);font-size:11px;"> · 3h 20m</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== OPCIÓN 3 — franja protagonista ===== -->
+  <h2 class="opt-h"><span class="n">C</span><span class="title">Franja protagonista</span><span class="fav">Te gustó</span></h2>
+  <p class="opt-tagline">La tarjeta entera respira con un glow suave (no es un parpadeo — es el mismo pulso lento que ya usa la app para "en vivo"), la barra blanca sobre el verde de Valle sube en tiempo real.</p>
+  <div class="demo-row">
+    <div>
+      <div class="mock-label">Compacta</div>
+      <div class="sys-black-frame">
+        <div class="tint-island-outer">
+          <div class="dyisland" style="background:transparent;">
+            <span class="txt" style="color:#fff;">Cargando · Valle <span class="num" id="c-compact-pct" style="color:#fff;"></span></span>
+          </div>
+        </div>
+      </div>
+      <div class="status-chip"><span class="dot"></span>En vivo</div>
+    </div>
+    <div>
+      <div class="mock-label">Pantalla bloqueada / expandida</div>
+      <div class="sys-black-frame">
+        <div class="tint-card">
+          <div class="tint-head">
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <div><b>Cargando en Casa</b><span class="netw">UTE Lentos</span></div>
+            <span class="tint-badge">Valle</span>
+          </div>
+          <div class="tint-bar-track"><div class="tint-bar-fill" id="c-bar"></div></div>
+          <div class="tint-foot"><span class="num" id="c-kwh">0.0 kWh</span><span id="c-eta">3h 20m restantes</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Cómo se comporta el loop</div>
+    <p>Las tres corren la misma física simulada: sube rápido hasta 80% y después se achata (CC/CV real del litio, el mismo criterio ya definido para el motor de estimación) — por eso el final se siente más lento que el arranque, en vez de terminar de golpe. Al llegar a 100% hace una pausa corta y vuelve a empezar, solo para que puedas verlo repetirse sin tocar nada.</p>
+    <p>¿Alguna de las tres quedó como favorita definitiva para construir de verdad, o seguimos afinando algo puntual (velocidad, color, qué número es el protagonista)?</p>
+  </div>
+</div>
+
+<script>
+  const RING_CIRC_SMALL = 2 * Math.PI * 11;   // 69.1
+  const RING_CIRC_BIG = 2 * Math.PI * 36;     // 226.2
+  const TOTAL_KWH = 27.4;
+  const TOTAL_MIN = 200; // 3h20m
+
+  function renderDigit(el, text) {
+    el.innerHTML = '';
+    for (const ch of text) {
+      if (/[0-9]/.test(ch)) {
+        const wrap = document.createElement('span');
+        wrap.className = 'digit-wrap';
+        const track = document.createElement('span');
+        track.className = 'digit-track';
+        for (let d = 0; d <= 9; d++) {
+          const div = document.createElement('div');
+          div.textContent = String(d);
+          track.appendChild(div);
+        }
+        wrap.appendChild(track);
+        el.appendChild(wrap);
+        const digit = Number(ch);
+        track.style.transform = 'translateY(-' + (digit * 1.1) + 'em)';
+      } else {
+        const span = document.createElement('span');
+        span.textContent = ch;
+        el.appendChild(span);
+      }
+    }
+  }
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const aBar = document.getElementById('a-bar');
+  const aKwh = document.getElementById('a-kwh');
+  const aEta = document.getElementById('a-eta');
+  const aCompactPct = document.getElementById('a-compact-pct');
+  const bCompactRing = document.getElementById('b-compact-ring');
+  const bBigRing = document.getElementById('b-big-ring');
+  const bPct = document.getElementById('b-pct');
+  const bKwh = document.getElementById('b-kwh');
+  const cBar = document.getElementById('c-bar');
+  const cKwh = document.getElementById('c-kwh');
+  const cEta = document.getElementById('c-eta');
+  const cCompactPct = document.getElementById('c-compact-pct');
+
+  function paint(pct) {
+    const p = Math.min(pct, 100);
+    const kwh = (TOTAL_KWH * p / 100).toFixed(1);
+    const minsLeft = Math.max(0, Math.round(TOTAL_MIN * (1 - p / 100)));
+    const etaTxt = minsLeft >= 60 ? Math.floor(minsLeft / 60) + 'h ' + (minsLeft % 60) + 'm restantes' : minsLeft + 'm restantes';
+    const pctTxt = Math.round(p) + '%';
+
+    aBar.style.width = p + '%';
+    renderDigit(aKwh, kwh + ' kWh');
+    aEta.textContent = p >= 100 ? 'Completa' : etaTxt;
+    renderDigit(aCompactPct, pctTxt);
+
+    bCompactRing.style.strokeDashoffset = String(RING_CIRC_SMALL * (1 - p / 100));
+    bBigRing.style.strokeDashoffset = String(RING_CIRC_BIG * (1 - p / 100));
+    bPct.textContent = pctTxt;
+    renderDigit(bKwh, kwh + ' kWh');
+
+    cBar.style.width = p + '%';
+    renderDigit(cKwh, kwh + ' kWh');
+    cEta.textContent = p >= 100 ? 'Completa' : etaTxt;
+    renderDigit(cCompactPct, pctTxt);
+  }
+
+  if (reduceMotion) {
+    paint(62); // valor representativo fijo, sin animar
+  } else {
+    let pct = 0;
+    let pauseUntil = 0;
+    setInterval(() => {
+      const now = Date.now();
+      if (now < pauseUntil) return;
+      if (pct >= 100) { pct = 0; }
+      pct += pct < 80 ? 2.2 : 0.6;
+      paint(pct);
+      if (pct >= 100) pauseUntil = now + 1100;
+    }, 90);
+    paint(0);
+  }
+</script>

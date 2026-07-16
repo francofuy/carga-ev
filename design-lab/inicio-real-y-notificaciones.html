@@ -1,0 +1,320 @@
+<title>Inicio real + notificaciones + aprendizaje</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent2: #E0871F; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-pill: 999px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  :root[data-theme="dark"] {
+    --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34; --border: #2A2F38;
+    --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+    --accent: #4FB0F5; --accent2: #F5A24F; --accent-ink: #04121C;
+    --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+    --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+    --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+    --page-surface: #0B0E13;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 780px; margin-bottom: 26px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .page-head p:last-child { margin-bottom: 0; }
+  .page-head b { color: var(--text); }
+
+  .theme-toggle-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .theme-btn { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); cursor: pointer; }
+  .theme-btn.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  h2.step-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 46px 0 6px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h2.step-h:first-of-type { margin-top: 0; }
+  h2.step-h .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.step-h .title { font-size: 18px; font-weight: 700; }
+  h2.step-h .sub { margin-left: auto; font-size: 11.5px; color: var(--text-muted); font-weight: 600; }
+  .step-tagline { font-size: 13px; color: var(--text-secondary); max-width: 700px; margin: 0 0 20px; }
+  .step-tagline b { color: var(--text); }
+
+  .device { max-width: 360px; margin: 0 auto; }
+  .versions { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 720px) { .versions { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; } }
+  .col-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
+
+  /* ===== pantalla real de Inicio ===== */
+  .phone-shell { background: var(--bg); border-radius: 30px; padding: 20px 16px 22px; box-shadow: var(--shadow-2); position: relative; overflow: hidden; }
+  .aurora-mock { position: absolute; top: 0; left: 0; right: 0; height: 220px; z-index: 0; pointer-events: none;
+    background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 60%),
+                radial-gradient(circle at 70% 60%, color-mix(in srgb, var(--accent2) 16%, transparent), transparent 55%);
+    filter: blur(28px); }
+  .content-z { position: relative; z-index: 1; }
+  .nav-title { font-size: 25px; font-weight: 700; margin: 4px 0 14px; letter-spacing: -0.015em; }
+
+  .sched-card { background: var(--surface); border-radius: var(--r-lg); padding: 14px 16px; margin-bottom: 14px; box-shadow: var(--shadow-1); }
+  .sched-card .tag { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .sched-card .tag .waiting { margin-left: auto; color: var(--text-muted); background: var(--surface-2); padding: 3px 8px; border-radius: 999px; font-size: 9.5px; }
+  .sched-card .row1 { display: flex; align-items: center; gap: 10px; }
+  .sched-card .ic { width: 32px; height: 32px; border-radius: var(--r-sm); background: var(--accent-soft); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .sched-card .ic svg { width: 16px; height: 16px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.2; }
+  .sched-card .m1 { font-size: 13.5px; font-weight: 700; }
+  .sched-card .m2 { font-size: 11.5px; color: var(--text-secondary); margin-top: 1px; }
+  .sched-card .countdown { font-size: 12px; color: var(--accent); font-weight: 700; margin-top: 10px; }
+
+  .split-card-mock { display: flex; background: var(--surface); border-radius: var(--r-lg); margin-bottom: 14px; box-shadow: var(--shadow-1); overflow: hidden; }
+  .split-card-mock .half { flex: 1; padding: 14px 16px; }
+  .split-card-mock .half + .half { border-left: 1px solid var(--border); }
+  .split-card-mock .half.accented { background: var(--accent-soft); }
+  .split-card-mock .label { font-size: 10.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+  .split-card-mock .half.accented .label { color: var(--accent); }
+  .split-card-mock .bignum { font-size: 23px; font-weight: 700; margin: 3px 0 1px; }
+  .split-card-mock .half.accented .bignum { color: var(--accent); }
+  .split-card-mock .sub { font-size: 11px; color: var(--text-secondary); }
+
+  .tile-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .tile { flex: 1; background: var(--surface); border-radius: var(--r-md); padding: 10px; box-shadow: var(--shadow-1); }
+  .tile .label { font-size: 9.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+  .tile .value { font-size: 15px; font-weight: 700; margin-top: 3px; }
+
+  .chart-card-mock { background: var(--surface); border-radius: var(--r-lg); padding: 14px 16px 12px; margin-bottom: 14px; box-shadow: var(--shadow-1); }
+  .chart-card-mock .chead { display: flex; justify-content: space-between; margin-bottom: 12px; }
+  .chart-card-mock .t { font-size: 12.5px; font-weight: 700; }
+  .chart-card-mock .p { font-size: 10.5px; color: var(--text-muted); }
+  .bar-chart-mock { display: flex; align-items: flex-end; gap: 6px; height: 52px; }
+  .bar-chart-mock .b { flex: 1; background: color-mix(in srgb, var(--good) 30%, transparent); border-radius: 3px 3px 1px 1px; }
+  .bar-chart-mock .b.peak { background: var(--accent); }
+
+  .section-title { font-size: 13px; font-weight: 700; margin: 4px 0 8px; }
+  .list-group-mock { background: var(--surface); border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-1); }
+  .row-mock { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-top: 1px solid var(--border); }
+  .row-mock:first-child { border-top: none; }
+  .row-mock .icon-dot { width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .row-mock .icon-dot svg { width: 15px; height: 15px; stroke: var(--accent); }
+  .row-mock .meta { flex: 1; }
+  .row-mock .primary { font-size: 13px; font-weight: 600; }
+  .row-mock .secondary { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+  .row-mock .amount { text-align: right; }
+  .row-mock .cost { font-size: 13px; font-weight: 700; }
+  .row-mock .kwh { font-size: 10px; color: var(--text-muted); display: block; }
+
+  /* ===== notificaciones ===== */
+  .notif-wrap { max-width: 360px; margin: 0 auto; }
+  .notif-banner { background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(16px); border-radius: 18px; padding: 12px 14px; box-shadow: var(--shadow-2); border: 1px solid var(--border); }
+  .notif-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .notif-app-ic { width: 20px; height: 20px; border-radius: 6px; background: var(--accent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .notif-app-ic svg { width: 11px; height: 11px; stroke: #fff; fill: #fff; fill-opacity: 0.3; }
+  .notif-appname { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
+  .notif-time { margin-left: auto; font-size: 10.5px; color: var(--text-muted); }
+  .notif-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+  .notif-body { font-size: 12.5px; color: var(--text-secondary); line-height: 1.4; }
+  .notif-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .notif-actions button { flex: 1; font-size: 12px; font-weight: 700; padding: 8px; border-radius: 10px; border: none; }
+  .notif-actions .primary { background: var(--accent); color: var(--accent-ink); }
+  .notif-actions .secondary { background: var(--surface-2); color: var(--text-secondary); }
+
+  .tech-note { display: flex; gap: 9px; align-items: flex-start; background: var(--surface); border-radius: var(--r-md); padding: 12px 14px; box-shadow: var(--shadow-1); font-size: 12.5px; line-height: 1.55; color: var(--text-secondary); margin-top: 14px; }
+  .tech-note b { color: var(--text); }
+
+  /* ===== aprendizaje / calibración ===== */
+  .calib-card { background: var(--surface); border-radius: var(--r-lg); padding: 18px 20px; box-shadow: var(--shadow-1); max-width: 420px; margin: 0 auto; }
+  .calib-card .ctitle { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .calib-card .cdesc { font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.5; }
+  .calib-bars { display: flex; align-items: flex-end; gap: 10px; height: 70px; margin-bottom: 8px; }
+  .calib-bars .bcol { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .calib-bars .b { width: 100%; border-radius: 4px 4px 1px 1px; background: var(--critical); }
+  .calib-bars .b.mid { background: var(--warning-fill); }
+  .calib-bars .b.good { background: var(--good); }
+  .calib-bars .lbl { font-size: 9px; color: var(--text-muted); margin-top: 5px; }
+  .calib-legend { font-size: 11px; color: var(--text-muted); text-align: center; }
+  .calib-legend b { color: var(--text); }
+
+  .callout { background: var(--surface); border-radius: var(--r-lg); padding: 16px 18px; box-shadow: var(--shadow-1); margin-top: 18px; max-width: 900px; }
+  .callout .row { display: flex; gap: 9px; align-items: flex-start; font-size: 12.5px; line-height: 1.55; color: var(--text-secondary); margin-bottom: 8px; }
+  .callout .row:last-child { margin-bottom: 0; }
+  .callout .row b { color: var(--text); }
+
+  .verdict-final { max-width: 900px; margin: 46px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe · Inicio real + 3 ideas nuevas</div>
+    <h1>Inicio con la tarjeta "En espera", notificaciones y aprendizaje</h1>
+    <p>Cuatro cosas en esta vuelta: 1) cómo se ve la tarjeta programada dentro del Inicio real (no aislada). 2) notificación al detectar que llegaste a Casa. 3) notificaciones de inicio/fin de carga. 4) cómo el motor de estimación aprende de tu historial real, no se queda en una fórmula fija.</p>
+  </div>
+
+  <!-- ===== 1. INICIO REAL ===== -->
+  <h2 class="step-h"><span class="n">1</span><span class="title">Inicio real, con la tarjeta integrada</span></h2>
+  <p class="step-tagline">Mismo layout de siempre — la tarjeta "En espera" vive exactamente donde hoy vive el borrador recuperado (arriba de todo), con el mismo lenguaje visual que ya conocés.</p>
+  <div class="theme-toggle-row">
+    <button class="theme-btn active" data-theme-btn="light">Claro</button>
+    <button class="theme-btn" data-theme-btn="dark">Oscuro</button>
+  </div>
+  <div class="device">
+    <div class="phone-shell">
+      <div class="aurora-mock"></div>
+      <div class="content-z">
+        <div class="nav-title">Inicio</div>
+
+        <div class="sched-card">
+          <div class="tag">
+            <span>Carga programada</span>
+            <span class="waiting">En espera</span>
+          </div>
+          <div class="row1">
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <div><div class="m1">Casa · 00:00 → 07:00</div><div class="m2">Batería al iniciar: 24.7%</div></div>
+          </div>
+          <div class="countdown">Arranca en 2h 46m</div>
+        </div>
+
+        <div class="split-card-mock">
+          <div class="half">
+            <div class="label">Gasto este mes</div>
+            <div class="bignum num">$330</div>
+            <div class="sub">5 lecturas</div>
+          </div>
+          <div class="half accented">
+            <div class="label">Autonomía</div>
+            <div class="bignum num">380 km</div>
+            <div class="sub">estimada</div>
+          </div>
+        </div>
+
+        <div class="tile-row">
+          <div class="tile"><div class="label">$/kWh</div><div class="value num">$2.44</div></div>
+          <div class="tile"><div class="label">% Valle</div><div class="value num">100%</div></div>
+          <div class="tile"><div class="label">$/km</div><div class="value num">$0.86</div></div>
+        </div>
+
+        <div class="chart-card-mock">
+          <div class="chead"><span class="t">Tendencia</span><span class="p">últimos 6 meses</span></div>
+          <div class="bar-chart-mock">
+            <div class="b" style="height:18%;"></div><div class="b" style="height:12%;"></div>
+            <div class="b" style="height:22%;"></div><div class="b" style="height:15%;"></div>
+            <div class="b" style="height:10%;"></div><div class="b peak" style="height:100%;"></div>
+          </div>
+        </div>
+
+        <div class="section-title">Últimas cargas</div>
+        <div class="list-group-mock">
+          <div class="row-mock">
+            <span class="icon-dot"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <div class="meta"><div class="primary">Mié 08 Jul</div><div class="secondary">Casa · Valle</div></div>
+            <div class="amount"><div class="cost num">$61</div><span class="kwh num">25.0 kWh</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 2. GEOFENCE ===== -->
+  <h2 class="step-h"><span class="n">2</span><span class="title">Al llegar a Casa</span><span class="sub">geofencing — sí es posible</span></h2>
+  <p class="step-tagline">iOS puede avisarle a la app cuando entrás a una zona guardada (Core Location, "region monitoring"), <b>incluso con la app cerrada</b> — y a diferencia de los widgets de Home Screen, esto <b>no</b> depende de pagar el Developer Program.</p>
+  <div class="notif-wrap">
+    <div class="notif-banner">
+      <div class="notif-head">
+        <span class="notif-app-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <span class="notif-appname">Carga EV</span>
+        <span class="notif-time">ahora</span>
+      </div>
+      <div class="notif-title">Llegaste a Casa</div>
+      <div class="notif-body">¿Programamos la carga de esta noche?</div>
+      <div class="notif-actions">
+        <button class="secondary">Ahora no</button>
+        <button class="primary">Programar</button>
+      </div>
+    </div>
+  </div>
+  <div class="tech-note">🔧 <div><b>Cómo funciona técnicamente:</b> guardás la ubicación de Casa una vez (Ajustes, "usar mi ubicación actual"), la app define una zona circular ahí con <code>CLCircularRegion</code>, y iOS despierta la app al cruzar el límite — sin gastar batería como un GPS activo. Necesita permiso de ubicación "Siempre" (el usuario puede rechazarlo) y un plugin nativo chico, en la misma línea de trabajo que la Live Activity — no existe hoy, habría que construirlo.</div></div>
+
+  <!-- ===== 3. NOTIFICACIONES INICIO/FIN ===== -->
+  <h2 class="step-h"><span class="n">3</span><span class="title">Notificaciones de inicio y fin</span><span class="sub">estas sí son simples</span></h2>
+  <p class="step-tagline">A diferencia del geofence, estas no necesitan ubicación — la app ya sabe la hora exacta (vos la programaste), así que son notificaciones locales comunes, sin nada especial.</p>
+  <div class="versions">
+    <div>
+      <div class="col-label">Al empezar</div>
+      <div class="notif-wrap">
+        <div class="notif-banner">
+          <div class="notif-head">
+            <span class="notif-app-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <span class="notif-appname">Carga EV</span>
+            <span class="notif-time">00:00</span>
+          </div>
+          <div class="notif-title">Empezó tu carga programada</div>
+          <div class="notif-body">Casa · Valle · corta a las 07:00</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="col-label">Al cortar</div>
+      <div class="notif-wrap">
+        <div class="notif-banner">
+          <div class="notif-head">
+            <span class="notif-app-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <span class="notif-appname">Carga EV</span>
+            <span class="notif-time">07:00</span>
+          </div>
+          <div class="notif-title">Terminó tu carga programada</div>
+          <div class="notif-body">Estimado ≈91% · 39.8 kWh — tocá para confirmar el real</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 4. APRENDIZAJE ===== -->
+  <h2 class="step-h"><span class="n">4</span><span class="title">Cómo aprende del historial</span><span class="sub">no es una fórmula fija</span></h2>
+  <p class="step-tagline">Cada vez que confirmás el resultado real (Paso 3 del flujo que ya vimos), la diferencia entre lo estimado y lo real se guarda y corrige la próxima estimación — <b>por cargador</b>, porque cada instalación tiene sus propias pérdidas reales.</p>
+  <div class="calib-card">
+    <div class="ctitle">Precisión en Casa</div>
+    <div class="cdesc">Diferencia entre lo estimado y lo que confirmaste, últimas 5 cargas</div>
+    <div class="calib-bars">
+      <div class="bcol"><div class="b" style="height:80%;"></div><div class="lbl">1ª</div></div>
+      <div class="bcol"><div class="b" style="height:58%;"></div><div class="lbl">2ª</div></div>
+      <div class="bcol"><div class="b mid" style="height:34%;"></div><div class="lbl">3ª</div></div>
+      <div class="bcol"><div class="b mid" style="height:20%;"></div><div class="lbl">4ª</div></div>
+      <div class="bcol"><div class="b good" style="height:8%;"></div><div class="lbl">5ª</div></div>
+    </div>
+    <div class="calib-legend">De <b>±3,8 kWh</b> de error a <b>±0,4 kWh</b> con solo 5 cargas confirmadas</div>
+  </div>
+
+  <div class="callout">
+    <div class="row"><span>💡</span><div><b>Ya estaba parcialmente contemplado:</b> el texto "Calibrado con 12 cargas previas" que viene apareciendo en los mockups desde el principio es justo esto — no es decorativo, es el resultado real de comparar estimado vs. confirmado en ese cargador específico.</div></div>
+    <div class="row"><span>💡</span><div><b>Por qué "por cargador" y no global:</b> tu cargador de Casa tiene pérdidas propias (cableado, temperatura, el propio limitador de 24A) — mezclar esos datos con, por ejemplo, un cargador público distinto ensuciaría la calibración en vez de mejorarla.</div></div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Resumen de lo nuevo en esta vuelta</div>
+    <p><b>Inicio real:</b> confirmado, la tarjeta "En espera" ocupa el mismo lugar que hoy tiene el borrador recuperado. <b>Geofence:</b> técnicamente posible y gratis, pero es una pieza de trabajo nativo nueva (un plugin de Core Location, separado de la Live Activity) — no algo que ya esté planeado, hay que sumarlo a la lista. <b>Notificaciones de inicio/fin:</b> triviales comparado con el geofence, ya que la hora la conoce la app. <b>Aprendizaje:</b> ya estaba en el diseño del motor desde el Paso 3 (confirmar lo real) — esto solo lo hace visible.</p>
+    <p>¿Sumamos el geofence a la lista de trabajo nativo real, o por ahora nos quedamos con Live Activity + notificaciones simples (que no necesitan ubicación) y dejamos el geofence para más adelante?</p>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('[data-theme-btn]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-theme-btn]').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.documentElement.setAttribute('data-theme', btn.dataset.themeBtn);
+    });
+  });
+</script>

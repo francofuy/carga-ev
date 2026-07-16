@@ -1,0 +1,263 @@
+<title>Programar solo en Casa + Ajustes de potencia</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0; --border: #DCE1E8;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-pill: 999px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C;
+      --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+      --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+      --border: #2A2F38; --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 780px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .page-head p:last-child { margin-bottom: 0; }
+  .page-head b { color: var(--text); }
+
+  h2.step-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 46px 0 6px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h2.step-h:first-of-type { margin-top: 0; }
+  h2.step-h .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.step-h .title { font-size: 18px; font-weight: 700; }
+  h2.step-h .sub { margin-left: auto; font-size: 11.5px; color: var(--text-muted); font-weight: 600; }
+  .step-tagline { font-size: 13px; color: var(--text-secondary); max-width: 700px; margin: 0 0 20px; }
+  .step-tagline b { color: var(--text); }
+
+  .versions { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  @media (max-width: 760px) { .versions { grid-template-columns: 1fr; max-width: 360px; margin: 0 auto; } }
+  .col-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
+  .col-label.on { color: var(--accent); }
+  .device { max-width: 340px; margin: 0 auto; }
+
+  .sheet-mock { background: var(--surface); border-radius: 26px; box-shadow: var(--shadow-2); padding: 20px 20px 22px; }
+  .sheet-title { font-size: 17px; font-weight: 700; margin-bottom: 14px; }
+
+  .segmented-real { display: flex; background: var(--surface-2); border-radius: var(--r-md); padding: 3px; margin-bottom: 14px; position: relative; }
+  .segmented-real .seg-pill { position: absolute; top: 3px; bottom: 3px; width: calc(50% - 3px); background: var(--surface); border-radius: 11px; box-shadow: var(--shadow-1); }
+  .segmented-real.pub .seg-pill { transform: translateX(100%); }
+  .segmented-real .seg { flex: 1; text-align: center; padding: 8px 4px; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); position: relative; z-index: 1; }
+  .segmented-real .seg.on { color: var(--text); }
+
+  .power-ref { display: flex; align-items: center; gap: 8px; background: var(--surface-2); border-radius: var(--r-sm); padding: 9px 12px; margin-bottom: 14px; font-size: 11.5px; color: var(--text-secondary); }
+  .power-ref b { color: var(--text); font-weight: 700; }
+  .power-ref a { margin-left: auto; color: var(--accent); font-weight: 600; text-decoration: none; white-space: nowrap; }
+
+  .field-label { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin: 2px 0 8px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .chip-mock { font-size: 11.5px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: var(--surface-2); color: var(--text-secondary); }
+  .chip-mock.on { background: var(--accent); color: var(--accent-ink); }
+
+  .suggest-box { background: color-mix(in srgb, var(--good) 14%, var(--surface)); border-radius: var(--r-sm); padding: 9px 11px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .suggest-box .sl { font-size: 9.5px; font-weight: 700; color: var(--good); text-transform: uppercase; letter-spacing: 0.03em; }
+  .suggest-box .sa { font-size: 13px; font-weight: 700; }
+  .suggest-box .su { font-size: 10px; font-weight: 700; color: #fff; background: var(--good); padding: 3px 9px; border-radius: 999px; }
+
+  .field-row-2 { display: flex; gap: 8px; margin-bottom: 12px; }
+  .field-box { flex: 1; background: var(--surface-2); border-radius: 10px; padding: 9px 11px; }
+  .field-box .l { font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+  .field-box .v { font-size: 13px; font-weight: 700; margin-top: 2px; }
+
+  .time-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .time-field { flex: 1; background: var(--surface-2); border-radius: var(--r-md); padding: 11px 12px; }
+  .time-field .l { font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+  .time-field .v { font-size: 18px; font-weight: 700; color: var(--text); }
+  .time-field.pct .v { color: var(--warning-fill); }
+
+  .estimate-box { background: var(--accent-soft); border-radius: var(--r-md); padding: 11px 12px; margin-bottom: 14px; }
+  .estimate-box .l { font-size: 10px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+  .estimate-box .v { font-size: 13.5px; font-weight: 700; color: var(--text); }
+  .estimate-box .s { font-size: 10.5px; color: var(--text-secondary); margin-top: 1px; }
+
+  .primary-btn-mock { display: block; width: 100%; text-align: center; background: var(--accent); color: var(--accent-ink); font-size: 14.5px; font-weight: 700; padding: 12px; border-radius: var(--r-md); border: none; margin-bottom: 4px; }
+  .escape-link { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--text-muted); padding: 10px 4px 2px; text-align: center; }
+
+  .toggle-mini { display: flex; background: var(--surface-2); border-radius: 10px; padding: 3px; margin-bottom: 12px; }
+  .toggle-mini .opt { flex: 1; text-align: center; padding: 7px 4px; font-size: 12px; font-weight: 600; color: var(--text-secondary); border-radius: 8px; }
+  .toggle-mini .opt.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow-1); }
+  .quick-field { background: var(--surface-2); border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 14px; }
+  .quick-field .l { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+  .quick-field .v { font-size: 19px; font-weight: 700; }
+
+  .no-schedule-note { display: flex; gap: 8px; align-items: flex-start; background: color-mix(in srgb, var(--warning-fill) 12%, var(--surface)); border-radius: var(--r-sm); padding: 10px 12px; margin-bottom: 14px; font-size: 11.5px; color: var(--text-secondary); line-height: 1.5; }
+  .no-schedule-note b { color: var(--text); }
+
+  /* ===== Ajustes ===== */
+  .settings-card { background: var(--surface); border-radius: var(--r-lg); padding: 20px 22px; box-shadow: var(--shadow-1); }
+  .settings-card .stitle { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .settings-card .sdesc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 18px; }
+  .setting-input-row { display: flex; gap: 12px; margin-bottom: 16px; }
+  .setting-input { flex: 1; }
+  .setting-input .l { font-size: 11.5px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+  .setting-input .box { background: var(--surface-2); border-radius: var(--r-md); padding: 12px 14px; display: flex; justify-content: space-between; align-items: baseline; }
+  .setting-input .box .v { font-size: 18px; font-weight: 700; }
+  .setting-input .box .u { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  .power-result { background: var(--accent-soft); border-radius: var(--r-md); padding: 14px 16px; margin-bottom: 12px; }
+  .power-result .l { font-size: 10.5px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+  .power-result .v { font-size: 20px; font-weight: 700; }
+  .power-result .s { font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
+  .footnote { font-size: 11px; color: var(--text-muted); line-height: 1.6; }
+  .footnote code { background: var(--surface-2); border-radius: 4px; padding: 1px 5px; }
+
+  .callout { background: var(--surface); border-radius: var(--r-lg); padding: 16px 18px; box-shadow: var(--shadow-1); margin-top: 18px; max-width: 900px; }
+  .callout .row { display: flex; gap: 9px; align-items: flex-start; font-size: 12.5px; line-height: 1.55; color: var(--text-secondary); margin-bottom: 8px; }
+  .callout .row:last-child { margin-bottom: 0; }
+  .callout .row b { color: var(--text); }
+
+  .verdict-final { max-width: 900px; margin: 46px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe · ajustado con datos reales de tu cargador</div>
+    <h1>Programar, solo para Casa — más el ajuste de potencia que lo hace posible</h1>
+    <p>Tenés razón: en Pública la potencia no es un dato fijo (cambia según cuántos autos comparten el cargador, incluso a mitad de una sesión) — no hay forma honesta de estimar ahí. <b>Programar queda exclusivo para Casa</b>, donde vos controlás la instalación y la potencia es estable.</p>
+    <p>Con tu foto (24A · 226V) el cálculo real es <code>kW = V × A × η</code> → 226 × 24 × 0,92 ≈ <b>5,0 kW</b>. Ese es justo el dato que hoy no existe en ningún lado de la app — sin él, "Programar" no tiene con qué estimar.</p>
+  </div>
+
+  <!-- ===== NUEVA CARGA: CASA vs PÚBLICA ===== -->
+  <h2 class="step-h"><span class="n">1</span><span class="title">Nueva carga</span><span class="sub">Programar solo aparece en Privada</span></h2>
+  <div class="versions">
+    <div>
+      <div class="col-label on">Privada (Casa) — con Programar</div>
+      <div class="device">
+        <div class="sheet-mock">
+          <div class="sheet-title">Nueva carga</div>
+          <div class="segmented-real">
+            <div class="seg-pill"></div>
+            <div class="seg on">Privada</div>
+            <div class="seg">Pública</div>
+          </div>
+
+          <div class="power-ref">
+            <span>Cargando a <b class="num">24A · 226V</b> · <b class="num">≈5,0 kW</b></span>
+            <a>Editar</a>
+          </div>
+
+          <div class="time-row">
+            <div class="time-field pct"><div class="l">Batería al iniciar</div><div class="v num">24.7%</div></div>
+            <div class="time-field"><div class="l">Corta a las</div><div class="v num">07:00</div></div>
+          </div>
+          <div class="estimate-box">
+            <div class="l">Estimado para las 07:00</div>
+            <div class="v num">≈ 91% · 39.8 kWh</div>
+            <div class="s">Calibrado con tu historial real en Casa</div>
+          </div>
+          <button class="primary-btn-mock">Empezar carga programada</button>
+          <div class="escape-link">¿Fue una carga rápida? <u>Anotar el resultado directo</u></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="col-label">Pública — sin Programar</div>
+      <div class="device">
+        <div class="sheet-mock">
+          <div class="sheet-title">Nueva carga</div>
+          <div class="segmented-real pub">
+            <div class="seg-pill"></div>
+            <div class="seg">Privada</div>
+            <div class="seg on">Pública</div>
+          </div>
+
+          <div class="no-schedule-note">⚠️ <span>La potencia en cargadores públicos varía (más autos = menos kW, y puede cambiar a mitad de carga) — acá siempre se anota el resultado directo, sin estimación.</span></div>
+
+          <div class="field-label">Red</div>
+          <div class="chip-row">
+            <span class="chip-mock">UTE</span><span class="chip-mock">eOne</span><span class="chip-mock on">DMC</span><span class="chip-mock">Evergo</span>
+          </div>
+          <div class="field-label">Variante</div>
+          <div class="chip-row">
+            <span class="chip-mock on">17 a 24hrs</span><span class="chip-mock">Otro horario</span>
+          </div>
+          <div class="suggest-box">
+            <div><div class="sl">Sugerido</div><div class="sa">$15,00/kWh</div></div>
+            <span class="su">Usar</span>
+          </div>
+          <div class="field-row-2">
+            <div class="field-box"><div class="l">Precio/kWh</div><div class="v">15.00</div></div>
+            <div class="field-box"><div class="l">Cargo fijo</div><div class="v">$120</div></div>
+          </div>
+
+          <div class="toggle-mini">
+            <div class="opt on">Por kWh</div>
+            <div class="opt">Por % batería</div>
+          </div>
+          <div class="quick-field">
+            <div class="l">kWh cargados</div>
+            <div class="v num">18.4</div>
+          </div>
+          <button class="primary-btn-mock">Guardar carga</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== AJUSTES ===== -->
+  <h2 class="step-h"><span class="n">2</span><span class="title">Ajustes → Datos de carga en Casa</span></h2>
+  <p class="step-tagline">Nueva sección, con los mismos datos que ya ves en la pantalla de tu cargador — solo hace falta cargarlos una vez.</p>
+  <div class="device">
+    <div class="settings-card">
+      <div class="stitle">Datos de carga en Casa</div>
+      <div class="sdesc">Necesarios para que "Programar" pueda estimar cuánto vas a cargar. Se sacan de la pantalla de tu propio cargador (amperaje y voltaje de línea).</div>
+
+      <div class="setting-input-row">
+        <div class="setting-input">
+          <div class="l">Amperaje</div>
+          <div class="box"><span class="v num">24</span><span class="u">A</span></div>
+        </div>
+        <div class="setting-input">
+          <div class="l">Voltaje</div>
+          <div class="box"><span class="v num">226</span><span class="u">V</span></div>
+        </div>
+      </div>
+
+      <div class="power-result">
+        <div class="l">Potencia estimada</div>
+        <div class="v num">≈ 5,0 kW</div>
+        <div class="s">226V × 24A × 0,92 de eficiencia</div>
+      </div>
+
+      <div class="footnote">El 0,92 (<code>η</code>) es una pérdida típica de carga en AC, ya usada en el resto del motor de estimación — no es editable, pero cada carga real que registrás en Casa recalibra qué tan preciso es este número para tu instalación puntual.</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="row"><span>💡</span><div><b>Un solo dato, no por carga:</b> a diferencia de Pública (que pide red/cargo fijo en cada carga porque cambia), Amperaje/Voltaje de Casa se cargan <b>una sola vez</b> en Ajustes — Nueva carga solo los muestra como referencia (con un link a "Editar" por si cambiás de cargador o cambiás la instalación).</div></div>
+    <div class="row"><span>💡</span><div><b>Por qué Voltaje es editable y no fijo en 220V:</b> tu propio cargador mide 226V real — dejarlo fijo en el nominal UTE metería un ~3% de error de entrada que no hace falta.</div></div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Algo para confirmar</div>
+    <p>Tu cargador ya muestra <b>32.50 kWh</b> y <b>06:59:55</b> en pantalla, en estado "En espera" — eso probablemente sea un límite que vos mismo configuraste en el cargador (parar a los 32,50 kWh o a las 7 horas, lo que llegue primero), no un dato en vivo. Si es así, la app terminaría siendo redundante con esa función del cargador — pero la diferencia es que la app te deja anotar el <b>costo real por franja horaria</b> (Valle/Llano/Punta) y guardar el historial, cosa que el cargador no hace.</p>
+    <p>¿Confirmás que "Amperaje + Voltaje" en Ajustes alcanza, o tu cargador tiene alguna otra config (como el límite de kWh/horas que se ve en la foto) que también debería vivir en la app en vez de solo en el cargador?</p>
+  </div>
+</div>

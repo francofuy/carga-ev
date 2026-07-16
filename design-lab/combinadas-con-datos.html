@@ -1,0 +1,283 @@
+<title>Combinadas — bobina, ondas y trazo, con % y kWh en vivo</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0; --border: #DCE1E8;
+    --r-lg: 18px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 700px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 25px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+  .page-head b { color: var(--text); }
+
+  h2.opt-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 46px 0 6px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h2.opt-h:first-of-type { margin-top: 0; }
+  h2.opt-h .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.opt-h .title { font-size: 18px; font-weight: 700; }
+  .opt-tagline { font-size: 13px; color: var(--text-secondary); max-width: 620px; margin: 0 0 20px; }
+
+  .card-frame { max-width: 340px; margin: 0 auto; }
+  .sys-black-frame { background: #050505; border-radius: 26px; padding: 18px 20px; box-shadow: var(--shadow-2); }
+
+  .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .bolt-ic { width: 28px; height: 28px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 22%, transparent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .bolt-ic svg { width: 15px; height: 15px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.2; }
+  .card-head b { color: #fff; font-size: 13.5px; display: block; }
+  .card-head span.netw { color: rgba(255,255,255,0.55); font-size: 11px; }
+  .franja-pill { margin-left: auto; font-size: 10px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: rgba(12,163,12,0.28); color: #7CE87C; flex: 0 0 auto; }
+
+  .digit-wrap { display: inline-block; height: 1.05em; overflow: hidden; position: relative; width: 0.58em; vertical-align: bottom; }
+  .digit-track { position: absolute; left: 0; top: 0; transition: transform 0.35s cubic-bezier(0.3, 1, 0.4, 1); }
+  .digit-track div { height: 1.05em; display: flex; align-items: center; justify-content: center; }
+  @media (prefers-reduced-motion: reduce) { .digit-track { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .anim-el { animation: none !important; } }
+
+  /* ===== Idea 1: bobina como marco/nexo entre ícono y números ===== */
+  .coil-svg { width: 100%; height: 34px; display: block; margin-bottom: 10px; }
+  .coil-base { fill: none; stroke-width: 3.5; stroke-linecap: round; transition: stroke 0.6s ease; }
+  .coil-pulse { fill: none; stroke: #fff; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 20 260; animation: coilFlow 2s linear infinite; filter: drop-shadow(0 0 4px rgba(255,255,255,0.7)); }
+  @keyframes coilFlow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -280; } }
+  .hero-row1 { display: flex; align-items: baseline; gap: 8px; }
+  .hero-row1 .pctnum { font-size: 34px; font-weight: 700; color: #fff; }
+  .hero-row1 .pctsign { font-size: 16px; color: rgba(255,255,255,0.5); font-weight: 600; }
+  .sub-row1 { display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: rgba(255,255,255,0.6); }
+  .sub-row1 .num { color: #fff; font-weight: 700; }
+
+  /* ===== Idea 2: núcleo de ondas — % en el centro del radar ===== */
+  .ripple-hero { position: relative; width: 128px; height: 128px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; }
+  .ripple-ring2 { position: absolute; width: 60px; height: 60px; border-radius: 50%; border-width: 2px; border-style: solid; animation: rippleOut2 2.6s cubic-bezier(0.2,0.6,0.4,1) infinite; }
+  @keyframes rippleOut2 { 0% { transform: scale(0.5); opacity: 0.85; } 100% { transform: scale(2.1); opacity: 0; } }
+  .ripple-r2b { animation-delay: 0.87s; }
+  .ripple-r3b { animation-delay: 1.74s; }
+  .ripple-core2 { position: relative; z-index: 1; width: 74px; height: 74px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 0.6s ease; }
+  .ripple-core2 .pctnum { font-size: 21px; font-weight: 700; color: #fff; line-height: 1; }
+  .ripple-core2 .kwhmini { font-size: 9px; color: rgba(255,255,255,0.75); font-weight: 600; margin-top: 3px; }
+  .foot-row2 { display: flex; justify-content: space-between; font-size: 12px; color: rgba(255,255,255,0.6); }
+  .foot-row2 .num { color: #fff; font-weight: 700; }
+
+  /* ===== Idea 3: trazo con lectura viva — split-card real de la app ===== */
+  .split-mini { display: flex; border-radius: 14px; overflow: hidden; background: rgba(255,255,255,0.06); margin-bottom: 12px; }
+  .split-mini .half { flex: 1; padding: 12px 14px; }
+  .split-mini .half + .half { border-left: 1px solid rgba(255,255,255,0.12); }
+  .split-mini .half.accented { background: rgba(255,255,255,0.08); }
+  .split-mini .l { font-size: 9.5px; color: rgba(255,255,255,0.5); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+  .split-mini .n { font-size: 21px; font-weight: 700; color: #fff; margin-top: 2px; }
+  .wave-svg { width: 100%; height: 36px; display: block; }
+  .wave-line { fill: none; stroke-width: 2.2; stroke-linecap: round; transition: stroke 0.6s ease; filter: drop-shadow(0 0 3px currentColor); stroke-dasharray: 340; animation: waveDraw 1.6s linear infinite; }
+  @keyframes waveDraw { from { stroke-dashoffset: 340; } to { stroke-dashoffset: 0; } }
+
+  .verdict-box { background: var(--surface); border-radius: var(--r-lg); padding: 16px 20px; box-shadow: var(--shadow-1); max-width: 700px; margin: 14px auto 0; }
+  .verdict-box .row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; font-size: 13px; line-height: 1.55; color: var(--text-secondary); }
+  .verdict-box .row:last-child { margin-bottom: 0; }
+  .verdict-box .row b { color: var(--text); }
+
+  .verdict-final { max-width: 700px; margin: 46px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe animado · las 3 anteriores, ahora con % y kWh integrados</div>
+    <h1>Bobina, ondas y trazo — como tarjetas completas de información</h1>
+    <p>La vuelta anterior mostraba el efecto solo, con los datos como leyenda aparte. Acá cada idea es una <b>tarjeta completa</b>: el % y los kWh cargados viven adentro del diseño, no al costado — y siguen coloreándose solos por franja de batería (rojo/naranja/verde) mientras suben en vivo.</p>
+  </div>
+
+  <!-- ===== IDEA 1 ===== -->
+  <h2 class="opt-h"><span class="n">1</span><span class="title">Bobina como nexo</span></h2>
+  <p class="opt-tagline">La bobina ya no es decoración aislada: conecta visualmente el encabezado con el número — como si la energía "entrara" desde arriba y se convirtiera en el %.</p>
+  <div class="card-frame">
+    <div class="sys-black-frame">
+      <div class="card-head">
+        <span class="bolt-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <div><b>Cargando en Casa</b><span class="netw">UTE Lentos</span></div>
+        <span class="franja-pill">Valle</span>
+      </div>
+      <svg class="coil-svg" viewBox="0 0 260 34" preserveAspectRatio="none">
+        <path class="coil-base" id="i1-coil" d="M4,17 Q 14,3 24,17 T 44,17 T 64,17 T 84,17 T 104,17 T 124,17 T 144,17 T 164,17 T 184,17 T 204,17 T 224,17 T 244,17"/>
+        <path class="coil-pulse" d="M4,17 Q 14,3 24,17 T 44,17 T 64,17 T 84,17 T 104,17 T 124,17 T 144,17 T 164,17 T 184,17 T 204,17 T 224,17 T 244,17"/>
+      </svg>
+      <div class="hero-row1">
+        <span class="pctnum num" id="i1-pct">0</span><span class="pctsign">%</span>
+      </div>
+      <div class="sub-row1"><span class="num" id="i1-kwh">0.0 / 27.4 kWh</span><span class="num" id="i1-eta">3h 20m</span></div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> el % queda como protagonista absoluto (como el gasto en la app hoy), y la bobina explica de dónde "viene" la energía sin robarle foco al número.</div></div>
+    <div class="row"><span>👎</span><div><b>En contra:</b> con poco espacio (Dynamic Island compacta) la bobina no entra bien — esta versión es más para pantalla bloqueada/expandida.</div></div>
+  </div>
+
+  <!-- ===== IDEA 2 ===== -->
+  <h2 class="opt-h"><span class="n">2</span><span class="title">Núcleo de ondas</span></h2>
+  <p class="opt-tagline">El % pasa a vivir en el centro exacto del radar — las ondas irradian <i>desde</i> el número, no al lado de él. El kWh queda justo debajo, dentro del mismo círculo.</p>
+  <div class="card-frame">
+    <div class="sys-black-frame">
+      <div class="card-head">
+        <span class="bolt-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <div><b>Cargando en Casa</b><span class="netw">UTE Lentos</span></div>
+        <span class="franja-pill">Valle</span>
+      </div>
+      <div class="ripple-hero">
+        <div class="ripple-ring2 anim-el" id="i2-r1" style="border-color:#0ca30c;"></div>
+        <div class="ripple-ring2 ripple-r2b anim-el" id="i2-r2" style="border-color:#0ca30c;"></div>
+        <div class="ripple-ring2 ripple-r3b anim-el" id="i2-r3" style="border-color:#0ca30c;"></div>
+        <div class="ripple-core2" id="i2-core" style="background:#0ca30c;">
+          <span class="pctnum" id="i2-pct">0%</span>
+          <span class="kwhmini" id="i2-kwh">0.0 kWh</span>
+        </div>
+      </div>
+      <div class="foot-row2"><span>Restante</span><span class="num" id="i2-eta">3h 20m</span></div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> es la composición más "propia" de las tres — nadie más muestra la carga como un radar con el % en el centro.</div></div>
+    <div class="row"><span>👎</span><div><b>En contra:</b> ocupa más espacio vertical, no entra en la Dynamic Island compacta ni en formatos chicos.</div></div>
+  </div>
+
+  <!-- ===== IDEA 3 ===== -->
+  <h2 class="opt-h"><span class="n">3</span><span class="title">Trazo con lectura viva</span></h2>
+  <p class="opt-tagline">Acá se reutiliza el mismo <code>split-card</code> que ya existe hoy en Inicio (Gasto / Autonomía) — mismo lenguaje exacto, solo que ahora muestra % y kWh, con la onda como firma abajo.</p>
+  <div class="card-frame">
+    <div class="sys-black-frame">
+      <div class="card-head">
+        <span class="bolt-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <div><b>Cargando en Casa</b><span class="netw">UTE Lentos</span></div>
+        <span class="franja-pill">Valle</span>
+      </div>
+      <div class="split-mini">
+        <div class="half">
+          <div class="l">Batería</div>
+          <div class="n" id="i3-pct">0%</div>
+        </div>
+        <div class="half accented">
+          <div class="l">Cargados</div>
+          <div class="n" id="i3-kwh">0.0</div>
+        </div>
+      </div>
+      <svg class="wave-svg" viewBox="0 0 200 36" preserveAspectRatio="none">
+        <polyline class="wave-line" id="i3-wave" points="0,18 10,18 16,4 22,32 28,18 44,18 50,7 56,29 62,18 78,18 84,3 90,33 96,18 112,18 118,9 124,27 130,18 146,18 152,5 158,31 164,18 180,18 186,10 192,26 200,18" vector-effect="non-scaling-stroke"/>
+      </svg>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> la más coherente con la app real — literalmente el mismo componente visual que ya usás en Inicio, solo con otros datos.</div></div>
+    <div class="row"><span>👎</span><div><b>En contra:</b> es la más "quieta" de las tres — la onda queda como firma de fondo, no como protagonista del movimiento.</div></div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Mi lectura</div>
+    <p>Si el criterio es "se parece a la app real", la <b>3 (split-card + onda)</b> gana fácil — es literalmente reciclar un componente que ya existe. Si el criterio es "se ve más único/creativo", el <b>núcleo de ondas (2)</b> es la más memorable. La <b>bobina (1)</b> queda en el medio: bastante distintiva, pero pide más espacio que las otras dos.</p>
+    <p>¿Con cuál seguimos como definitiva para pasar a Swift, o querés una vuelta más combinando piezas de estas tres?</p>
+  </div>
+</div>
+
+<script>
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TOTAL_KWH = 27.4;
+  const TOTAL_MIN = 200;
+
+  function bandColor(pct) {
+    if (pct < 20) return '#d03b3b';
+    if (pct < 80) return '#fab219';
+    return '#0ca30c';
+  }
+
+  function renderDigit(el, text) {
+    el.innerHTML = '';
+    for (const ch of text) {
+      if (/[0-9]/.test(ch)) {
+        const wrap = document.createElement('span');
+        wrap.className = 'digit-wrap';
+        const track = document.createElement('span');
+        track.className = 'digit-track';
+        for (let d = 0; d <= 9; d++) {
+          const div = document.createElement('div');
+          div.textContent = String(d);
+          track.appendChild(div);
+        }
+        wrap.appendChild(track);
+        el.appendChild(wrap);
+        const digit = Number(ch);
+        track.style.transform = 'translateY(-' + (digit * 1.05) + 'em)';
+      } else {
+        const span = document.createElement('span');
+        span.textContent = ch;
+        el.appendChild(span);
+      }
+    }
+  }
+
+  const i1Coil = document.getElementById('i1-coil');
+  const i1Pct = document.getElementById('i1-pct');
+  const i1Kwh = document.getElementById('i1-kwh');
+  const i1Eta = document.getElementById('i1-eta');
+  const i2Core = document.getElementById('i2-core');
+  const i2Rings = [document.getElementById('i2-r1'), document.getElementById('i2-r2'), document.getElementById('i2-r3')];
+  const i2Pct = document.getElementById('i2-pct');
+  const i2Kwh = document.getElementById('i2-kwh');
+  const i2Eta = document.getElementById('i2-eta');
+  const i3Pct = document.getElementById('i3-pct');
+  const i3Kwh = document.getElementById('i3-kwh');
+  const i3Wave = document.getElementById('i3-wave');
+
+  function paint(pct) {
+    const p = Math.min(pct, 100);
+    const color = bandColor(p);
+    const kwh = (TOTAL_KWH * p / 100).toFixed(1);
+    const minsLeft = Math.max(0, Math.round(TOTAL_MIN * (1 - p / 100)));
+    const etaTxt = p >= 100 ? 'Completa' : (minsLeft >= 60 ? Math.floor(minsLeft / 60) + 'h ' + (minsLeft % 60) + 'm' : minsLeft + 'm');
+    const pctTxt = Math.round(p) + '%';
+
+    i1Coil.style.stroke = color;
+    renderDigit(i1Pct, String(Math.round(p)));
+    renderDigit(i1Kwh, kwh + ' / 27.4 kWh');
+    i1Eta.textContent = etaTxt;
+
+    i2Core.style.background = color;
+    i2Rings.forEach((r) => { r.style.borderColor = color; });
+    renderDigit(i2Pct, pctTxt);
+    renderDigit(i2Kwh, kwh + ' kWh');
+    i2Eta.textContent = etaTxt;
+
+    renderDigit(i3Pct, pctTxt);
+    renderDigit(i3Kwh, kwh);
+    i3Wave.style.stroke = color;
+  }
+
+  if (reduceMotion) {
+    paint(62);
+  } else {
+    let pct = 0;
+    let pauseUntil = 0;
+    setInterval(() => {
+      const now = Date.now();
+      if (now < pauseUntil) return;
+      if (pct >= 100) { pct = 0; }
+      pct += pct < 80 ? 2.2 : 0.6;
+      paint(pct);
+      if (pct >= 100) pauseUntil = now + 1100;
+    }, 90);
+    paint(0);
+  }
+</script>

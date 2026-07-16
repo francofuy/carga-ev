@@ -1,0 +1,289 @@
+<title>Wireframe — Experiencias nativas de Apple, con el diseño real de Carga EV</title>
+<style>
+  :root {
+    /* Tokens reales de src/styles/tokens.css — no los del rediseño "Instrumento" (descartado).
+       Mismos valores: hue 205 (celeste histórico #1F8FE0/#4FB0F5), semánticos good/warning/critical
+       para Valle/Llano/Punta, números en SF Rounded (no monoespaciado). */
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB;
+    --border: #DCE1E8; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent2: #E0871F; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --good-soft: #E4F7E4;
+    --warning-fill: #fab219; --warning-soft: #FEF3DC;
+    --critical: #d03b3b; --critical-soft: #FBE4E3;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-pill: 999px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34;
+      --border: #2A2F38; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent2: #F5A24F; --accent-ink: #04121C;
+      --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+      --good: #21C05E; --good-soft: #0F2A16; --warning-fill: #FAB219; --warning-soft: #3A2C0E;
+      --critical: #FF6259; --critical-soft: #3A1613;
+      --shadow-1: 0 0 0 1px var(--border);
+      --shadow-2: 0 14px 30px -10px rgba(0, 0, 0, 0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34;
+    --border: #2A2F38; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+    --accent: #4FB0F5; --accent2: #F5A24F; --accent-ink: #04121C;
+    --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+    --good: #21C05E; --good-soft: #0F2A16; --warning-fill: #FAB219; --warning-soft: #3A2C0E;
+    --critical: #FF6259; --critical-soft: #3A1613;
+    --shadow-1: 0 0 0 1px var(--border);
+    --shadow-2: 0 14px 30px -10px rgba(0, 0, 0, 0.55);
+    --page-surface: #0B0E13;
+  }
+  :root[data-theme="light"] {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB;
+    --border: #DCE1E8; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent2: #E0871F; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --good-soft: #E4F7E4; --warning-fill: #fab219; --warning-soft: #FEF3DC;
+    --critical: #d03b3b; --critical-soft: #FBE4E3;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 760px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 27px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14.5px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .page-head p:last-child { margin-bottom: 0; }
+  .page-head b { color: var(--text); }
+
+  h2.section-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 46px 0 8px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  h2.section-h:first-of-type { margin-top: 0; }
+  h2.section-h .n { width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.section-h .title { font-size: 18px; font-weight: 700; }
+  h2.section-h .sub { margin-left: auto; font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  .section-note { font-size: 13px; line-height: 1.6; color: var(--text-secondary); max-width: 760px; margin: 0 0 22px; }
+  .section-note b { color: var(--text); }
+  .section-note.warn { color: var(--critical); }
+  .badge-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 3px 9px; border-radius: 999px; margin-left: 8px; vertical-align: middle; }
+  .badge-tag.free { background: var(--good-soft); color: var(--good); }
+  .badge-tag.paid { background: var(--warning-soft); color: var(--warning-fill); }
+
+  .mock-wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 22px; margin-bottom: 8px; }
+  .mock-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
+
+  /* ===== Dynamic Island / Lock Screen: material real de sistema (siempre oscuro,
+     no lo elige la app) — la única parte de esta página que NO usa --surface/--bg. ===== */
+  .sys-black-frame { background: #050505; border-radius: 28px; padding: 16px; box-shadow: var(--shadow-2); }
+  .dyisland { display: flex; align-items: center; gap: 9px; background: #000; border-radius: 999px; padding: 8px 16px 8px 8px; width: fit-content; margin: 0 auto; }
+  .dyisland .ic { width: 26px; height: 26px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 22%, transparent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .dyisland .ic svg { width: 14px; height: 14px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.2; }
+  .dyisland .txt { font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; }
+  .dyisland .txt .dim { color: rgba(255,255,255,0.5); font-weight: 500; margin-left: 4px; }
+  .dyisland .txt .num { color: var(--accent); }
+
+  .island-expanded { background: #000; border-radius: 26px; padding: 16px 18px; }
+  .island-expanded .head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .island-expanded .head .ic { width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 20%, transparent); display: flex; align-items: center; justify-content: center; }
+  .island-expanded .head .ic svg { width: 18px; height: 18px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.2; }
+  .island-expanded .head b { font-size: 14px; font-weight: 700; display: block; color: #fff; }
+  .island-expanded .head span { font-size: 11.5px; color: rgba(255,255,255,0.5); }
+  .island-expanded .franja { margin-left: auto; }
+  .island-expanded .bar-track { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.12); overflow: hidden; margin-bottom: 8px; }
+  .island-expanded .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, white)); border-radius: 4px; width: 62%; }
+  .island-expanded .foot { display: flex; justify-content: space-between; font-size: 11.5px; color: rgba(255,255,255,0.55); }
+  .island-expanded .foot .num { color: #fff; font-weight: 600; }
+
+  .lock-screen-frame { background: linear-gradient(180deg, #1a1a2e, #0d0d1a); border-radius: 40px; padding: 46px 16px 22px; box-shadow: var(--shadow-2); position: relative; overflow: hidden; }
+  .lock-screen-frame::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.08), transparent 55%); }
+  .lock-clock { text-align: center; color: #fff; margin-bottom: 20px; position: relative; }
+  .lock-clock .t { font-size: 52px; font-weight: 600; font-family: var(--num-font); line-height: 1; }
+  .lock-clock .d { font-size: 13px; color: rgba(255,255,255,0.65); margin-top: 4px; }
+  .lock-activity { background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); border-radius: 22px; padding: 14px 16px; position: relative; }
+  .lock-activity .head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .lock-activity .ic { width: 32px; height: 32px; border-radius: 9px; background: color-mix(in srgb, var(--accent) 25%, transparent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .lock-activity .ic svg { width: 17px; height: 17px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.25; }
+  .lock-activity b { color: #fff; font-size: 13.5px; display: block; }
+  .lock-activity .netw { color: rgba(255,255,255,0.55); font-size: 11px; }
+  .lock-activity .franja-pill { margin-left: auto; font-size: 10px; font-weight: 700; padding: 4px 9px; border-radius: 999px; }
+  .lock-activity .bar-track { height: 7px; border-radius: 4px; background: rgba(255,255,255,0.14); overflow: hidden; margin-bottom: 8px; }
+  .lock-activity .bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 55%, white)); width: 62%; }
+  .lock-activity .foot { display: flex; justify-content: space-between; font-size: 11.5px; color: rgba(255,255,255,0.6); }
+  .lock-activity .foot .num { color: #fff; font-weight: 700; font-size: 13px; }
+
+  .sys-caption { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 10px; }
+
+  /* ===== Widget de pantalla de inicio: acá SÍ manda la superficie real de la app ===== */
+  .widget-frame { border-radius: 26px; background: var(--surface); box-shadow: var(--shadow-2); border: 1px solid var(--border); }
+  .widget-frame.small { width: 154px; aspect-ratio: 1/1; margin: 0 auto; padding: 14px; display: flex; flex-direction: column; }
+  .widget-frame.medium { width: 100%; max-width: 330px; aspect-ratio: 2.15/1; margin: 0 auto; padding: 16px 18px; display: flex; flex-direction: column; }
+  .widget-frame .wtitle { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; display: flex; justify-content: space-between; }
+  .widget-frame .whero { margin: auto 0; }
+  .widget-frame .whero .l { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+  .widget-frame .whero .n { font-size: 26px; font-weight: 700; font-family: var(--num-font); margin-top: 2px; }
+  .widget-frame .wsplit { display: flex; flex: 1; margin: 8px -18px -16px; }
+  .widget-frame .wsplit .half { flex: 1; padding: 14px 16px; }
+  .widget-frame .wsplit .half + .half { border-left: 1px solid var(--border); }
+  .widget-frame .wsplit .half.accented { background: var(--accent-soft); }
+  .widget-frame .wsplit .l { font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+  .widget-frame .wsplit .n { font-size: 20px; font-weight: 700; font-family: var(--num-font); margin-top: 3px; }
+  .widget-frame .wsplit .half.accented .n, .widget-frame .wsplit .half.accented .l { color: var(--accent); }
+
+  .theme-toggle-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 18px; }
+  .theme-btn { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); cursor: pointer; }
+  .theme-btn.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  .confirm-mock { background: var(--surface); border-radius: var(--r-lg); padding: 26px; box-shadow: var(--shadow-1); text-align: center; max-width: 280px; margin: 0 auto; }
+  .confirm-check { width: 52px; height: 52px; margin: 0 auto 10px; }
+  .confirm-check circle { fill: none; stroke: var(--good); stroke-width: 3; }
+  .confirm-check path { fill: none; stroke: var(--good); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+  .confirm-mock .ct { font-size: 15px; font-weight: 700; }
+  .confirm-mock .cs { font-size: 12.5px; color: var(--text-secondary); margin-top: 4px; }
+  .confirm-mock .spark { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+
+  .verdict-final { max-width: 900px; margin: 46px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--good); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+  .verdict-final .row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+  .verdict-final .row .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex: 0 0 auto; }
+  .verdict-final .row .dot.free { background: var(--good); }
+  .verdict-final .row .dot.paid { background: var(--warning-fill); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe · design-lab, nada aplicado todavía</div>
+    <h1>Momentos nativos de iOS — con el diseño real de Carga EV</h1>
+    <p>Se descartó la línea visual "Instrumento" (glass + negro + colores de sistema Apple) — <b>no convenció</b>. Esta vuelta parte de cero desde el otro lado: en vez de inventar un lenguaje visual nuevo para lo nativo, se usa el que la app <b>ya tiene en producción</b> — <code>tokens.css</code>/<code>shell.css</code> tal cual existen hoy: acento celeste personalizable, verde/ámbar/rojo para Valle/Llano/Punta, tarjetas blancas/oscuras con sombra suave, números en SF Rounded (no monoespaciado).</p>
+    <p>Con un matiz técnico real: la <b>Dynamic Island</b> y la <b>pantalla bloqueada</b> corren sobre un material de sistema que siempre es oscuro — eso no lo elige la app, lo impone iOS. Ahí lo único que traducimos del diseño real es el <b>color de acento y los íconos</b>, no la superficie. El <b>widget de pantalla de inicio</b> sí es 100% superficie propia — ahí se ve la tarjeta real de la app, en claro y oscuro.</p>
+  </div>
+
+  <h2 class="section-h"><span class="n">1</span><span class="title">Dynamic Island — cargando ahora</span><span class="badge-tag free">Gratis</span><span class="sub">compacta y expandida</span></h2>
+  <p class="section-note">Contenido dentro del material negro del sistema: el rayo con el color de acento real de tu app (no naranja inventado), franja horaria con el mismo verde/ámbar/rojo semántico que ya usa Inicio.</p>
+  <div class="mock-wrap">
+    <div>
+      <div class="mock-label">Compacta — siempre visible arriba</div>
+      <div class="sys-black-frame">
+        <div class="dyisland">
+          <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+          <span class="txt">Cargando<span class="dim"> · </span><span class="num">45%</span></span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock-label">Expandida — al mantener presionada</div>
+      <div class="sys-black-frame">
+        <div class="island-expanded">
+          <div class="head">
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <div><b>Cargando en Casa</b><span>UTE Lentos</span></div>
+            <span class="franja-pill" style="background:rgba(12,163,12,0.22);color:#5DDE5D;">Valle</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill"></div></div>
+          <div class="foot"><span class="num">17.0 kWh</span><span>3h 20m restantes</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-h"><span class="n">2</span><span class="title">Pantalla bloqueada — Live Activity detallada</span><span class="badge-tag free">Gratis</span></h2>
+  <p class="section-note">Misma tarjeta, ahora con más lugar: franja horaria, $/kWh vigente y progreso — todo actualizándose solo con el paso del tiempo (no hace falta que la app esté abierta ni push de por medio).</p>
+  <div class="mock-wrap" style="max-width:280px;margin:0 auto;">
+    <div>
+      <div class="lock-screen-frame">
+        <div class="lock-clock">
+          <div class="t">23:41</div>
+          <div class="d">martes, 16 de julio</div>
+        </div>
+        <div class="lock-activity">
+          <div class="head">
+            <span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+            <div><b>Cargando en Casa</b><div class="netw">UTE Lentos · $2,44/kWh</div></div>
+            <span class="franja-pill" style="background:rgba(12,163,12,0.28);color:#7CE87C;">Valle</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill"></div></div>
+          <div class="foot"><span>17.0 / 27.4 kWh</span><span class="num">Listo 02:20</span></div>
+        </div>
+      </div>
+      <div class="sys-caption">Material oscuro impuesto por iOS — el acento celeste y el verde de Valle son lo único que "es" Carga EV acá</div>
+    </div>
+  </div>
+
+  <h2 class="section-h"><span class="n">3</span><span class="title">Confirmación al completar</span><span class="badge-tag free">Gratis</span><span class="sub">ya existe en la app real</span></h2>
+  <p class="section-note">Esto no es nuevo: la app real ya tiene esta chispa al guardar una carga (<b>micro-interacción ya implementada</b>, ver <code>spark-burst.ts</code>). Al terminar una Live Activity, el mismo lenguaje se traslada al momento nativo en vez de inventar uno nuevo tipo "instrumento".</p>
+  <div class="confirm-mock" style="position:relative;">
+    <svg class="confirm-check" viewBox="0 0 52 52"><circle cx="26" cy="26" r="22"/><path d="M15 27l7 7 15-15"/></svg>
+    <div class="ct">Carga guardada</div>
+    <div class="cs">17.0 kWh · $58 · Valle</div>
+  </div>
+
+  <h2 class="section-h"><span class="n">4</span><span class="title">Widget de pantalla de inicio</span><span class="badge-tag paid">Requiere cuenta paga</span><span class="sub">acá sí manda tu tema claro/oscuro</span></h2>
+  <p class="section-note">A diferencia de los dos anteriores, un widget de Home Screen usa una superficie 100% propia — por eso es el único lugar de esta página donde vale la pena mostrar claro <i>y</i> oscuro. Recordatorio técnico ya investigado: esto necesita el <b>Apple Developer Program pago</b> (App Groups no está disponible en cuenta gratis) — queda como referencia visual, no planeado para construir todavía.</p>
+  <div class="theme-toggle-row">
+    <button class="theme-btn active" data-theme-btn="light">Claro</button>
+    <button class="theme-btn" data-theme-btn="dark">Oscuro</button>
+  </div>
+  <div class="mock-wrap" style="max-width:640px;margin:0 auto;">
+    <div>
+      <div class="mock-label">Pequeño — gasto del mes</div>
+      <div class="widget-frame small">
+        <div class="wtitle"><span>Carga EV</span><span>⚡</span></div>
+        <div class="whero">
+          <div class="l">Gasto este mes</div>
+          <div class="n">$330</div>
+        </div>
+        <div style="font-size:10.5px;color:var(--text-muted);">5 lecturas</div>
+      </div>
+    </div>
+    <div>
+      <div class="mock-label">Mediano — gasto + autonomía (split-card real)</div>
+      <div class="widget-frame medium">
+        <div class="wtitle"><span>Carga EV</span><span>⚡</span></div>
+        <div class="wsplit">
+          <div class="half">
+            <div class="l">Gasto este mes</div>
+            <div class="n">$330</div>
+          </div>
+          <div class="half accented">
+            <div class="l">Autonomía</div>
+            <div class="n">380 km</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Qué es feasible ya, sin pagar nada</div>
+    <div class="row"><span class="dot free"></span><p style="margin:0;"><b>Dynamic Island + pantalla bloqueada</b> (secciones 1, 2 y 3): no dependen de App Groups, se pueden construir con Apple ID gratuito — es exactamente lo que quedó definido en el plan de la app nativa (Fase C). Lo único que cambia hoy es el lenguaje visual: colores/tipografía reales de la app en vez de los inventados para "Instrumento".</p></div>
+    <div class="row"><span class="dot paid"></span><p style="margin:0;"><b>Widget de pantalla de inicio</b> (sección 4): sigue necesitando el Developer Program pago (US$99/año) por el mismo motivo ya investigado — App Groups bloqueado en cuenta gratis. Queda documentado acá como referencia visual para el día que se decida pagarlo, no bloquea nada de lo demás.</p></div>
+    <p>¿Seguimos con esto — Dynamic Island/pantalla bloqueada con este lenguaje visual — como la referencia definitiva para la Fase C, o hay algo puntual para ajustar antes (el celeste, el tamaño de los números, la pill de franja horaria)?</p>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('[data-theme-btn]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-theme-btn]').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.documentElement.setAttribute('data-theme', btn.dataset.themeBtn);
+    });
+  });
+</script>

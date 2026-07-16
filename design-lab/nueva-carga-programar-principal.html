@@ -1,0 +1,219 @@
+<title>Nueva carga — programar como método principal</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0; --border: #DCE1E8;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-pill: 999px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C;
+      --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+      --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+      --border: #2A2F38; --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 760px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .page-head p:last-child { margin-bottom: 0; }
+  .page-head b { color: var(--text); }
+
+  .versions { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+  @media (max-width: 760px) { .versions { grid-template-columns: 1fr; max-width: 360px; margin: 0 auto; } }
+  .col-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
+  .col-label.on { color: var(--accent); }
+
+  .sheet-mock { background: var(--surface); border-radius: 26px; box-shadow: var(--shadow-2); padding: 20px 20px 22px; }
+  .sheet-title { font-size: 17px; font-weight: 700; margin-bottom: 14px; }
+
+  .segmented-real { display: flex; background: var(--surface-2); border-radius: var(--r-md); padding: 3px; margin-bottom: 14px; position: relative; }
+  .segmented-real .seg-pill { position: absolute; top: 3px; bottom: 3px; width: calc(50% - 3px); background: var(--surface); border-radius: 11px; box-shadow: var(--shadow-1); }
+  .segmented-real.pub .seg-pill { transform: translateX(100%); }
+  .segmented-real .seg { flex: 1; text-align: center; padding: 8px 4px; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); position: relative; z-index: 1; }
+  .segmented-real .seg.on { color: var(--text); }
+
+  .field-label { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin: 2px 0 8px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .chip-mock { font-size: 11.5px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: var(--surface-2); color: var(--text-secondary); }
+  .chip-mock.on { background: var(--accent); color: var(--accent-ink); }
+
+  .suggest-box { background: var(--good-soft, #E4F7E4); background: color-mix(in srgb, var(--good) 14%, var(--surface)); border-radius: var(--r-sm); padding: 9px 11px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .suggest-box .sl { font-size: 9.5px; font-weight: 700; color: var(--good); text-transform: uppercase; letter-spacing: 0.03em; }
+  .suggest-box .sa { font-size: 13px; font-weight: 700; }
+  .suggest-box .su { font-size: 10px; font-weight: 700; color: #fff; background: var(--good); padding: 3px 9px; border-radius: 999px; }
+
+  .field-row-2 { display: flex; gap: 8px; margin-bottom: 12px; }
+  .field-box { flex: 1; background: var(--surface-2); border-radius: 10px; padding: 9px 11px; }
+  .field-box .l { font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+  .field-box .v { font-size: 13px; font-weight: 700; margin-top: 2px; }
+
+  .divider-label { display: flex; align-items: center; gap: 10px; margin: 18px 0 12px; }
+  .divider-label::before, .divider-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .divider-label span { font-size: 10.5px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+
+  .time-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .time-field { flex: 1; background: var(--surface-2); border-radius: var(--r-md); padding: 11px 12px; }
+  .time-field .l { font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+  .time-field .v { font-size: 18px; font-weight: 700; color: var(--text); }
+  .time-field.pct .v { color: var(--warning-fill); }
+
+  .estimate-box { background: var(--accent-soft); border-radius: var(--r-md); padding: 11px 12px; margin-bottom: 14px; }
+  .estimate-box .l { font-size: 10px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 3px; }
+  .estimate-box .v { font-size: 13.5px; font-weight: 700; color: var(--text); }
+  .estimate-box .s { font-size: 10.5px; color: var(--text-secondary); margin-top: 1px; }
+
+  .primary-btn-mock { display: block; width: 100%; text-align: center; background: var(--accent); color: var(--accent-ink); font-size: 14.5px; font-weight: 700; padding: 12px; border-radius: var(--r-md); border: none; margin-bottom: 4px; }
+
+  .escape-link { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--text-muted); padding: 10px 4px 2px; text-align: center; }
+  .escape-link svg { width: 12px; height: 12px; stroke: currentColor; fill: none; }
+
+  .back-link { display: flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--accent); margin-bottom: 14px; }
+  .back-link svg { width: 13px; height: 13px; stroke: currentColor; fill: none; }
+
+  .quick-tag { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--warning-fill); background: color-mix(in srgb, var(--warning-fill) 14%, var(--surface)); padding: 4px 10px; border-radius: 999px; margin-bottom: 12px; }
+
+  .toggle-mini { display: flex; background: var(--surface-2); border-radius: 10px; padding: 3px; margin-bottom: 12px; }
+  .toggle-mini .opt { flex: 1; text-align: center; padding: 7px 4px; font-size: 12px; font-weight: 600; color: var(--text-secondary); border-radius: 8px; }
+  .toggle-mini .opt.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow-1); }
+
+  .quick-field { background: var(--surface-2); border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 14px; }
+  .quick-field .l { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+  .quick-field .v { font-size: 19px; font-weight: 700; }
+
+  .callout { background: var(--surface); border-radius: var(--r-lg); padding: 16px 18px; box-shadow: var(--shadow-1); margin-top: 18px; }
+  .callout .row { display: flex; gap: 9px; align-items: flex-start; font-size: 12.5px; line-height: 1.55; color: var(--text-secondary); margin-bottom: 8px; }
+  .callout .row:last-child { margin-bottom: 0; }
+  .callout .row b { color: var(--text); }
+
+  .verdict-final { max-width: 900px; margin: 46px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe · Programar pasa a ser el método principal</div>
+    <h1>Nueva carga: programar por defecto, anotar directo como escape sutil</h1>
+    <p>Programar (% al iniciar + hora de corte) queda como <b>flujo principal</b>, para Privada y Pública por igual — el cargo fijo de una red sigue sumándose igual que hoy, no cambia nada ahí. Las dos formas actuales (por kWh directo, por % de batería) <b>no se eliminan</b>: quedan como un link chico y discreto, para cargas tan rápidas que no vale la pena "cronometrarlas" (ej. un cargador DC público) o para una emergencia.</p>
+  </div>
+
+  <div class="versions">
+    <div>
+      <div class="col-label on">Estado 1 — Programar (por defecto)</div>
+      <div class="sheet-mock">
+        <div class="sheet-title">Nueva carga</div>
+        <div class="segmented-real pub">
+          <div class="seg-pill"></div>
+          <div class="seg">Privada</div>
+          <div class="seg on">Pública</div>
+        </div>
+
+        <div class="field-label">Red</div>
+        <div class="chip-row">
+          <span class="chip-mock">UTE</span><span class="chip-mock">eOne</span><span class="chip-mock on">DMC</span><span class="chip-mock">Evergo</span>
+        </div>
+        <div class="field-label">Variante</div>
+        <div class="chip-row">
+          <span class="chip-mock on">17 a 24hrs</span><span class="chip-mock">Otro horario</span>
+        </div>
+        <div class="suggest-box">
+          <div><div class="sl">Sugerido</div><div class="sa">$15,00/kWh</div></div>
+          <span class="su">Usar</span>
+        </div>
+        <div class="field-row-2">
+          <div class="field-box"><div class="l">Precio/kWh</div><div class="v">15.00</div></div>
+          <div class="field-box"><div class="l">Cargo fijo</div><div class="v">$120</div></div>
+        </div>
+
+        <div class="divider-label"><span>Programar</span></div>
+        <div class="time-row">
+          <div class="time-field pct"><div class="l">Batería al iniciar</div><div class="v num">24.7%</div></div>
+          <div class="time-field"><div class="l">Corta a las</div><div class="v num">07:00</div></div>
+        </div>
+        <div class="estimate-box">
+          <div class="l">Estimado para las 07:00</div>
+          <div class="v num">≈ 86% · 43.3 kWh</div>
+          <div class="s">+ cargo fijo $120 = costo total estimado</div>
+        </div>
+        <button class="primary-btn-mock">Empezar carga programada</button>
+        <div class="escape-link">¿Fue una carga rápida? <u>Anotar el resultado directo</u></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="col-label">Estado 2 — Anotar directo (escape sutil)</div>
+      <div class="sheet-mock">
+        <div class="sheet-title">Nueva carga</div>
+        <div class="segmented-real pub">
+          <div class="seg-pill"></div>
+          <div class="seg">Privada</div>
+          <div class="seg on">Pública</div>
+        </div>
+
+        <div class="field-label">Red</div>
+        <div class="chip-row">
+          <span class="chip-mock">UTE</span><span class="chip-mock">eOne</span><span class="chip-mock on">DMC</span><span class="chip-mock">Evergo</span>
+        </div>
+        <div class="field-label">Variante</div>
+        <div class="chip-row">
+          <span class="chip-mock on">17 a 24hrs</span><span class="chip-mock">Otro horario</span>
+        </div>
+        <div class="suggest-box">
+          <div><div class="sl">Sugerido</div><div class="sa">$15,00/kWh</div></div>
+          <span class="su">Usar</span>
+        </div>
+        <div class="field-row-2">
+          <div class="field-box"><div class="l">Precio/kWh</div><div class="v">15.00</div></div>
+          <div class="field-box"><div class="l">Cargo fijo</div><div class="v">$120</div></div>
+        </div>
+
+        <div class="back-link">
+          <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Volver a programar
+        </div>
+        <span class="quick-tag">⚡ Modo rápido</span>
+        <div class="toggle-mini">
+          <div class="opt on">Por kWh</div>
+          <div class="opt">Por % batería</div>
+        </div>
+        <div class="quick-field">
+          <div class="l">kWh cargados</div>
+          <div class="v num">18.4</div>
+        </div>
+        <button class="primary-btn-mock">Guardar carga</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="row"><span>💡</span><div><b>Lo que no cambia:</b> el cargo fijo de una red (ej. DMC $120) sigue sumándose al costo total tal cual funciona hoy, sea cual sea el modo elegido — Programar o Anotar directo. La red/variante/precio sugerido tampoco cambia.</div></div>
+    <div class="row"><span>💡</span><div><b>Por qué el link es discreto:</b> si "Anotar directo" se viera como una tercera pestaña al mismo nivel que Privada/Pública, competiría visualmente con Programar en vez de sentirse como la excepción que es — por eso es solo texto subrayado, no un botón.</div></div>
+    <div class="row"><span>💡</span><div><b>Modo rápido = mismo motor de hoy:</b> "Por kWh"/"Por % batería" en el Estado 2 son exactamente las dos formas que ya existen en producción — no se toca esa lógica, solo se le baja la jerarquía visual.</div></div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Una pregunta abierta antes de darlo por bueno</div>
+    <p>En Privada (Casa) tiene sentido de sobra: siempre sabés a qué hora corta el auto. En Pública es un poco más raro programar "hora de corte" si estás al lado del cargador esperando — ahí probablemente el 90% de las veces vas a usar el modo rápido de una. ¿Programar debería ser el default en los dos casos por igual, o tiene más sentido que <b>Privada arranque en "Programar"</b> y <b>Pública arranque en "Anotar directo"</b>, ya invirtiendo cuál es el escape sutil según el contexto?</p>
+  </div>
+</div>

@@ -1,0 +1,218 @@
+<title>Programar carga — hora de inicio/fin reales + Live Activity</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0; --border: #DCE1E8;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-pill: 999px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C;
+      --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+      --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+      --border: #2A2F38; --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 760px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 25px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .page-head p:last-child { margin-bottom: 0; }
+  .page-head b { color: var(--text); }
+
+  h2.step-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 48px 0 6px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h2.step-h:first-of-type { margin-top: 0; }
+  h2.step-h .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.step-h .title { font-size: 18px; font-weight: 700; }
+  h2.step-h .sub { margin-left: auto; font-size: 11.5px; color: var(--text-muted); font-weight: 600; }
+  .step-tagline { font-size: 13px; color: var(--text-secondary); max-width: 700px; margin: 0 0 20px; }
+  .step-tagline b { color: var(--text); }
+
+  .device { max-width: 340px; margin: 0 auto; }
+  .mock-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
+
+  /* ===== pantallas reales de la app (claro/oscuro, tokens reales) ===== */
+  .app-card { background: var(--surface); border-radius: var(--r-lg); padding: 18px 20px; box-shadow: var(--shadow-1); margin-bottom: 14px; }
+  .app-card .label { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px; }
+
+  .segmented-real { display: flex; background: var(--surface-2); border-radius: var(--r-md); padding: 3px; margin-bottom: 16px; position: relative; }
+  .segmented-real .seg-pill { position: absolute; top: 3px; bottom: 3px; width: calc(50% - 3px); background: var(--surface); border-radius: 11px; box-shadow: var(--shadow-1); transition: transform 0.3s ease; }
+  .segmented-real .seg { flex: 1; text-align: center; padding: 8px 4px; font-size: 13px; font-weight: 600; color: var(--text-secondary); position: relative; z-index: 1; }
+  .segmented-real .seg.on { color: var(--text); }
+
+  .time-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .time-field { flex: 1; background: var(--surface-2); border-radius: var(--r-md); padding: 12px 14px; }
+  .time-field .l { font-size: 10.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+  .time-field .v { font-size: 21px; font-weight: 700; color: var(--text); }
+  .time-field .v .amp { font-size: 12px; color: var(--text-muted); margin-left: 3px; }
+  .time-field.pct .v { color: var(--warning-fill); }
+
+  .estimate-box { background: var(--accent-soft); border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 16px; }
+  .estimate-box .l { font-size: 10.5px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+  .estimate-box .v { font-size: 15px; font-weight: 700; color: var(--text); }
+  .estimate-box .s { font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
+
+  .primary-btn-mock { display: block; width: 100%; text-align: center; background: var(--accent); color: var(--accent-ink); font-size: 15px; font-weight: 700; padding: 13px; border-radius: var(--r-md); border: none; }
+
+  .schedule-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-soft); color: var(--accent); font-size: 11.5px; font-weight: 700; padding: 5px 11px; border-radius: 999px; margin-bottom: 8px; }
+
+  /* ===== Live Activity — bobina como nexo (favorita elegida) ===== */
+  .sys-black-frame { background: #050505; border-radius: 26px; padding: 18px 20px; box-shadow: var(--shadow-2); }
+  .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .bolt-ic { width: 28px; height: 28px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 22%, transparent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .bolt-ic svg { width: 15px; height: 15px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.2; }
+  .card-head b { color: #fff; font-size: 13.5px; display: block; }
+  .card-head span.netw { color: rgba(255,255,255,0.55); font-size: 11px; }
+  .franja-pill { margin-left: auto; font-size: 10px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: rgba(12,163,12,0.28); color: #7CE87C; flex: 0 0 auto; }
+
+  .coil-svg { width: 100%; height: 34px; display: block; margin-bottom: 10px; }
+  .coil-base { fill: none; stroke-width: 3.5; stroke-linecap: round; }
+  .coil-pulse { fill: none; stroke: #fff; stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 20 260; animation: coilFlow 2s linear infinite; filter: drop-shadow(0 0 4px rgba(255,255,255,0.7)); }
+  @keyframes coilFlow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -280; } }
+  @media (prefers-reduced-motion: reduce) { .coil-pulse { animation: none; } }
+
+  .hero-row1 { display: flex; align-items: baseline; gap: 8px; }
+  .hero-row1 .pctnum { font-size: 34px; font-weight: 700; color: #fff; }
+  .hero-row1 .pctsign { font-size: 16px; color: rgba(255,255,255,0.5); font-weight: 600; }
+  .hero-row1 .approx { font-size: 12px; color: rgba(255,255,255,0.4); margin-left: 4px; font-weight: 600; }
+  .sub-row1 { display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: rgba(255,255,255,0.6); }
+  .sub-row1 .num { color: #fff; font-weight: 700; }
+  .target-row { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11.5px; color: rgba(255,255,255,0.55); }
+  .target-row .num { color: #fff; font-weight: 700; }
+  .target-row .fixed-tag { font-size: 9px; text-transform: uppercase; letter-spacing: 0.03em; color: rgba(255,255,255,0.4); margin-left: 5px; }
+
+  /* ===== confirmación final ===== */
+  .confirm-card { background: var(--surface); border-radius: var(--r-lg); padding: 18px 20px; box-shadow: var(--shadow-2); }
+  .confirm-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .confirm-head .ic { width: 34px; height: 34px; border-radius: 50%; background: var(--good); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .confirm-head .ic svg { width: 17px; height: 17px; stroke: #fff; }
+  .confirm-head b { font-size: 14.5px; display: block; }
+  .confirm-head span { font-size: 11.5px; color: var(--text-muted); }
+  .confirm-field { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid var(--border); }
+  .confirm-field:first-of-type { border-top: none; }
+  .confirm-field .l { font-size: 13px; color: var(--text-secondary); }
+  .confirm-field .v-box { display: flex; align-items: baseline; gap: 6px; }
+  .confirm-field .v-box .estimated { font-size: 12px; color: var(--text-muted); text-decoration: line-through; }
+  .confirm-field .v-box input { width: 64px; text-align: right; font-size: 15px; font-weight: 700; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; font-family: var(--num-font); }
+  .confirm-note { font-size: 11.5px; color: var(--text-muted); margin: 10px 0 16px; line-height: 1.5; }
+
+  .verdict-final { max-width: 900px; margin: 50px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.001ms !important; } }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe · ajustado a tu proceso manual real</div>
+    <h1>Programar carga: hora de inicio + hora de corte, no un % objetivo</h1>
+    <p>Como bien decís, hoy <b>no hay forma de saber con qué % va a terminar</b> — vos programás al auto para que corte a una hora fija (ej. 07:00) y recién ahí lo mirás. Así que el dato que sí conocemos de antemano es la <b>hora</b>, no el %. La app debería pedir: % al iniciar (lo único manual real) + hora de inicio + hora de corte — y <b>estimar</b> el % final con el motor de física, no al revés.</p>
+    <p>Eso también corrige la Live Activity: el <b>"tiempo restante" pasa a ser exacto</b> (cuenta regresiva a la hora que vos programaste), y el <b>% es lo estimado</b> — al final se confirma con lo que el auto marcó de verdad, igual que hacés hoy a mano.</p>
+  </div>
+
+  <!-- ===== PASO 1: programar ===== -->
+  <h2 class="step-h"><span class="n">1</span><span class="title">Programar la carga</span><span class="sub">pantallas reales — claro/oscuro</span></h2>
+  <p class="step-tagline">Mismo lenguaje visual que ya tiene <code>Nueva carga</code> hoy — nada de negro ni glass acá, esto vive en la app real.</p>
+  <div class="device">
+    <div class="app-card">
+      <div class="label">Empezar a cargar</div>
+      <div class="segmented-real">
+        <div class="seg-pill" style="transform:translateX(0%);"></div>
+        <div class="seg on">Ahora</div>
+        <div class="seg">Elegir hora</div>
+      </div>
+      <div class="time-row">
+        <div class="time-field pct">
+          <div class="l">Batería al iniciar</div>
+          <div class="v num">24.7<span class="amp">%</span></div>
+        </div>
+        <div class="time-field">
+          <div class="l">Corta a las</div>
+          <div class="v num">07:00</div>
+        </div>
+      </div>
+      <div class="estimate-box">
+        <div class="l">Estimado para las 07:00</div>
+        <div class="v num">≈ 86% · 43.3 kWh</div>
+        <div class="s">Calibrado con 12 cargas previas en este cargador · UTE Lentos</div>
+      </div>
+      <button class="primary-btn-mock">Empezar carga programada</button>
+    </div>
+  </div>
+
+  <!-- ===== PASO 2: en curso ===== -->
+  <h2 class="step-h"><span class="n">2</span><span class="title">En curso — Live Activity</span><span class="sub">bobina como nexo</span></h2>
+  <p class="step-tagline">El tiempo ya no es una adivinanza: es la cuenta regresiva real a las <b>07:00</b>, la hora que vos elegiste. El % sí lleva un "≈" — es una estimación, no un sensor.</p>
+  <div class="device">
+    <div class="sys-black-frame">
+      <div class="card-head">
+        <span class="bolt-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+        <div><b>Cargando en Casa</b><span class="netw">UTE Lentos</span></div>
+        <span class="franja-pill">Valle</span>
+      </div>
+      <svg class="coil-svg" viewBox="0 0 260 34" preserveAspectRatio="none">
+        <path class="coil-base" style="stroke:#fab219;" d="M4,17 Q 14,3 24,17 T 44,17 T 64,17 T 84,17 T 104,17 T 124,17 T 144,17 T 164,17 T 184,17 T 204,17 T 224,17 T 244,17"/>
+        <path class="coil-pulse" d="M4,17 Q 14,3 24,17 T 44,17 T 64,17 T 84,17 T 104,17 T 124,17 T 144,17 T 164,17 T 184,17 T 204,17 T 224,17 T 244,17"/>
+      </svg>
+      <div class="hero-row1">
+        <span class="pctnum num">58</span><span class="pctsign">%</span><span class="approx">estimado</span>
+      </div>
+      <div class="sub-row1"><span class="num">18.6 / 43.3 kWh</span><span>desde 24.7%</span></div>
+      <div class="target-row">
+        <span>Corte programado</span>
+        <span><span class="num">3h 12m</span><span class="fixed-tag">a las 07:00 · fijo</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PASO 3: confirmación ===== -->
+  <h2 class="step-h"><span class="n">3</span><span class="title">Al cortar — confirmá lo real</span><span class="sub">pantalla real de la app</span></h2>
+  <p class="step-tagline">A las 07:00 la app te avisa que terminó la ventana programada, con la estimación pre-cargada — vos la corregís mirando el auto, como ya hacés hoy, y eso además mejora la calibración de la próxima estimación.</p>
+  <div class="device">
+    <div class="confirm-card">
+      <div class="confirm-head">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg></span>
+        <div><b>Tu carga programada terminó</b><span>Casa · UTE Lentos · 00:00 → 07:00</span></div>
+      </div>
+      <div class="confirm-field">
+        <span class="l">% final de batería</span>
+        <div class="v-box"><span class="estimated">≈86%</span><input value="84" type="text"></div>
+      </div>
+      <div class="confirm-field">
+        <span class="l">kWh cargados</span>
+        <div class="v-box"><span class="estimated">≈43.3</span><input value="41.8" type="text"></div>
+      </div>
+      <div class="confirm-note">Editaste el % — la próxima estimación en este cargador se ajusta con este dato real (ya delivered 41.8 kWh en vez de los 43.3 esperados).</div>
+      <button class="primary-btn-mock">Guardar carga</button>
+    </div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Qué implica esto para el motor de estimación (Fase B)</div>
+    <p>Cambia la variable de entrada: en vez de "% objetivo → hora estimada", es <b>"hora objetivo → % estimado"</b> — misma física (V×A×η, curva CC/CV después del 80%), pero resolviendo la ecuación al revés. Sigue siendo el mismo dato que ya existe (capacidad del auto, 60 kWh) más el % inicial que vos ingresás a mano, más el historial real de ese cargador para calibrar.</p>
+    <p>La corrección al final (Paso 3) es la pieza que faltaba para que la calibración funcione de verdad — sin eso, el motor nunca aprendería si sus estimaciones fueron buenas o no.</p>
+    <p>¿Este flujo te convence para pasarlo a la Fase B de verdad, o hay algo para ajustar antes (el wording, si "Elegir hora" de inicio hace falta o alcanza con "Ahora", etc.)?</p>
+  </div>
+</div>

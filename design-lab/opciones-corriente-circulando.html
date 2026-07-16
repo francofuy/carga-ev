@@ -1,0 +1,223 @@
+<title>Opciones — corriente circulando</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --good: #0ca30c;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0; --border: #DCE1E8;
+    --r-lg: 18px;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 36px 20px 80px;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 700px; margin-bottom: 30px; }
+  .eyebrow { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 25px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+  .page-head b { color: var(--text); }
+
+  h2.opt-h {
+    display: flex; align-items: baseline; gap: 12px; margin: 46px 0 6px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--accent);
+  }
+  h2.opt-h:first-of-type { margin-top: 0; }
+  h2.opt-h .n { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  h2.opt-h .title { font-size: 18px; font-weight: 700; }
+  .opt-tagline { font-size: 13px; color: var(--text-secondary); max-width: 650px; margin: 0 0 20px; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 560px) { .row2 { grid-template-columns: 1fr; max-width: 320px; margin: 0 auto; } }
+  .mock-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
+  .sys-black-frame { background: #050505; border-radius: 24px; padding: 18px; box-shadow: var(--shadow-2); min-height: 90px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+  .num-txt { font-size: 11.5px; color: rgba(255,255,255,0.55); text-align: center; margin-top: 8px; }
+
+  .bolt-ic { width: 26px; height: 26px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 22%, transparent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .bolt-ic svg { width: 14px; height: 14px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.2; }
+  .row-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .row-head .lbl { color: #fff; font-size: 12px; font-weight: 600; }
+  .row-head .pct { margin-left: auto; color: #fff; font-weight: 700; font-size: 13px; }
+
+  .bar-track { height: 9px; border-radius: 5px; background: rgba(255,255,255,0.12); overflow: hidden; position: relative; width: 100%; }
+  .bar-fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 55%, white)); width: 62%; position: relative; overflow: hidden; }
+
+  .ring-wrap { position: relative; width: 68px; height: 68px; }
+  .ring-wrap svg { overflow: visible; }
+  .ring-wrap .bg { stroke: rgba(255,255,255,0.16); }
+  .ring-wrap .fg { stroke: var(--accent); stroke-linecap: round; }
+  .ring-wrap .pct-c { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 15px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .anim-el { animation: none !important; }
+  }
+
+  /* ===== Variación 1: cometa con estela ===== */
+  .comet { position: absolute; top: 50%; width: 18px; height: 18px; transform: translate(-50%, -50%); left: -10%; animation: cometMove 1.7s linear infinite; }
+  @keyframes cometMove { from { left: -10%; } to { left: 110%; } }
+  .comet .core { position: absolute; right: 0; top: 50%; width: 7px; height: 7px; border-radius: 50%; background: #fff; transform: translateY(-50%); box-shadow: 0 0 6px 2px rgba(255,255,255,0.85); }
+  .comet .tail { position: absolute; right: 7px; top: 50%; width: 16px; height: 100%; transform: translateY(-50%); background: linear-gradient(90deg, transparent, rgba(255,255,255,0.65)); }
+  .ring-comet-group { transform-origin: 34px 34px; animation: ringSpin 1.7s linear infinite; }
+  @keyframes ringSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .ring-comet-group circle { filter: drop-shadow(0 0 3px rgba(255,255,255,0.7)); }
+
+  /* ===== Variación 2: guiones eléctricos ===== */
+  .dash-bar-overlay {
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.75) 0 5px, transparent 5px 13px);
+    animation: dashFlow 0.7s linear infinite;
+  }
+  @keyframes dashFlow { from { background-position-x: 0; } to { background-position-x: -26px; } }
+  .ring-dash-overlay { stroke: rgba(255,255,255,0.85); stroke-dasharray: 3 7; animation: dashFlowRing 0.9s linear infinite; }
+  @keyframes dashFlowRing { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -20; } }
+
+  /* ===== Variación 3: doble pulso ===== */
+  .pulse2 { position: absolute; top: 0; bottom: 0; width: 34%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent); animation: sweepMove 1.9s linear infinite; }
+  @keyframes sweepMove { from { left: -40%; } to { left: 110%; } }
+  .pulse2.b { animation-delay: -0.95s; }
+  .ring-pulse2-group { transform-origin: 34px 34px; animation: ringSpin 1.9s linear infinite; }
+
+  .verdict-box { background: var(--surface); border-radius: var(--r-lg); padding: 16px 20px; box-shadow: var(--shadow-1); max-width: 900px; margin-top: 16px; }
+  .verdict-box .row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; font-size: 13px; line-height: 1.55; color: var(--text-secondary); }
+  .verdict-box .row:last-child { margin-bottom: 0; }
+  .verdict-box .row b { color: var(--text); }
+
+  .verdict-final { max-width: 900px; margin: 46px auto 0; background: var(--surface); border-radius: var(--r-lg); padding: 22px 24px; box-shadow: var(--shadow-1); }
+  .verdict-final .nt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 8px; }
+  .verdict-final p { font-size: 14px; line-height: 1.6; color: var(--text-secondary); margin: 0 0 10px; }
+  .verdict-final p:last-child { margin-bottom: 0; }
+  .verdict-final b { color: var(--text); }
+</style>
+
+<div class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Wireframe animado · variaciones de "corriente circulando"</div>
+    <h1>Tres formas distintas de ejecutar el mismo efecto</h1>
+    <p>Mismo concepto que te gustó (algo que se mueve todo el tiempo, sin relación con el %) — acá cambia <b>cómo se ve ese movimiento</b>. Las tres corren sobre barra y anillo fijos en 62%, para que compares solo el efecto, no el progreso.</p>
+  </div>
+
+  <!-- ===== VARIACIÓN 1 ===== -->
+  <h2 class="opt-h"><span class="n">1</span><span class="title">Cometa con estela</span></h2>
+  <p class="opt-tagline">Un punto brillante con una cola que se desvanece, en vez de un brillo parejo — se lee más como una chispa viajando por el cable que como una barra de carga genérica.</p>
+  <div class="row2">
+    <div>
+      <div class="mock-label">Barra</div>
+      <div class="sys-black-frame">
+        <div style="width:100%;">
+          <div class="row-head"><span class="bolt-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span><span class="lbl">Cargando</span><span class="pct">62%</span></div>
+          <div class="bar-track"><div class="bar-fill"><div class="comet anim-el"><div class="tail"></div><div class="core"></div></div></div></div>
+        </div>
+      </div>
+      <div class="num-txt">cabeza brillante + cola que se apaga</div>
+    </div>
+    <div>
+      <div class="mock-label">Anillo</div>
+      <div class="sys-black-frame">
+        <div class="ring-wrap">
+          <svg width="68" height="68" viewBox="0 0 68 68">
+            <circle class="bg" cx="34" cy="34" r="28" fill="none" stroke-width="5"/>
+            <circle class="fg" cx="34" cy="34" r="28" fill="none" stroke-width="5" stroke-dasharray="176" stroke-dashoffset="67"/>
+            <g class="ring-comet-group anim-el">
+              <circle cx="34" cy="6" r="3.6" fill="#fff" opacity="1"/>
+              <circle cx="27.5" cy="6.9" r="2.6" fill="#fff" opacity="0.5"/>
+              <circle cx="22" cy="9.3" r="1.8" fill="#fff" opacity="0.25"/>
+            </g>
+          </svg>
+          <span class="pct-c">62%</span>
+        </div>
+      </div>
+      <div class="num-txt">punto + 2 réplicas apagándose detrás</div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> el más "energético" de los tres — se nota incluso mirando de reojo.</div></div>
+    <div class="row"><span>👎</span><div><b>En contra:</b> es el que más "brilla" — en pantalla bloqueada de noche puede llamar demasiado la atención comparado con el resto de los widgets del sistema.</div></div>
+  </div>
+
+  <!-- ===== VARIACIÓN 2 ===== -->
+  <h2 class="opt-h"><span class="n">2</span><span class="title">Guiones eléctricos</span></h2>
+  <p class="opt-tagline">Rayas cortas desplazándose sin parar — el mismo símbolo que usan los diagramas eléctricos para marcar "sentido de la corriente", trasladado literalmente a la barra y al anillo.</p>
+  <div class="row2">
+    <div>
+      <div class="mock-label">Barra</div>
+      <div class="sys-black-frame">
+        <div style="width:100%;">
+          <div class="row-head"><span class="bolt-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span><span class="lbl">Cargando</span><span class="pct">62%</span></div>
+          <div class="bar-track"><div class="bar-fill"><div class="dash-bar-overlay anim-el"></div></div></div>
+        </div>
+      </div>
+      <div class="num-txt">rayas marchando de izquierda a derecha</div>
+    </div>
+    <div>
+      <div class="mock-label">Anillo</div>
+      <div class="sys-black-frame">
+        <div class="ring-wrap">
+          <svg width="68" height="68" viewBox="0 0 68 68">
+            <circle class="bg" cx="34" cy="34" r="28" fill="none" stroke-width="5"/>
+            <circle class="fg" cx="34" cy="34" r="28" fill="none" stroke-width="5" stroke-dasharray="176" stroke-dashoffset="67"/>
+            <circle class="ring-dash-overlay anim-el" cx="34" cy="34" r="28" fill="none" stroke-width="2.4" transform="rotate(-90 34 34)"/>
+          </svg>
+          <span class="pct-c">62%</span>
+        </div>
+      </div>
+      <div class="num-txt">guiones marchando sobre todo el aro</div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> es el más "técnico"/con sentido literal — cualquiera que sepa leer un diagrama eléctrico lo reconoce como "corriente fluyendo".</div></div>
+    <div class="row"><span>👎</span><div><b>En contra:</b> es el que menos se parece a algo que Apple haría — ningún widget de sistema usa guiones marchando, puede sentirse "de otra app".</div></div>
+  </div>
+
+  <!-- ===== VARIACIÓN 3 ===== -->
+  <h2 class="opt-h"><span class="n">3</span><span class="title">Doble pulso</span></h2>
+  <p class="opt-tagline">Dos brillos persiguiéndose con un desfase fijo — un ritmo más parecido a una oscilación (como la corriente alterna real), en vez de un solo movimiento repetitivo.</p>
+  <div class="row2">
+    <div>
+      <div class="mock-label">Barra</div>
+      <div class="sys-black-frame">
+        <div style="width:100%;">
+          <div class="row-head"><span class="bolt-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/></svg></span><span class="lbl">Cargando</span><span class="pct">62%</span></div>
+          <div class="bar-track"><div class="bar-fill">
+            <div class="pulse2 a anim-el"></div>
+            <div class="pulse2 b anim-el"></div>
+          </div></div>
+        </div>
+      </div>
+      <div class="num-txt">dos brillos con desfase, nunca se juntan</div>
+    </div>
+    <div>
+      <div class="mock-label">Anillo</div>
+      <div class="sys-black-frame">
+        <div class="ring-wrap">
+          <svg width="68" height="68" viewBox="0 0 68 68">
+            <circle class="bg" cx="34" cy="34" r="28" fill="none" stroke-width="5"/>
+            <circle class="fg" cx="34" cy="34" r="28" fill="none" stroke-width="5" stroke-dasharray="176" stroke-dashoffset="67"/>
+            <g class="ring-pulse2-group anim-el">
+              <circle cx="34" cy="6" r="3.2" fill="#fff" style="filter:drop-shadow(0 0 3px rgba(255,255,255,0.7));"/>
+              <circle cx="34" cy="62" r="3.2" fill="#fff" style="filter:drop-shadow(0 0 3px rgba(255,255,255,0.7));"/>
+            </g>
+          </svg>
+          <span class="pct-c">62%</span>
+        </div>
+      </div>
+      <div class="num-txt">dos puntos opuestos girando juntos</div>
+    </div>
+  </div>
+  <div class="verdict-box">
+    <div class="row"><span>👍</span><div><b>A favor:</b> se siente más "eléctrico" sin ser tan llamativo como el cometa — un término medio.</div></div>
+    <div class="row"><span>👎</span><div><b>En contra:</b> con dos elementos moviéndose es el que más puede distraer si terminás mirando la pantalla bloqueada fijo (ej. mientras esperás que cargue el teléfono al lado).</div></div>
+  </div>
+
+  <div class="verdict-final">
+    <div class="nt">Mi lectura</div>
+    <p><b>Cometa con estela</b> es mi favorita: es la que mejor comunica "energía viajando" sin inventar un símbolo nuevo raro (guiones) ni arriesgar que se sienta ocupada (doble pulso). El brillo del punto se puede bajar de intensidad si en pantalla bloqueada de noche resulta molesto.</p>
+    <p>¿Alguna de las tres te cierra, o querés que pruebe alguna variante de intensidad/velocidad sobre la que más te gustó?</p>
+  </div>
+</div>
