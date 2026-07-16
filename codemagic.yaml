@@ -13,17 +13,27 @@ workflows:
         script: npm ci
       - name: Build web assets (modo Capacitor, sin service worker, base "/")
         script: npm run build:capacitor
-      - name: Sync Capacitor (copia dist-capacitor a ios/App/App/public)
+      - name: Sync Capacitor #1 (copia dist-capacitor a ios/App/App/public)
+        # Necesario ANTES de generar el proyecto: puebla App/public con los assets web para
+        # el folder reference que declara project.yml.
         script: npx cap sync ios
       - name: Generar el proyecto Xcode desde project.yml (XcodeGen)
         # El .xcodeproj ya no se versiona a mano: se genera acá a partir de
-        # ios/App/project.yml, que ahora también declara el target LiveActivityWidget
-        # (spike de la Fase C, casi vacío, solo para confirmar que un Widget Extension
-        # archiva y empaqueta bien sin firma real de Apple en este mismo pipeline).
+        # ios/App/project.yml, que declara el target App + LiveActivityWidget.
         script: |
           set -e
           brew install xcodegen
           cd ios/App && xcodegen generate
+      - name: Sync Capacitor #2 (recién ahora puede linkear los plugins nativos)
+        # cap sync necesita que project.pbxproj ya exista para poder escribir
+        # CapApp-SPM/Package.swift con los plugins nativos (Geolocation, Local
+        # Notifications) — en la sync #1 ese archivo todavía no existía (lo genera
+        # XcodeGen), así que la escritura fallaba en silencio (log
+        # "ENOENT ... project.pbxproj") y esos plugins quedaban sin linkear de
+        # verdad, aunque el propio cap sync dijera "Found N Capacitor plugins".
+        # Repetir cap sync acá (ya con el .xcodeproj generado) es lo que realmente
+        # los agrega. Recopiar los assets web es una operación inofensiva/idempotente.
+        script: npx cap sync ios
       - name: Archive .app SIN firma de Apple
         # No hay certificado que subir acá: con Apple ID gratis no existe firma vía el
         # portal de developer.apple.com (eso requiere Developer Program pago) ni vía
