@@ -656,8 +656,17 @@ export function mountNuevaCarga(root: ParentNode): void {
     if (isHome && charge.startAt && charge.endAt) {
       startInput.value = isoToTimeInput(charge.startAt);
       endInput.value = isoToTimeInput(charge.endAt);
-      kwhHomeInput.value = String(charge.kwh);
       odoHomeInput.value = charge.odometerKm != null ? String(charge.odometerKm) : '';
+      // Si la carga tiene % guardado, reabrir en modo "por % de batería" — si no, se pierde
+      // ese dato al guardar (handleSave solo persiste startPct/endPct cuando mode === 'pct').
+      if (charge.startPct != null && charge.endPct != null) {
+        mode = 'pct';
+        modeSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-mode') === 'pct'));
+        pctFromHome.value = String(charge.startPct);
+        pctToHome.value = String(charge.endPct);
+      } else {
+        kwhHomeInput.value = String(charge.kwh);
+      }
     } else {
       priceInput.value = charge.pricePerKwh != null ? String(charge.pricePerKwh) : '';
       kwhPublicInput.value = String(charge.kwh);
@@ -948,7 +957,19 @@ export function mountNuevaCarga(root: ParentNode): void {
       if (origin() === 'home') {
         const { start, end } = resolveChargeWindow(startInput.value, endInput.value, new Date());
         const odo = odoHomeInput.value ? parseFloat(odoHomeInput.value) : null;
-        input = { location: 'home', startAt: start, endAt: end, kwh, odometerKm: odo };
+        // "Por % de batería" ya pide Desde/Hasta — guardarlos también en startPct/endPct para
+        // que la fila del historial dibuje la barra de rango, no solo cuando se usa Programar.
+        const startPctVal = mode === 'pct' ? parseFloat(pctFromHome.value) : NaN;
+        const endPctVal = mode === 'pct' ? parseFloat(pctToHome.value) : NaN;
+        input = {
+          location: 'home',
+          startAt: start,
+          endAt: end,
+          kwh,
+          odometerKm: odo,
+          startPct: isFinite(startPctVal) ? startPctVal : null,
+          endPct: isFinite(endPctVal) ? endPctVal : null,
+        };
       } else {
         const price = parseFloat(priceInput.value);
         if (!price || price <= 0) throw new Error('Ingresá el precio por kWh.');
