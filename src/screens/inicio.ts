@@ -252,6 +252,7 @@ export const inicioScreen: Screen = {
           </div>
           <div class="field" style="margin-top:8px;"><label>% final real</label><div class="input"><input type="number" step="0.1" min="0" max="100" id="confirmPct" value="${estPct.toFixed(1)}"><span class="unit">%</span></div></div>
           <div class="field"><label>kWh reales</label><div class="input"><input type="number" step="0.1" min="0" id="confirmKwh" value="${estKwh.toFixed(1)}"><span class="unit">kWh</span></div></div>
+          <div class="field"><label>Odómetro (opcional)</label><div class="input"><input type="number" step="1" min="0" id="confirmOdo" placeholder="km"><span class="unit">km</span></div></div>
           <div class="form-error" id="confirmError"></div>
           <div class="btnrow">
             <button class="go" id="confirmSave">Guardar carga</button>
@@ -263,6 +264,8 @@ export const inicioScreen: Screen = {
         void (async () => {
           const realPct = parseFloat(draftCardEl.querySelector<HTMLInputElement>('#confirmPct')!.value);
           const realKwh = parseFloat(draftCardEl.querySelector<HTMLInputElement>('#confirmKwh')!.value);
+          const odoRaw = draftCardEl.querySelector<HTMLInputElement>('#confirmOdo')!.value;
+          const odometerKm = odoRaw ? parseFloat(odoRaw) : null;
           if (!isFinite(realPct) || realPct < 0 || realPct > 100) {
             confirmErrorEl.textContent = 'Ingresá un % final válido (0–100).';
             confirmErrorEl.classList.add('show');
@@ -275,7 +278,7 @@ export const inicioScreen: Screen = {
           }
           confirmErrorEl.classList.remove('show');
           try {
-            await insertCharge({ location: 'home', startAt: start, endAt: atTime, kwh: realKwh, odometerKm: null, startPct: ac.startPct, endPct: realPct });
+            await insertCharge({ location: 'home', startAt: start, endAt: atTime, kwh: realKwh, odometerKm, startPct: ac.startPct, endPct: realPct });
             await deleteActiveCharge();
             await cancelActiveChargeNotifications();
             await endChargeLiveActivity();
