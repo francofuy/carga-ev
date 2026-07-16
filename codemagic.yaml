@@ -1,6 +1,6 @@
 workflows:
   ios-bare-shell:
-    name: Carga EV - iOS bare shell (Fase A, sin Live Activity)
+    name: Carga EV - iOS (Fase C spike, XcodeGen + LiveActivityWidget vacio)
     max_build_duration: 30
     instance_type: mac_mini_m2
     environment:
@@ -15,6 +15,15 @@ workflows:
         script: npm run build:capacitor
       - name: Sync Capacitor (copia dist-capacitor a ios/App/App/public)
         script: npx cap sync ios
+      - name: Generar el proyecto Xcode desde project.yml (XcodeGen)
+        # El .xcodeproj ya no se versiona a mano: se genera acá a partir de
+        # ios/App/project.yml, que ahora también declara el target LiveActivityWidget
+        # (spike de la Fase C, casi vacío, solo para confirmar que un Widget Extension
+        # archiva y empaqueta bien sin firma real de Apple en este mismo pipeline).
+        script: |
+          set -e
+          brew install xcodegen
+          cd ios/App && xcodegen generate
       - name: Archive .app SIN firma de Apple
         # No hay certificado que subir acá: con Apple ID gratis no existe firma vía el
         # portal de developer.apple.com (eso requiere Developer Program pago) ni vía

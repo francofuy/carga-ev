@@ -11,3 +11,6 @@ capacitor-cordova-ios-plugins
 # Generated Config files
 App/App/capacitor.config.json
 App/App/config.xml
+
+# Generado por XcodeGen (ios/App/project.yml es la fuente de verdad, ver Fase C)
+App/App.xcodeproj

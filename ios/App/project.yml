@@ -1,0 +1,70 @@
+name: App
+options:
+  createIntermediateGroups: true
+configs:
+  Debug: debug
+  Release: release
+settings:
+  base:
+    TARGETED_DEVICE_FAMILY: "1,2"
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "iPhone Developer"
+packages:
+  CapApp-SPM:
+    path: CapApp-SPM
+targets:
+  App:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: App
+        excludes:
+          - Info.plist
+    configFiles:
+      Debug: ../debug.xcconfig
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.francofuy.cargaev
+        INFOPLIST_FILE: App/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path/Frameworks"
+    dependencies:
+      - package: CapApp-SPM
+      - target: LiveActivityWidget
+        embed: true
+
+  # Spike de la Fase C: target casi vacío, solo para confirmar que un Widget Extension
+  # (requisito de las Live Activities) archiva y empaqueta bien sin firma real de Apple
+  # a través del mismo pipeline de Codemagic ya verificado en la Fase A. La Live Activity
+  # de verdad (diseño "bobina", franjas de color, datos reales) se escribe recién después
+  # de confirmar esto en un dispositivo real.
+  LiveActivityWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "16.1"
+    sources:
+      - path: LiveActivityWidget
+        excludes:
+          - Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.francofuy.cargaev.LiveActivityWidget
+        INFOPLIST_FILE: LiveActivityWidget/Info.plist
+        SKIP_INSTALL: YES
+
+schemes:
+  App:
+    build:
+      targets:
+        App: all
+        LiveActivityWidget: all
+    run:
+      config: Debug
+    archive:
+      config: Release
