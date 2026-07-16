@@ -7,13 +7,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // LiveActivityPlugin vive directo en este target (no es un plugin npm/SPM que pasa por
-        // "cap sync", como Geolocation o Local Notifications) — Capacitor no lo descubre solo,
-        // hay que registrarlo a mano. Sin esto, cualquier llamada desde JS devuelve
-        // "\"LiveActivity\" plugin is not implemented on ios" aunque el Swift compile bien.
-        if let bridgeVC = window?.rootViewController as? CAPBridgeViewController {
-            bridgeVC.bridge?.registerPluginInstance(LiveActivityPlugin())
-        }
+        // Override point for customization after application launch.
+        // (LiveActivityPlugin se registra en MainViewController.capacitorDidLoad() — acá el
+        // rootViewController todavía puede no estar cargado, un primer intento acá falló.)
         return true
     }
 
