@@ -58,9 +58,11 @@ export function nuevaCargaMarkup(): string {
         <div class="form-note" id="ncBackToProgramar" style="display:none;cursor:pointer;">‹ Volver a programar</div>
 
         <div id="ncFieldsHome">
-          <div class="field"><label>Fecha</label><div class="input"><input type="date" id="ncDateHome"></div></div>
-          <div class="field"><label>Hora de inicio</label><div class="input"><input type="time" id="ncStart" value="22:00"></div></div>
-          <div class="field"><label>Hora de fin</label><div class="input"><input type="time" id="ncEnd" value="06:00"></div></div>
+          <div class="row3">
+            <div class="field"><label>Fecha</label><div class="input"><input type="date" id="ncDateHome"></div></div>
+            <div class="field"><label>Inicio</label><div class="input"><input type="time" id="ncStart" value="22:00"></div></div>
+            <div class="field"><label>Fin</label><div class="input"><input type="time" id="ncEnd" value="06:00"></div></div>
+          </div>
 
           <div id="ncKwhBlockHome">
             <div class="field"><label>kWh cargados</label><div class="input"><input type="number" step="0.1" min="0" id="ncKwhHome" placeholder="0.0"><span class="unit">kWh</span></div></div>
