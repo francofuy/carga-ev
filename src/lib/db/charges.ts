@@ -22,6 +22,10 @@ export interface NewPublicCharge {
   fixedFee: number | null;
   /** "UTE", "Otro", o el nombre completo de la variante sugerida (ej. "DMC (17 a 24hrs)") — ver src/lib/network-prices.ts. */
   network: string | null;
+  /** Día real en que ocurrió la carga — antes no existía ningún campo de fecha para Público, así
+   * que start_at quedaba null y getRealConsumption() caía al created_at (el día en que se cargó el
+   * registro, no el día real de la carga), rompiendo el orden cronológico usado para el consumo real. */
+  chargeDate: Date;
 }
 export type NewCharge = NewHomeCharge | NewPublicCharge;
 
@@ -109,6 +113,7 @@ export function insertCharge(
     pricePerKwh = input.pricePerKwh;
     fixedFee = input.fixedFee;
     network = input.network;
+    startAt = input.chargeDate.toISOString();
   }
 
   db.exec(
@@ -153,6 +158,7 @@ export function updateCharge(
     pricePerKwh = input.pricePerKwh;
     fixedFee = input.fixedFee;
     network = input.network;
+    startAt = input.chargeDate.toISOString();
   }
 
   db.exec(

@@ -58,6 +58,7 @@ export function nuevaCargaMarkup(): string {
         <div class="form-note" id="ncBackToProgramar" style="display:none;cursor:pointer;">‹ Volver a programar</div>
 
         <div id="ncFieldsHome">
+          <div class="field"><label>Fecha</label><div class="input"><input type="date" id="ncDateHome"></div></div>
           <div class="field"><label>Hora de inicio</label><div class="input"><input type="time" id="ncStart" value="22:00"></div></div>
           <div class="field"><label>Hora de fin</label><div class="input"><input type="time" id="ncEnd" value="06:00"></div></div>
 
@@ -77,6 +78,7 @@ export function nuevaCargaMarkup(): string {
         </div>
 
         <div id="ncFieldsPublic" style="display:none;">
+          <div class="field"><label>Fecha</label><div class="input"><input type="date" id="ncDatePublic"></div></div>
           <div class="field">
             <label>Red</label>
             <div class="chip-row" id="ncNetworkRow" style="margin-bottom:8px;"></div>
@@ -124,25 +126,37 @@ export function nuevaCargaMarkup(): string {
   `;
 }
 
-/** Reconstruye una hora "HH:MM" del formulario en un Date real, asumiendo que se carga de noche y se consulta a la mañana siguiente (caso normal de uso). */
-function resolveChargeWindow(startTime: string, endTime: string, now: Date): { start: Date; end: Date } {
+/**
+ * Reconstruye la fecha ("YYYY-MM-DD", elegida a mano — ya no se asume "hoy") y las horas "HH:MM"
+ * del formulario en Dates reales. Antes la fecha base salía siempre de `now`, así que cualquier
+ * carga vieja cargada de memoria quedaba con la fecha del día en que se la anotaba, no el día real
+ * en que pasó — eso rompía el orden cronológico que usa getRealConsumption() para calcular consumo
+ * real de carga a carga.
+ */
+function resolveChargeWindow(dateStr: string, startTime: string, endTime: string): { start: Date; end: Date } {
+  const [y, mo, d] = dateStr.split('-').map(Number);
   const [sh, sm] = startTime.split(':').map(Number);
   const [eh, em] = endTime.split(':').map(Number);
-  const base = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const start = new Date(base);
-  start.setHours(sh, sm, 0, 0);
-  const end = new Date(base);
-  end.setHours(eh, em, 0, 0);
+  const start = new Date(y, mo - 1, d, sh, sm, 0, 0);
+  const end = new Date(y, mo - 1, d, eh, em, 0, 0);
   if (end.getTime() <= start.getTime()) end.setDate(end.getDate() + 1);
-  if (start.getTime() > now.getTime()) {
-    start.setDate(start.getDate() - 1);
-    end.setDate(end.getDate() - 1);
-  }
   return { start, end };
 }
 
 function isoToTimeInput(iso: string): string {
   return new Date(iso).toTimeString().slice(0, 5);
+}
+
+function dateToDateInput(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function isoToDateInput(iso: string): string {
+  return dateToDateInput(new Date(iso));
+}
+
+function todayDateInput(): string {
+  return dateToDateInput(new Date());
 }
 
 /** Resuelve "HH:MM" a la próxima vez que ocurra esa hora — hoy si todavía no pasó, si no mañana. */
@@ -186,9 +200,11 @@ export function mountNuevaCarga(root: ParentNode): void {
     sparkBurst(sparkCanvas, window.innerWidth / 2, window.innerHeight - 100, accent || '#1F8FE0');
   }
 
+  const dateHomeInput = root.querySelector<HTMLInputElement>('#ncDateHome')!;
   const startInput = root.querySelector<HTMLInputElement>('#ncStart')!;
   const endInput = root.querySelector<HTMLInputElement>('#ncEnd')!;
   const odoHomeInput = root.querySelector<HTMLInputElement>('#ncOdoHome')!;
+  const datePublicInput = root.querySelector<HTMLInputElement>('#ncDatePublic')!;
   const priceInput = root.querySelector<HTMLInputElement>('#ncPrice')!;
   const odoPublicInput = root.querySelector<HTMLInputElement>('#ncOdoPublic')!;
   const networkRow = root.querySelector<HTMLElement>('#ncNetworkRow')!;
@@ -506,7 +522,7 @@ export function mountNuevaCarga(root: ParentNode): void {
           breakdownEl.innerHTML = '';
           return;
         }
-        const { start, end } = resolveChargeWindow(startInput.value, endInput.value, new Date());
+        const { start, end } = resolveChargeWindow(dateHomeInput.value, startInput.value, endInput.value);
         const b = computeHomeChargeCost(start, end, kwh, rates, puntaStartHour);
         amountEl.textContent = '$' + Math.round(b.total).toLocaleString('es-UY');
         const parts: string[] = [];
@@ -571,10 +587,12 @@ export function mountNuevaCarga(root: ParentNode): void {
     saveBtn.textContent = 'Guardar carga';
     deleteBtn.style.display = 'none';
     seg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-origin') === 'home'));
+    dateHomeInput.value = todayDateInput();
     startInput.value = '22:00';
     endInput.value = '06:00';
     kwhHomeInput.value = '';
     odoHomeInput.value = '';
+    datePublicInput.value = todayDateInput();
     priceInput.value = '';
     kwhPublicInput.value = '';
     odoPublicInput.value = '';
@@ -655,6 +673,7 @@ export function mountNuevaCarga(root: ParentNode): void {
     homeFlowSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-flow') === 'rapido'));
 
     if (isHome && charge.startAt && charge.endAt) {
+      dateHomeInput.value = isoToDateInput(charge.startAt);
       startInput.value = isoToTimeInput(charge.startAt);
       endInput.value = isoToTimeInput(charge.endAt);
       odoHomeInput.value = charge.odometerKm != null ? String(charge.odometerKm) : '';
@@ -669,6 +688,9 @@ export function mountNuevaCarga(root: ParentNode): void {
         kwhHomeInput.value = String(charge.kwh);
       }
     } else {
+      // Cargas públicas viejas (de antes de este campo) nunca tuvieron start_at — quedan con la
+      // fecha de creación como mejor estimación disponible, en vez de caer en "hoy" sin avisar.
+      datePublicInput.value = isoToDateInput(charge.startAt ?? charge.createdAt);
       priceInput.value = charge.pricePerKwh != null ? String(charge.pricePerKwh) : '';
       kwhPublicInput.value = String(charge.kwh);
       odoPublicInput.value = charge.odometerKm != null ? String(charge.odometerKm) : '';
@@ -727,12 +749,14 @@ export function mountNuevaCarga(root: ParentNode): void {
       origin: o,
       mode,
       fields: {
+        dateHome: dateHomeInput.value,
         start: startInput.value,
         end: endInput.value,
         kwhHome: kwhHomeInput.value,
         pctFromHome: pctFromHome.value,
         pctToHome: pctToHome.value,
         odoHome: odoHomeInput.value,
+        datePublic: datePublicInput.value,
         price: priceInput.value,
         kwhPublic: kwhPublicInput.value,
         pctFromPublic: pctFromPublic.value,
@@ -768,12 +792,14 @@ export function mountNuevaCarga(root: ParentNode): void {
     homeFlowSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-flow') === 'rapido'));
     mode = draft.mode;
     modeSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-mode') === draft.mode));
+    dateHomeInput.value = draft.fields.dateHome ?? dateHomeInput.value;
     startInput.value = draft.fields.start ?? startInput.value;
     endInput.value = draft.fields.end ?? endInput.value;
     kwhHomeInput.value = draft.fields.kwhHome ?? '';
     pctFromHome.value = draft.fields.pctFromHome ?? '';
     pctToHome.value = draft.fields.pctToHome ?? '';
     odoHomeInput.value = draft.fields.odoHome ?? '';
+    datePublicInput.value = draft.fields.datePublic ?? datePublicInput.value;
     priceInput.value = draft.fields.price ?? '';
     kwhPublicInput.value = draft.fields.kwhPublic ?? '';
     pctFromPublic.value = draft.fields.pctFromPublic ?? '';
@@ -976,7 +1002,7 @@ export function mountNuevaCarga(root: ParentNode): void {
       if (!kwh || kwh <= 0) throw new Error(mode === 'pct' ? 'Ingresá el % de desde y hasta.' : 'Ingresá los kWh cargados.');
       let input: NewCharge;
       if (origin() === 'home') {
-        const { start, end } = resolveChargeWindow(startInput.value, endInput.value, new Date());
+        const { start, end } = resolveChargeWindow(dateHomeInput.value, startInput.value, endInput.value);
         const odo = odoHomeInput.value ? parseFloat(odoHomeInput.value) : null;
         // "Por % de batería" ya pide Desde/Hasta — guardarlos también en startPct/endPct para
         // que la fila del historial dibuje la barra de rango, no solo cuando se usa Programar.
@@ -996,7 +1022,16 @@ export function mountNuevaCarga(root: ParentNode): void {
         if (!price || price <= 0) throw new Error('Ingresá el precio por kWh.');
         const odo = odoPublicInput.value ? parseFloat(odoPublicInput.value) : null;
         const fixedFee = getFixedFee();
-        input = { location: 'public', kwh, pricePerKwh: price, odometerKm: odo, fixedFee: fixedFee > 0 ? fixedFee : null, network: currentNetworkValue() };
+        const [py, pm, pd] = datePublicInput.value.split('-').map(Number);
+        input = {
+          location: 'public',
+          kwh,
+          pricePerKwh: price,
+          odometerKm: odo,
+          fixedFee: fixedFee > 0 ? fixedFee : null,
+          network: currentNetworkValue(),
+          chargeDate: new Date(py, pm - 1, pd),
+        };
       }
       const isNew = editingId == null;
       const charge = editingId == null ? await insertCharge(input) : await updateCharge(editingId, input);
