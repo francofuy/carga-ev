@@ -1,0 +1,295 @@
+<title>Prototipo — Opción 1 (fila de 3) clickeable en todos los modos</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --overlay: rgba(14, 17, 22, 0.45);
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-xl: 22px;
+    --number-weight: 700;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34; --border: #2A2F38;
+      --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C;
+      --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+      --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+      --overlay: rgba(0, 0, 0, 0.65);
+      --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34; --border: #2A2F38;
+    --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+    --accent: #4FB0F5; --accent-ink: #04121C;
+    --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--surface));
+    --good: #21C05E; --warning-fill: #FAB219; --critical: #FF6259;
+    --overlay: rgba(0, 0, 0, 0.65);
+    --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+    --page-surface: #0B0E13;
+  }
+  :root[data-theme="light"] {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --accent-soft: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --good: #0ca30c; --warning-fill: #fab219; --critical: #d03b3b;
+    --overlay: rgba(14, 17, 22, 0.45);
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 32px 16px 70px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  .page-head { max-width: 620px; text-align: center; margin-bottom: 20px; }
+  .eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 21px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 13px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+  .page-head b { color: var(--text); }
+
+  .theme-toggle-row { display: flex; gap: 8px; margin-bottom: 24px; }
+  .theme-btn { font-size: 11.5px; font-weight: 700; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); }
+  .theme-btn.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  .phone { position: relative; width: 320px; height: 660px; background: var(--bg); border-radius: 40px;
+    border: 1px solid var(--border); box-shadow: var(--shadow-2); overflow: hidden; }
+  .notch { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); width: 80px; height: 20px; background: #000; border-radius: 999px; z-index: 20; }
+
+  .sheet-overlay { position: absolute; inset: 0; background: var(--overlay); }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface); border-radius: var(--r-xl) var(--r-xl) 0 0;
+    padding: 14px 18px 22px; max-height: 94%; overflow-y: auto; }
+  .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .sheet-title { font-size: 17px; font-weight: 700; }
+  .sheet-cancel { background: none; border: none; font-size: 13px; font-weight: 600; color: var(--accent); padding: 4px; }
+
+  .segmented { display: flex; background: var(--surface-2); border-radius: var(--r-sm); padding: 3px; margin-bottom: 14px; }
+  .segmented button { flex: 1; border: none; background: none; font-size: 11.5px; font-weight: 600; padding: 9px 4px; border-radius: 8px; color: var(--text-secondary); }
+  .segmented button.sel { background: var(--surface); color: var(--text); box-shadow: var(--shadow-1); }
+  .segmented.sub { margin-bottom: 10px; }
+  .segmented.sub button { font-size: 11px; padding: 7px 4px; }
+
+  .field { margin-bottom: 10px; }
+  .field label { font-size: 10.5px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px; }
+  .field .input { background: var(--surface-2); border-radius: var(--r-sm); padding: 9px 10px; font-size: 13px; display: flex; justify-content: space-between; border: 1.5px solid transparent; }
+  .field .input input, .field .input span.val { border: none; background: none; font: inherit; color: var(--text); width: 100%; }
+  .field .input .unit { color: var(--text-muted); }
+  .field .input:focus-within { border-color: var(--accent); }
+
+  .row2 { display: flex; gap: 8px; }
+  .row2 .field { flex: 1; margin-bottom: 10px; }
+  .row3 { display: flex; gap: 6px; }
+  .row3 .field { flex: 1; margin-bottom: 10px; }
+  .row3 .field label { font-size: 9.5px; }
+  .row3 .field .input { padding: 8px 7px; font-size: 12px; }
+
+  .battery-strip { height: 12px; border-radius: 6px; background: var(--surface-3); overflow: hidden; position: relative; margin: 2px 0 8px; }
+  .battery-strip .fill-before { position: absolute; top: 0; bottom: 0; left: 0; width: 24%; background: var(--surface-2); }
+  .battery-strip .fill-delta { position: absolute; top: 0; bottom: 0; left: 24%; width: 64%; background: var(--accent); }
+  .computed-kwh { background: var(--surface-2); border-radius: var(--r-sm); padding: 9px 11px; margin-bottom: 12px; font-size: 12px; color: var(--text-secondary); display: flex; justify-content: space-between; }
+  .computed-kwh b { color: var(--text); font-size: 13.5px; }
+
+  .chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .chip { background: var(--surface-2); border: none; border-radius: 999px; padding: 7px 12px; font-size: 11px; font-weight: 700; color: var(--text); }
+  .chip.sel { background: var(--accent); color: var(--accent-ink); }
+
+  .cost-preview { background: var(--accent-soft); border-radius: var(--r-md); padding: 12px 14px; margin: 10px 0; }
+  .cost-preview .label { font-size: 10.5px; color: var(--accent); font-weight: 700; }
+  .cost-preview .amount { font-size: 22px; font-weight: var(--number-weight); margin: 2px 0; }
+
+  .form-note { font-size: 10.5px; color: var(--text-muted); background: var(--surface-2); border-radius: var(--r-sm); padding: 8px 10px; margin-bottom: 10px; line-height: 1.5; }
+
+  .primary-btn { width: 100%; background: var(--accent); color: var(--accent-ink); border: none; border-radius: var(--r-sm); padding: 13px; font-size: 13.5px; font-weight: 700; margin-top: 4px; }
+
+  .hint { max-width: 620px; margin-top: 22px; text-align: center; font-size: 11.5px; line-height: 1.7; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; }
+  .hint b { color: var(--text); }
+</style>
+
+<div class="page-head">
+  <div class="eyebrow">Prototipo interactivo — Opción 1 aplicada a todos los modos reales</div>
+  <h1>Tocá cada botón para ver cómo se acomoda la fila de 3 (Fecha·Inicio·Fin)</h1>
+  <p>Es el sheet real completo: <b>Casa/Público</b>, <b>Programar/Modo rápido</b>,
+    <b>kWh/% batería</b> — todos clickeables. La fila compacta solo aplica donde hoy existen esos 3
+    campos juntos (Modo rápido, Casa); en Programar y en Público el layout es el que ya tenían.</p>
+</div>
+<div class="theme-toggle-row">
+  <button class="theme-btn active" data-theme-btn="light">Claro</button>
+  <button class="theme-btn" data-theme-btn="dark">Oscuro</button>
+</div>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="sheet-overlay">
+    <div class="sheet">
+      <div class="sheet-head"><span class="sheet-title" id="title">Nueva carga</span><button class="sheet-cancel">Cancelar</button></div>
+
+      <div class="segmented" id="segOrigin">
+        <button class="sel" data-origin="home">Casa</button>
+        <button data-origin="public">Público o trabajo</button>
+      </div>
+      <div class="segmented sub" id="segFlow">
+        <button class="sel" data-flow="programar">Programar</button>
+        <button data-flow="rapido">Modo rápido</button>
+      </div>
+      <div class="segmented sub" id="segMode">
+        <button class="sel" data-mode="kwh">kWh</button>
+        <button data-mode="pct">% batería</button>
+      </div>
+
+      <!-- Programar (Casa) -->
+      <div id="blockProgramar">
+        <div class="field"><label>Cargando a</label><div class="input"><span class="val" style="color:var(--text-secondary);">24A · 226V · ≈5.0 kW</span></div></div>
+        <div class="segmented sub" id="segWhen">
+          <button class="sel" data-when="ahora">Ahora</button>
+          <button data-when="tarde">Más tarde</button>
+        </div>
+        <div class="field" id="empiezaField" style="display:none;"><label>Empieza a las</label><div class="input"><span class="val">22:00</span></div></div>
+        <div class="field"><label>Batería al iniciar</label><div class="input"><span class="val">24.7</span><span class="unit">%</span></div></div>
+        <div class="field"><label>Corta a las</label><div class="input"><span class="val">07:00</span></div></div>
+        <div class="cost-preview"><div class="label">Estimado</div><div class="amount num">≈ 92% · 40.8 kWh</div></div>
+        <div class="form-note">¿Fue una carga rápida? <u>Anotar el resultado directo</u></div>
+      </div>
+
+      <!-- Modo rápido, Casa -->
+      <div id="blockHomeRapido" style="display:none;">
+        <div class="row3">
+          <div class="field"><label>Fecha</label><div class="input"><span class="val">16 jul</span></div></div>
+          <div class="field"><label>Inicio</label><div class="input"><span class="val">22:00</span></div></div>
+          <div class="field"><label>Fin</label><div class="input"><span class="val">06:00</span></div></div>
+        </div>
+        <div id="kwhHomeBlock">
+          <div class="field"><label>kWh cargados</label><div class="input"><span class="val">12.4</span><span class="unit">kWh</span></div></div>
+        </div>
+        <div id="pctHomeBlock" style="display:none;">
+          <div class="row2">
+            <div class="field"><label>Desde %</label><div class="input"><span class="val">24</span></div></div>
+            <div class="field"><label>Hasta %</label><div class="input"><span class="val">92</span></div></div>
+          </div>
+          <div class="battery-strip"><span class="fill-before"></span><span class="fill-delta"></span></div>
+          <div class="computed-kwh"><span>kWh estimados</span><b class="num">40.8</b></div>
+        </div>
+        <div class="field"><label>Odómetro (opcional)</label><div class="input"><span class="val" style="color:var(--text-muted);">km</span></div></div>
+      </div>
+
+      <!-- Público -->
+      <div id="blockPublic" style="display:none;">
+        <div class="field"><label>Fecha</label><div class="input"><span class="val">16 jul</span></div></div>
+        <div class="field">
+          <label>Red</label>
+          <div class="chip-row">
+            <button class="chip sel">DMC</button><button class="chip">UTE</button><button class="chip">Evergo</button><button class="chip">Otro</button>
+          </div>
+        </div>
+        <div class="field"><label>Precio por kWh</label><div class="input"><span class="unit">$</span><span class="val">49.20</span></div></div>
+        <div id="kwhPublicBlock">
+          <div class="field"><label>kWh cargados</label><div class="input"><span class="val">18.1</span><span class="unit">kWh</span></div></div>
+        </div>
+        <div id="pctPublicBlock" style="display:none;">
+          <div class="row2">
+            <div class="field"><label>Desde %</label><div class="input"><span class="val">40</span></div></div>
+            <div class="field"><label>Hasta %</label><div class="input"><span class="val">80</span></div></div>
+          </div>
+          <div class="battery-strip"><span class="fill-before" style="width:40%;"></span><span class="fill-delta" style="left:40%;width:40%;"></span></div>
+          <div class="computed-kwh"><span>kWh estimados</span><b class="num">24.0</b></div>
+        </div>
+        <div class="field"><label>Odómetro (opcional)</label><div class="input"><span class="val" style="color:var(--text-muted);">km</span></div></div>
+      </div>
+
+      <div class="cost-preview" id="costPreviewMain">
+        <div class="label">Costo estimado</div>
+        <div class="amount num" id="mainAmount">$610</div>
+      </div>
+      <button class="primary-btn" id="saveBtn">Guardar carga</button>
+    </div>
+  </div>
+</div>
+
+<div class="hint">
+  <b>Probá:</b> Casa → Modo rápido → kWh o % batería (ahí aparece la fila de 3). Público (Fecha
+  queda sola, nunca tuvo Inicio/Fin). Casa → Programar (layout de siempre, sin la fila de 3 — no
+  aplica porque Programar no pide fecha, arranca en tiempo real). Nada de esto toca <code>src/</code>.
+</div>
+
+<script>
+  let origin = 'home', homeFlow = 'programar', mode = 'kwh', when = 'ahora';
+
+  const segOrigin = document.getElementById('segOrigin');
+  const segFlow = document.getElementById('segFlow');
+  const segMode = document.getElementById('segMode');
+  const segWhen = document.getElementById('segWhen');
+  const blockProgramar = document.getElementById('blockProgramar');
+  const blockHomeRapido = document.getElementById('blockHomeRapido');
+  const blockPublic = document.getElementById('blockPublic');
+  const kwhHomeBlock = document.getElementById('kwhHomeBlock');
+  const pctHomeBlock = document.getElementById('pctHomeBlock');
+  const kwhPublicBlock = document.getElementById('kwhPublicBlock');
+  const pctPublicBlock = document.getElementById('pctPublicBlock');
+  const empiezaField = document.getElementById('empiezaField');
+  const costPreviewMain = document.getElementById('costPreviewMain');
+  const saveBtn = document.getElementById('saveBtn');
+  const title = document.getElementById('title');
+
+  function render() {
+    const isProgramar = origin === 'home' && homeFlow === 'programar';
+    segFlow.style.display = origin === 'home' ? 'flex' : 'none';
+    segMode.style.display = isProgramar ? 'none' : 'flex';
+    blockProgramar.style.display = isProgramar ? 'block' : 'none';
+    blockHomeRapido.style.display = origin === 'home' && homeFlow === 'rapido' ? 'block' : 'none';
+    blockPublic.style.display = origin === 'public' ? 'block' : 'none';
+    kwhHomeBlock.style.display = mode === 'kwh' ? 'block' : 'none';
+    pctHomeBlock.style.display = mode === 'pct' ? 'block' : 'none';
+    kwhPublicBlock.style.display = mode === 'kwh' ? 'block' : 'none';
+    pctPublicBlock.style.display = mode === 'pct' ? 'block' : 'none';
+    empiezaField.style.display = when === 'tarde' ? 'block' : 'none';
+    costPreviewMain.style.display = isProgramar ? 'none' : 'block';
+    title.textContent = origin === 'public' ? 'Nueva carga · Público' : (homeFlow === 'programar' ? 'Programar en Casa' : 'Nueva carga · Casa');
+    saveBtn.textContent = isProgramar ? (when === 'ahora' ? 'Empezar carga programada' : 'Programar carga') : 'Guardar carga';
+  }
+
+  segOrigin.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+    origin = b.getAttribute('data-origin');
+    segOrigin.querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
+    render();
+  }));
+  segFlow.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+    homeFlow = b.getAttribute('data-flow');
+    segFlow.querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
+    render();
+  }));
+  segMode.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+    mode = b.getAttribute('data-mode');
+    segMode.querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
+    render();
+  }));
+  segWhen.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+    when = b.getAttribute('data-when');
+    segWhen.querySelectorAll('button').forEach((x) => x.classList.toggle('sel', x === b));
+    render();
+  }));
+
+  document.querySelectorAll('.theme-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const t = btn.getAttribute('data-theme-btn');
+      document.documentElement.setAttribute('data-theme', t);
+      document.querySelectorAll('.theme-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    });
+  });
+
+  render();
+</script>
