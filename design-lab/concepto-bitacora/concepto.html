@@ -1,0 +1,329 @@
+<title>Concepto "Bitácora" — Carga EV desde cero</title>
+<style>
+  :root {
+    --ink: #14191F; --ink-soft: #545F68; --ink-faint: #8B959D;
+    --paper: #E7ECEE; --paper-raised: #FFFFFF; --rule: #CDD4D7; --rule-strong: #A9B3B7;
+    --copper: #B8622A; --copper-deep: #8F4A1E; --copper-soft: color-mix(in srgb, var(--copper) 14%, var(--paper-raised));
+    --good: #2F7D4F; --good-soft: color-mix(in srgb, var(--good) 14%, var(--paper-raised));
+    --llano: #7C7568; --oxblood: #8B3A3A; --oxblood-soft: color-mix(in srgb, var(--oxblood) 14%, var(--paper-raised));
+    --shadow-1: 0 1px 2px rgba(20, 25, 31, 0.06);
+    --serif: ui-serif, "New York", Georgia, "Iowan Old Style", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    --page-bg: #DDE3E5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #ECEFF0; --ink-soft: #A6B0B7; --ink-faint: #6E7880;
+      --paper: #10151A; --paper-raised: #1A2128; --rule: #2A333B; --rule-strong: #3A454E;
+      --copper: #D98A4D; --copper-deep: #F2A868; --copper-soft: color-mix(in srgb, var(--copper) 18%, var(--paper-raised));
+      --good: #4FAE78; --good-soft: color-mix(in srgb, var(--good) 16%, var(--paper-raised));
+      --llano: #9B9284; --oxblood: #C97272; --oxblood-soft: color-mix(in srgb, var(--oxblood) 16%, var(--paper-raised));
+      --shadow-1: 0 0 0 1px var(--rule);
+      --page-bg: #05080B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #ECEFF0; --ink-soft: #A6B0B7; --ink-faint: #6E7880;
+    --paper: #10151A; --paper-raised: #1A2128; --rule: #2A333B; --rule-strong: #3A454E;
+    --copper: #D98A4D; --copper-deep: #F2A868; --copper-soft: color-mix(in srgb, var(--copper) 18%, var(--paper-raised));
+    --good: #4FAE78; --good-soft: color-mix(in srgb, var(--good) 16%, var(--paper-raised));
+    --llano: #9B9284; --oxblood: #C97272; --oxblood-soft: color-mix(in srgb, var(--oxblood) 16%, var(--paper-raised));
+    --shadow-1: 0 0 0 1px var(--rule);
+    --page-bg: #05080B;
+  }
+  :root[data-theme="light"] {
+    --ink: #14191F; --ink-soft: #545F68; --ink-faint: #8B959D;
+    --paper: #E7ECEE; --paper-raised: #FFFFFF; --rule: #CDD4D7; --rule-strong: #A9B3B7;
+    --copper: #B8622A; --copper-deep: #8F4A1E; --copper-soft: color-mix(in srgb, var(--copper) 14%, var(--paper-raised));
+    --good: #2F7D4F; --good-soft: color-mix(in srgb, var(--good) 14%, var(--paper-raised));
+    --llano: #7C7568; --oxblood: #8B3A3A; --oxblood-soft: color-mix(in srgb, var(--oxblood) 14%, var(--paper-raised));
+    --shadow-1: 0 1px 2px rgba(20, 25, 31, 0.06);
+    --page-bg: #DDE3E5;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page-bg); color: var(--ink); font-family: var(--sans);
+    -webkit-font-smoothing: antialiased; padding: 32px 16px 70px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 640px; text-align: center; margin-bottom: 18px; }
+  .eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--copper); margin-bottom: 8px; }
+  h1 { font-family: var(--serif); font-size: 25px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 13px; line-height: 1.6; color: var(--ink-soft); margin: 0; }
+  .page-head b { color: var(--ink); }
+
+  .theme-toggle-row { display: flex; gap: 8px; margin-bottom: 26px; }
+  .theme-btn { font-size: 11.5px; font-weight: 700; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--rule); background: var(--paper-raised); color: var(--ink-soft); font-family: var(--sans); }
+  .theme-btn.active { background: var(--copper); color: #fff; border-color: var(--copper); }
+
+  .frames-row { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; }
+  .frame-col { text-align: center; }
+  .frame-label { font-size: 11.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 10px; }
+
+  .phone { position: relative; width: 310px; height: 660px; background: var(--paper); border-radius: 38px;
+    border: 1px solid var(--rule); box-shadow: 0 20px 46px -18px rgba(10,14,18,0.35); overflow: hidden; }
+  .notch { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); width: 78px; height: 20px; background: #000; border-radius: 999px; z-index: 10; }
+  .screen { position: absolute; inset: 0; padding: 42px 20px 74px; overflow-y: auto; }
+  .tabbar { position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: var(--paper-raised); border-top: 1px solid var(--rule); display: flex; align-items: center; justify-content: space-around; }
+  .tabbar .t { font-size: 9.5px; font-weight: 600; color: var(--ink-faint); }
+  .tabbar .t.sel { color: var(--copper); }
+
+  /* ===== letterhead / masthead ===== */
+  .masthead { margin-bottom: 18px; }
+  .masthead .kicker { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-faint); }
+  .masthead h2 { font-family: var(--serif); font-size: 24px; font-weight: 600; margin: 3px 0 10px; letter-spacing: -0.01em; }
+  .masthead .rule { height: 1px; background: var(--rule-strong); }
+
+  /* ===== entrada de bitácora activa (carga en curso) ===== */
+  .folio { padding: 14px 0 18px; border-bottom: 1px solid var(--rule); margin-bottom: 4px; }
+  .folio .no { font-family: var(--serif); font-size: 11px; color: var(--copper); font-weight: 600; margin-bottom: 3px; }
+  .folio .headline { display: flex; align-items: baseline; justify-content: space-between; }
+  .folio .place { font-size: 13.5px; font-weight: 700; }
+  .folio .status { font-size: 10px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.05em; }
+  .folio .fill { height: 3px; background: var(--rule); margin: 10px 0 8px; position: relative; }
+  .folio .fill span { position: absolute; inset: 0; background: var(--copper); }
+  .folio .figures { display: flex; align-items: baseline; justify-content: space-between; }
+  .folio .pct { font-family: var(--serif); font-size: 28px; font-weight: 600; color: var(--copper); }
+  .folio .pct .u { font-family: var(--sans); font-size: 10px; color: var(--ink-faint); font-weight: 500; margin-left: 4px; }
+  .folio .kwh { font-size: 11px; color: var(--ink-soft); }
+
+  /* ===== ledger row (gasto / autonomía) ===== */
+  .ledger-pair { display: flex; padding: 14px 0; border-bottom: 1px solid var(--rule); margin-bottom: 4px; }
+  .ledger-pair .half { flex: 1; }
+  .ledger-pair .half + .half { border-left: 1px solid var(--rule); padding-left: 18px; }
+  .ledger-pair .l { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); }
+  .ledger-pair .v { font-family: var(--serif); font-size: 22px; font-weight: 600; margin-top: 3px; }
+
+  .ledger-row3 { display: flex; padding: 12px 0; border-bottom: 1px solid var(--rule); margin-bottom: 4px; }
+  .ledger-row3 .c { flex: 1; text-align: center; }
+  .ledger-row3 .c + .c { border-left: 1px solid var(--rule); }
+  .ledger-row3 .v { font-family: var(--serif); font-size: 15.5px; font-weight: 600; }
+  .ledger-row3 .l { font-size: 8.5px; color: var(--ink-faint); text-transform: uppercase; font-weight: 700; margin-top: 2px; }
+
+  /* ===== chart sin card, dibujado sobre el papel ===== */
+  .chart-section { padding: 16px 0; border-bottom: 1px solid var(--rule); margin-bottom: 4px; }
+  .chart-section .title { font-family: var(--serif); font-size: 13.5px; font-weight: 600; margin-bottom: 10px; }
+  .step-chart { display: flex; align-items: flex-end; gap: 8px; height: 54px; }
+  .step-chart .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .step-chart .bar { width: 100%; background: var(--copper-soft); border-top: 2px solid var(--copper); }
+  .step-chart .bar.sel { background: var(--copper); }
+  .step-chart .lbl { font-size: 8px; color: var(--ink-faint); font-style: italic; }
+
+  /* ===== entradas numeradas (últimas cargas / bitácora completa) ===== */
+  .entry { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+  .entry .spine { flex: 0 0 auto; width: 30px; text-align: center; }
+  .entry .spine .no { font-family: var(--serif); font-size: 13px; font-weight: 600; color: var(--copper); }
+  .entry .spine .tick { width: 1px; height: 100%; background: var(--rule); margin: 4px auto 0; }
+  .entry .body { flex: 1; min-width: 0; }
+  .entry .top-row { display: flex; justify-content: space-between; align-items: baseline; }
+  .entry .place { font-size: 12.5px; font-weight: 700; }
+  .entry .date { font-size: 10px; color: var(--ink-faint); }
+  .entry .range { font-size: 10.5px; color: var(--ink-soft); margin-top: 2px; }
+  .entry .range b { color: var(--ink); font-weight: 700; }
+  .entry .bottom-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 5px; }
+  .entry .cost { font-family: var(--serif); font-size: 14px; font-weight: 600; }
+  .entry .kwh { font-size: 10px; color: var(--ink-faint); }
+  .entry .tag { font-size: 8.5px; font-weight: 700; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
+  .entry .tag.valle { background: var(--good-soft); color: var(--good); }
+  .entry .tag.punta { background: var(--oxblood-soft); color: var(--oxblood); }
+
+  .see-all { text-align: center; font-size: 11px; font-weight: 700; color: var(--copper); padding: 12px 0 4px; }
+
+  .chapter { font-family: var(--serif); font-size: 12px; font-weight: 600; letter-spacing: 0.01em; color: var(--ink-soft); margin: 18px 0 4px; }
+  .chapter:first-child { margin-top: 0; }
+  .chip-row { display: flex; gap: 6px; margin-bottom: 14px; }
+  .chip { flex: 1; text-align: center; padding: 7px 4px; font-size: 10.5px; font-weight: 700; color: var(--ink-soft); border-bottom: 2px solid transparent; }
+  .chip.sel { color: var(--copper); border-bottom-color: var(--copper); }
+
+  /* ===== sheet "nueva entrada" ===== */
+  .dim { position: absolute; inset: 0; background: rgba(10,14,18,0.42); z-index: 8; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; top: 150px; background: var(--paper-raised);
+    border-radius: 20px 20px 0 0; box-shadow: 0 -8px 30px -12px rgba(0,0,0,0.3); z-index: 9; padding: 10px 20px 20px; overflow-y: auto; }
+  .sheet-handle { width: 34px; height: 4px; border-radius: 2px; background: var(--rule-strong); margin: 2px auto 14px; }
+  .sheet-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+  .sheet-head .title { font-family: var(--serif); font-size: 17px; font-weight: 600; }
+  .sheet-head .cancel { font-size: 12px; color: var(--ink-faint); }
+  .lfield { padding: 11px 0; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; }
+  .lfield .l { font-size: 12px; color: var(--ink-soft); }
+  .lfield .v { font-family: var(--serif); font-size: 14px; font-weight: 600; }
+  .seg-under { display: flex; gap: 18px; margin-bottom: 16px; }
+  .seg-under button { background: none; border: none; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink-faint); padding: 0 0 8px; border-bottom: 2px solid transparent; }
+  .seg-under button.sel { color: var(--ink); border-bottom-color: var(--copper); }
+  .primary-btn { width: 100%; background: var(--copper); color: #fff; border: none; border-radius: 10px; padding: 13px; font-size: 13.5px; font-weight: 700; margin-top: 18px; font-family: var(--sans); }
+
+  .fab { position: absolute; right: 18px; bottom: 78px; width: 50px; height: 50px; border-radius: 50%; background: var(--copper); color: #fff; border: none; font-size: 22px; font-family: var(--serif); box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--copper) 60%, transparent); }
+
+  .foot-note { max-width: 680px; margin-top: 34px; text-align: center; font-size: 11.5px; line-height: 1.7; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 14px; padding: 14px 18px; }
+  .foot-note b { color: var(--ink); }
+</style>
+
+<div class="page-head">
+  <div class="eyebrow">Concepto desde cero — metodología nueva, carpeta aparte</div>
+  <h1>Bitácora — Carga EV con otro lenguaje visual</h1>
+  <p>No es un ajuste sobre el diseño actual: <b>arranca de cero</b>, con un sistema de diseño propio
+    (serif del sistema para cifras, cobre en vez de azul, papel de libro contable en vez de tarjetas
+    con sombra) pensado para esta app puntual — un registro de cargas es, literalmente, una bitácora.</p>
+</div>
+<div class="theme-toggle-row">
+  <button class="theme-btn active" data-theme-btn="light">Claro</button>
+  <button class="theme-btn" data-theme-btn="dark">Oscuro</button>
+</div>
+
+<div class="frames-row">
+  <div class="frame-col">
+    <div class="frame-label">Inicio — "hoy" de la bitácora</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="masthead">
+          <div class="kicker">Jueves 16 de julio</div>
+          <h2>Bitácora</h2>
+          <div class="rule"></div>
+        </div>
+
+        <div class="folio">
+          <div class="no">N.º 015 — en curso</div>
+          <div class="headline"><span class="place">Casa · corta a las 22:00</span><span class="status">En vivo</span></div>
+          <div class="fill"><span style="width:62%;"></span></div>
+          <div class="figures"><span class="pct">62<span class="u">% estimado</span></span><span class="kwh">18.4 / 60.0 kWh</span></div>
+        </div>
+
+        <div class="ledger-pair">
+          <div class="half"><div class="l">Gasto este mes</div><div class="v num">$3.240</div></div>
+          <div class="half"><div class="l">Autonomía</div><div class="v num">312 km</div></div>
+        </div>
+
+        <div class="ledger-row3">
+          <div class="c"><div class="v num">$8,60</div><div class="l">$/kWh</div></div>
+          <div class="c"><div class="v num">62%</div><div class="l">en Valle</div></div>
+          <div class="c"><div class="v num">$5,10</div><div class="l">$/km</div></div>
+        </div>
+
+        <div class="chart-section">
+          <div class="title">Tendencia — últimos 6 meses</div>
+          <div class="step-chart">
+            <div class="col"><div class="bar" style="height:40%;"></div><div class="lbl">Feb</div></div>
+            <div class="col"><div class="bar" style="height:58%;"></div><div class="lbl">Mar</div></div>
+            <div class="col"><div class="bar" style="height:34%;"></div><div class="lbl">Abr</div></div>
+            <div class="col"><div class="bar" style="height:72%;"></div><div class="lbl">May</div></div>
+            <div class="col"><div class="bar" style="height:50%;"></div><div class="lbl">Jun</div></div>
+            <div class="col"><div class="bar sel" style="height:88%;"></div><div class="lbl">Jul</div></div>
+          </div>
+        </div>
+
+        <div class="chapter">Últimas entradas</div>
+        <div class="entry">
+          <div class="spine"><div class="no">014</div></div>
+          <div class="body">
+            <div class="top-row"><span class="place">Casa</span><span class="date">16 jul</span></div>
+            <div class="range">Desde <b>24%</b> hasta <b>88%</b></div>
+            <div class="bottom-row"><span class="cost num">$610</span><span class="tag valle">Valle</span></div>
+          </div>
+        </div>
+        <div class="entry">
+          <div class="spine"><div class="no">013</div></div>
+          <div class="body">
+            <div class="top-row"><span class="place">DMC (17 a 24hrs)</span><span class="date">12 jul</span></div>
+            <div class="range">18.1 kWh entregados</div>
+            <div class="bottom-row"><span class="cost num">$890</span><span class="tag punta">Punta</span></div>
+          </div>
+        </div>
+        <div class="see-all">Ver bitácora completa →</div>
+      </div>
+      <button class="fab">✎</button>
+      <div class="tabbar">
+        <div class="t sel">Bitácora</div><div class="t">Registro</div><div class="t">Vehículo</div><div class="t">Ajustes</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-col">
+    <div class="frame-label">Registro (Cargas) — capítulos por mes</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="masthead">
+          <div class="kicker">Historial completo</div>
+          <h2>Registro</h2>
+          <div class="rule"></div>
+        </div>
+        <div class="chip-row">
+          <div class="chip sel">Todas</div><div class="chip">Casa</div><div class="chip">Público</div>
+        </div>
+        <div class="ledger-row3" style="margin-bottom:14px;">
+          <div class="c"><div class="v num">14</div><div class="l">Entradas</div></div>
+          <div class="c"><div class="v num">$5.180</div><div class="l">Total</div></div>
+          <div class="c"><div class="v num">$8,60</div><div class="l">$/kWh</div></div>
+        </div>
+
+        <div class="chapter">Capítulo — Julio 2026</div>
+        <div class="entry">
+          <div class="spine"><div class="no">014</div></div>
+          <div class="body">
+            <div class="top-row"><span class="place">Casa</span><span class="date">16 jul · 20:00 → 06:00</span></div>
+            <div class="range">Desde <b>24%</b> hasta <b>88%</b></div>
+            <div class="bottom-row"><span class="cost num">$610</span><span class="kwh num">12.4 kWh</span></div>
+          </div>
+        </div>
+        <div class="entry">
+          <div class="spine"><div class="no">013</div></div>
+          <div class="body">
+            <div class="top-row"><span class="place">DMC (17 a 24hrs)</span><span class="date">12 jul · 18:30</span></div>
+            <div class="range">18.1 kWh entregados</div>
+            <div class="bottom-row"><span class="cost num">$890</span><span class="kwh num">$49,20/kWh</span></div>
+          </div>
+        </div>
+        <div class="chapter">Capítulo — Junio 2026</div>
+        <div class="entry">
+          <div class="spine"><div class="no">012</div></div>
+          <div class="body">
+            <div class="top-row"><span class="place">Casa</span><span class="date">28 jun · 22:00 → 06:30</span></div>
+            <div class="range">Desde <b>18%</b> hasta <b>98%</b></div>
+            <div class="bottom-row"><span class="cost num">$740</span><span class="kwh num">15.2 kWh</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="t">Bitácora</div><div class="t sel">Registro</div><div class="t">Vehículo</div><div class="t">Ajustes</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame-col">
+    <div class="frame-label">Nueva entrada — el sheet, mismo lenguaje</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen"><div class="masthead"><div class="kicker">Jueves 16 de julio</div><h2>Bitácora</h2><div class="rule"></div></div></div>
+      <div class="dim"></div>
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-head"><span class="title">Nueva entrada — Casa</span><span class="cancel">Cancelar</span></div>
+        <div class="seg-under"><button class="sel">Ahora</button><button>Más tarde</button></div>
+        <div class="lfield"><span class="l">Batería al iniciar</span><span class="v num">24.7%</span></div>
+        <div class="lfield"><span class="l">Corta a las</span><span class="v num">22:00</span></div>
+        <div class="lfield"><span class="l">Estimado</span><span class="v num">≈ 88% · 40.8 kWh</span></div>
+        <button class="primary-btn">Empezar carga programada</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="foot-note">
+  Nada de esto toca <code>src/</code> — vive aparte en <code>design-lab/concepto-bitacora/</code>.
+  El mecanismo (sheet, tab bar, motor de tarifas) es el mismo de siempre; lo que cambia es el
+  lenguaje visual entero: tipografía, color, y la estructura en "entradas numeradas + reglas finas"
+  en vez de tarjetas con sombra.
+</div>
+
+<script>
+  document.querySelectorAll('.theme-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const t = btn.getAttribute('data-theme-btn');
+      document.documentElement.setAttribute('data-theme', t);
+      document.querySelectorAll('.theme-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    });
+  });
+</script>
