@@ -1,0 +1,359 @@
+<title>Wireframe — Inicio con el auto en primer plano</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff; --accent-soft: #E3F0FC;
+    --good: #0ca30c; --good-soft: #E4F7E4; --warning: #C77E00; --warning-fill: #fab219; --warning-soft: #FEF3DC;
+    --critical: #d03b3b; --critical-soft: #FBE4E4;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+    --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-pill: 999px;
+    --car-body: #AEB6C2; --car-body-dark: #8B93A1; --car-glass: #4A5568;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34; --border: #2A2F38;
+      --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C; --accent-soft: #1B2C3B;
+      --good: #21C05E; --good-soft: #0F2A16; --warning: #FAB219; --warning-fill: #FAB219; --warning-soft: #3A2C0E;
+      --critical: #FF6259; --critical-soft: #3A1414;
+      --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+      --page-surface: #0B0E13;
+      --car-body: #4C5666; --car-body-dark: #3A4250; --car-glass: #1B222C;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34; --border: #2A2F38;
+    --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+    --accent: #4FB0F5; --accent-ink: #04121C; --accent-soft: #1B2C3B;
+    --good: #21C05E; --good-soft: #0F2A16; --warning: #FAB219; --warning-fill: #FAB219; --warning-soft: #3A2C0E;
+    --critical: #FF6259; --critical-soft: #3A1414;
+    --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+    --page-surface: #0B0E13;
+    --car-body: #4C5666; --car-body-dark: #3A4250; --car-glass: #1B222C;
+  }
+  :root[data-theme="light"] {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff; --accent-soft: #E3F0FC;
+    --good: #0ca30c; --good-soft: #E4F7E4; --warning: #C77E00; --warning-fill: #fab219; --warning-soft: #FEF3DC;
+    --critical: #d03b3b; --critical-soft: #FBE4E4;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --car-body: #AEB6C2; --car-body-dark: #8B93A1; --car-glass: #4A5568;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 32px 16px 70px;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 760px; margin: 0 auto 20px; text-align: center; }
+  .eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 13px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+  .page-head b { color: var(--text); }
+
+  .theme-toggle-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 26px; }
+  .theme-btn { font-size: 11.5px; font-weight: 700; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); }
+  .theme-btn.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  .diag-box { max-width: 760px; margin: 0 auto 40px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; box-shadow: var(--shadow-2); }
+  .diag-box h3 { font-size: 13px; margin: 0 0 8px; }
+  .diag-box p { font-size: 12.5px; line-height: 1.65; color: var(--text-secondary); margin: 0 0 10px; }
+  .diag-box p:last-child { margin-bottom: 0; }
+  .diag-box b { color: var(--text); }
+  .diag-box code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-size: 11.5px; }
+
+  .block-title { text-align: center; font-size: 16px; font-weight: 700; margin: 40px 0 4px; }
+  .block-sub { text-align: center; font-size: 12px; color: var(--text-secondary); max-width: 620px; margin: 0 auto 20px; line-height: 1.6; }
+  .block-sub b { color: var(--text); }
+
+  .frames-row { display: flex; gap: 26px; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+  .frame-col { text-align: center; width: 260px; }
+  .frame-label { font-size: 11.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; min-height: 30px; display: flex; align-items: center; justify-content: center; }
+  .frame-label b { color: var(--text); }
+  .tag-pill { display: inline-block; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+  .tag-pill.new { background: var(--good-soft); color: var(--good); }
+
+  .phone { position: relative; width: 260px; height: 640px; background: var(--bg); border-radius: 34px;
+    border: 1px solid var(--border); box-shadow: var(--shadow-2); overflow: hidden; }
+  .notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 70px; height: 18px; background: #000; border-radius: 999px; z-index: 10; }
+  .screen { position: absolute; inset: 0; padding: 34px 14px 20px; overflow-y: auto; }
+  .nav-title { font-size: 16px; font-weight: 700; margin: 2px 0 12px; }
+  .fab-mini { position: absolute; right: 12px; bottom: 16px; width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-2); z-index: 10; }
+  .fab-mini svg { width: 18px; height: 18px; stroke: var(--accent-ink); fill: none; stroke-width: 2; }
+  .fab-mini.crossed::after { content: ""; position: absolute; inset: -3px; border: 2px solid var(--critical); border-radius: 50%; }
+  .fab-mini.crossed svg { opacity: 0.3; }
+
+  /* dashboard real, sin cambios */
+  .split-card { display: flex; background: var(--surface); border-radius: var(--r-lg); margin-bottom: 14px; box-shadow: var(--shadow-1); overflow: hidden; }
+  .split-card .half { flex: 1; min-width: 0; padding: 13px; }
+  .split-card .half + .half { border-left: 1px solid var(--border); }
+  .split-card .half.accented { background: var(--accent-soft); }
+  .split-card .label { font-size: 9.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
+  .split-card .half.accented .label { color: var(--accent); }
+  .split-card .big-number { font-size: 20px; font-weight: 700; margin: 3px 0 1px; font-family: var(--num-font); }
+  .split-card .half.accented .big-number { color: var(--accent); }
+  .split-card .sub { font-size: 10px; color: var(--text-secondary); }
+  .tile-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .tile { flex: 1; min-width: 0; background: var(--surface); border-radius: var(--r-md); padding: 10px; box-shadow: var(--shadow-1); }
+  .tile .label { font-size: 9px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+  .tile .value { font-size: 14px; font-weight: 700; margin-top: 3px; }
+  .chart-card { background: var(--surface); border-radius: var(--r-lg); padding: 12px 14px 10px; margin-bottom: 12px; box-shadow: var(--shadow-1); }
+  .chart-card .chead { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-size: 11px; }
+  .chart-card .p { color: var(--text-muted); font-size: 10px; }
+  .mini-bars { display: flex; align-items: flex-end; gap: 6px; height: 46px; }
+  .mini-bars .b { flex: 1; background: var(--accent-soft); border-radius: 3px 3px 1px 1px; }
+  .mini-bars .b.peak { background: var(--accent); }
+  .section-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin: 12px 0 8px; }
+  .list-group { background: var(--surface); border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-1); }
+  .mini-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-bottom: 1px solid var(--border); font-size: 11px; }
+  .mini-row:last-child { border-bottom: none; }
+  .mini-row .l { color: var(--text-secondary); }
+  .mini-row .r { font-weight: 700; }
+
+  /* hero nuevo */
+  .hero-hub { text-align: center; margin-bottom: 16px; }
+  .hero-status-line { font-size: 11.5px; font-weight: 600; color: var(--text-secondary); margin-bottom: 2px; }
+  .hero-status-line b { color: var(--text); font-weight: 700; }
+  .hero-status-line.live b { color: var(--warning); }
+  .hero-stage { position: relative; height: 118px; margin: 6px 0 10px; }
+  .car-shadow { fill: rgba(0,0,0,0.16); }
+  .car-body { fill: var(--car-body); }
+  .car-body-dark { fill: var(--car-body-dark); }
+  .car-glass { fill: var(--car-glass); opacity: 0.85; }
+  .car-wheel-rim { fill: var(--car-body-dark); }
+  .car-wheel-hub { fill: var(--surface); opacity: 0.5; }
+  .headlight { fill: #fff; opacity: 0.35; }
+  .headlight.on { opacity: 1; filter: drop-shadow(0 0 4px rgba(255,255,255,0.75)); }
+  .port-dot { fill: var(--text-muted); }
+  .port-dot.warning { fill: var(--warning); }
+  .port-dot.good { fill: var(--good); }
+  .port-pulse { fill: none; stroke-width: 2; opacity: 0; }
+  .port-pulse.warning { stroke: var(--warning); }
+  .port-pulse.animate { animation: portPulse 1.7s ease-out infinite; }
+  @keyframes portPulse { 0% { r: 7; opacity: 0.9; stroke-width: 2.5; } 100% { r: 17; opacity: 0; stroke-width: 0.5; } }
+  @media (prefers-reduced-motion: reduce) { .port-pulse.animate { animation: none; } }
+
+  .hero-actions-2col { display: flex; gap: 8px; }
+  .hero-btn { flex: 1; background: var(--accent); color: var(--accent-ink); border: none; border-radius: var(--r-md); padding: 13px 6px; font-size: 12.5px; font-weight: 700; line-height: 1.3; }
+  .hero-btn.secondary { background: var(--accent-soft); color: var(--accent); }
+  .hero-btn-1col { width: 100%; background: var(--accent); color: var(--accent-ink); border: none; border-radius: var(--r-md); padding: 12px; font-size: 13px; font-weight: 700; }
+  .hero-btn-1col.stop { background: var(--critical-soft); color: var(--critical); }
+
+  .verdict { max-width: 260px; margin: 12px auto 0; font-size: 11px; line-height: 1.55; color: var(--text-secondary); text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .verdict b { color: var(--text); }
+
+  .foot-note { max-width: 760px; margin: 40px auto 0; text-align: center; font-size: 11.5px; line-height: 1.7; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; }
+  .foot-note b { color: var(--text); }
+</style>
+
+<div class="page-head">
+  <div class="eyebrow">Wireframe — 100% leal a shell.css real, resto del dashboard sin tocar</div>
+  <h1>Inicio con el auto en primer plano</h1>
+  <p>Tomo prestada la idea de jerarquía de la app de Tesla (auto grande, estado arriba, acciones
+    abajo) pero con nuestros propios datos y límites reales — no hay telemetría del auto, así que la
+    "línea de estado" solo dice lo que la app realmente sabe.</p>
+</div>
+<div class="theme-toggle-row">
+  <button class="theme-btn active" data-theme-btn="light">Claro</button>
+  <button class="theme-btn" data-theme-btn="dark">Oscuro</button>
+</div>
+
+<div class="diag-box">
+  <h3>Qué cambia y qué no</h3>
+  <p>Hoy, cuando no hay ninguna carga activa ni borrador, el espacio arriba del dashboard
+    (<code>#draftCard</code> en <code>inicio.ts</code>) queda directamente <b>vacío</b> — la única
+    forma de agregar una carga es el botón "+" flotante. La propuesta reemplaza ese espacio vacío por
+    el auto + 2 botones. <b>El resto de Inicio (Gasto/Autonomía, tiles, gráficos, últimas cargas) no
+    se toca</b> — eso queda para una pasada de rediseño aparte, como pediste.</p>
+  <p><b>Los 2 botones abren el sheet "Nueva carga" que ya existe</b>, con Casa + Programar
+    preseleccionado — "Cargar ahora" deja "Ahora" marcado, "Carga programada" deja "Más tarde"
+    marcado. No se pierde nada: Público y "Modo rápido" siguen adentro del mismo sheet, un toque más
+    allá (el segmentado de arriba y el link "¿Fue una carga rápida?" que ya existen).</p>
+  <p><b>Punto a confirmar:</b> con estos 2 botones, el "+" flotante ya no aporta nada nuevo en
+    Inicio — propongo ocultarlo solo en esta pestaña (sigue como está en Cargas, donde es la única
+    forma de agregar una carga mirando el historial).</p>
+</div>
+
+<div class="block-title">Cómo es hoy — sin carga activa</div>
+<div class="frames-row">
+  <div class="frame-col">
+    <div class="frame-label">El espacio de arriba queda vacío</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="screen">
+        <div class="nav-title">Inicio</div>
+        <div class="split-card">
+          <div class="half"><div class="label">Gasto este mes</div><div class="big-number">$4.180</div><div class="sub">6 cargas registradas</div></div>
+          <div class="half accented"><div class="label">Autonomía</div><div class="big-number">≈312 km</div><div class="sub">estimada</div></div>
+        </div>
+        <div class="tile-row">
+          <div class="tile"><div class="label">$/kWh</div><div class="value">$4.87</div></div>
+          <div class="tile"><div class="label">% Valle</div><div class="value">68%</div></div>
+          <div class="tile"><div class="label">$/km</div><div class="value">$3.21</div></div>
+        </div>
+        <div class="chart-card"><div class="chead"><span>Tendencia</span><span class="p">6 meses</span></div>
+          <div class="mini-bars"><div class="b" style="height:40%"></div><div class="b" style="height:55%"></div><div class="b peak" style="height:100%"></div><div class="b" style="height:60%"></div><div class="b" style="height:35%"></div><div class="b" style="height:70%"></div></div>
+        </div>
+        <div class="section-title">Últimas cargas</div>
+        <div class="list-group">
+          <div class="mini-row"><span class="l">Mié · Casa</span><span class="r">$610</span></div>
+          <div class="mini-row"><span class="l">Sáb · DMC</span><span class="r">$890</span></div>
+        </div>
+      </div>
+      <div class="fab-mini"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+    </div>
+  </div>
+</div>
+
+<div class="block-title">Propuesta — el auto en primer plano <span class="tag-pill new">nuevo</span></div>
+<p class="block-sub">Mismo auto y mismos colores semánticos ya charlados — cambia el brillo del
+  faro/puerto y el texto de estado según qué está pasando en la app.</p>
+<div class="frames-row">
+  <div class="frame-col">
+    <div class="frame-label">Sin carga activa</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="screen">
+        <div class="nav-title">Inicio</div>
+        <div class="hero-hub">
+          <div class="hero-status-line">Sin carga activa · <b>≈312 km</b> de autonomía</div>
+          <div class="hero-stage">
+            <svg viewBox="0 0 320 150" style="width:100%; height:100%;">
+              <ellipse class="car-shadow" cx="160" cy="140" rx="112" ry="7"/>
+              <rect class="car-body" x="30" y="88" width="230" height="46" rx="23"/>
+              <rect class="car-body-dark" x="245" y="96" width="38" height="32" rx="15"/>
+              <rect class="car-body" x="95" y="42" width="142" height="56" rx="27"/>
+              <rect class="car-glass" x="102" y="50" width="128" height="24" rx="12"/>
+              <circle class="car-wheel-rim" cx="92" cy="132" r="21"/><circle class="car-wheel-hub" cx="92" cy="132" r="9"/>
+              <circle class="car-wheel-rim" cx="222" cy="132" r="21"/><circle class="car-wheel-hub" cx="222" cy="132" r="9"/>
+              <rect class="headlight" x="268" y="102" width="15" height="9" rx="4.5"/>
+              <circle class="port-dot" cx="205" cy="86" r="4.5"/>
+            </svg>
+          </div>
+          <div class="hero-actions-2col">
+            <button class="hero-btn">Cargar ahora</button>
+            <button class="hero-btn secondary">Carga programada</button>
+          </div>
+        </div>
+        <div class="split-card">
+          <div class="half"><div class="label">Gasto este mes</div><div class="big-number">$4.180</div><div class="sub">6 cargas registradas</div></div>
+          <div class="half accented"><div class="label">Autonomía</div><div class="big-number">≈312 km</div><div class="sub">estimada</div></div>
+        </div>
+        <div class="tile-row">
+          <div class="tile"><div class="label">$/kWh</div><div class="value">$4.87</div></div>
+          <div class="tile"><div class="label">% Valle</div><div class="value">68%</div></div>
+          <div class="tile"><div class="label">$/km</div><div class="value">$3.21</div></div>
+        </div>
+        <div class="chart-card"><div class="chead"><span>Tendencia</span><span class="p">6 meses</span></div>
+          <div class="mini-bars"><div class="b" style="height:40%"></div><div class="b" style="height:55%"></div><div class="b peak" style="height:100%"></div><div class="b" style="height:60%"></div><div class="b" style="height:35%"></div><div class="b" style="height:70%"></div></div>
+        </div>
+        <div class="section-title">Últimas cargas</div>
+        <div class="list-group">
+          <div class="mini-row"><span class="l">Mié · Casa</span><span class="r">$610</span></div>
+          <div class="mini-row"><span class="l">Sáb · DMC</span><span class="r">$890</span></div>
+        </div>
+      </div>
+      <div class="fab-mini crossed"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+    </div>
+    <div class="verdict">"Cargar ahora" abre el sheet con <b>Ahora</b> ya marcado (arranca a
+      contar de inmediato). "Carga programada" lo abre con <b>Más tarde</b> marcado. El "+"
+      flotante queda tachado acá a propósito — es la parte a confirmar.</div>
+  </div>
+  <div class="frame-col">
+    <div class="frame-label">Carga programada, en espera</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="screen">
+        <div class="nav-title">Inicio</div>
+        <div class="hero-hub">
+          <div class="hero-status-line">Programada · arranca en <b>3h 20m</b> (22:00)</div>
+          <div class="hero-stage">
+            <svg viewBox="0 0 320 150" style="width:100%; height:100%;">
+              <ellipse class="car-shadow" cx="160" cy="140" rx="112" ry="7"/>
+              <rect class="car-body" x="30" y="88" width="230" height="46" rx="23"/>
+              <rect class="car-body-dark" x="245" y="96" width="38" height="32" rx="15"/>
+              <rect class="car-body" x="95" y="42" width="142" height="56" rx="27"/>
+              <rect class="car-glass" x="102" y="50" width="128" height="24" rx="12"/>
+              <circle class="car-wheel-rim" cx="92" cy="132" r="21"/><circle class="car-wheel-hub" cx="92" cy="132" r="9"/>
+              <circle class="car-wheel-rim" cx="222" cy="132" r="21"/><circle class="car-wheel-hub" cx="222" cy="132" r="9"/>
+              <rect class="headlight" x="268" y="102" width="15" height="9" rx="4.5"/>
+              <circle class="port-dot" cx="205" cy="86" r="4.5"/>
+            </svg>
+          </div>
+          <button class="hero-btn-1col stop">Cancelar carga programada</button>
+        </div>
+        <div class="split-card">
+          <div class="half"><div class="label">Gasto este mes</div><div class="big-number">$4.180</div><div class="sub">6 cargas registradas</div></div>
+          <div class="half accented"><div class="label">Autonomía</div><div class="big-number">≈312 km</div><div class="sub">estimada</div></div>
+        </div>
+        <div class="tile-row">
+          <div class="tile"><div class="label">$/kWh</div><div class="value">$4.87</div></div>
+          <div class="tile"><div class="label">% Valle</div><div class="value">68%</div></div>
+          <div class="tile"><div class="label">$/km</div><div class="value">$3.21</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="frame-col">
+    <div class="frame-label">Cargando ahora, en vivo</div>
+    <div class="phone"><div class="notch"></div>
+      <div class="screen">
+        <div class="nav-title">Inicio</div>
+        <div class="hero-hub">
+          <div class="hero-status-line live">Cargando ahora · <b>≈61%</b> · 17.4 kWh · corta 20:00</div>
+          <div class="hero-stage">
+            <svg viewBox="0 0 320 150" style="width:100%; height:100%;">
+              <ellipse class="car-shadow" cx="160" cy="140" rx="112" ry="7"/>
+              <rect class="car-body" x="30" y="88" width="230" height="46" rx="23"/>
+              <rect class="car-body-dark" x="245" y="96" width="38" height="32" rx="15"/>
+              <rect class="car-body" x="95" y="42" width="142" height="56" rx="27"/>
+              <rect class="car-glass" x="102" y="50" width="128" height="24" rx="12"/>
+              <circle class="car-wheel-rim" cx="92" cy="132" r="21"/><circle class="car-wheel-hub" cx="92" cy="132" r="9"/>
+              <circle class="car-wheel-rim" cx="222" cy="132" r="21"/><circle class="car-wheel-hub" cx="222" cy="132" r="9"/>
+              <rect class="headlight on" x="268" y="102" width="15" height="9" rx="4.5"/>
+              <circle class="port-pulse warning animate" cx="205" cy="86" r="7"/>
+              <circle class="port-dot warning" cx="205" cy="86" r="4.5"/>
+            </svg>
+          </div>
+          <button class="hero-btn-1col">Terminar ahora</button>
+        </div>
+        <div class="split-card">
+          <div class="half"><div class="label">Gasto este mes</div><div class="big-number">$4.180</div><div class="sub">6 cargas registradas</div></div>
+          <div class="half accented"><div class="label">Autonomía</div><div class="big-number">≈312 km</div><div class="sub">estimada</div></div>
+        </div>
+        <div class="tile-row">
+          <div class="tile"><div class="label">$/kWh</div><div class="value">$4.87</div></div>
+          <div class="tile"><div class="label">% Valle</div><div class="value">68%</div></div>
+          <div class="tile"><div class="label">$/km</div><div class="value">$3.21</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="verdict">Mismos textos y misma acción ("Terminar ahora") que ya existen hoy en
+      <code>renderDraftCard</code> — solo cambia dónde viven visualmente, no la lógica.</div>
+  </div>
+</div>
+
+<div class="foot-note">
+  El auto es el mismo boceto original que ya viste (a redibujar mejor una vez que tengamos el
+  modelo/ilustración final). El estado "Carga lista, confirmá el resultado" no se rediseñó acá —
+  sigue siendo el formulario editable de hoy, sin cambios, apareciendo debajo del auto. Nada de esto
+  toca <code>src/</code> todavía.
+</div>
+
+<script>
+  document.querySelectorAll('.theme-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const t = btn.getAttribute('data-theme-btn');
+      document.documentElement.setAttribute('data-theme', t);
+      document.querySelectorAll('.theme-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    });
+  });
+</script>

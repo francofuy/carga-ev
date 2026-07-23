@@ -1,0 +1,405 @@
+<title>Wireframe — rediseño de Live Activity y Dynamic Island expandida</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --good: #21A35F; --warning: #FAB219; --critical: #D03B3B;
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+    --ok: #1F8FE0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --border: #2A2F38;
+      --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C;
+      --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --border: #2A2F38;
+    --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+    --accent: #4FB0F5; --accent-ink: #04121C;
+    --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+    --page-surface: #0B0E13;
+  }
+  :root[data-theme="light"] {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff;
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 32px 16px 70px;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .num { font-family: var(--num-font); font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 720px; margin: 0 auto 20px; text-align: center; }
+  .eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 13px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+  .page-head b { color: var(--text); }
+
+  .theme-toggle-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 26px; }
+  .theme-btn { font-size: 11.5px; font-weight: 700; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); }
+  .theme-btn.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  .diag-box { max-width: 720px; margin: 0 auto 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; box-shadow: var(--shadow-2); }
+  .diag-box h3 { font-size: 13px; margin: 0 0 8px; }
+  .diag-box p { font-size: 12.5px; line-height: 1.65; color: var(--text-secondary); margin: 0 0 10px; }
+  .diag-box p:last-child { margin-bottom: 0; }
+  .diag-box b { color: var(--text); }
+  .diag-box code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-size: 11.5px; }
+  .src-list { font-size: 11px; color: var(--text-muted); margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); line-height: 1.8; }
+  .src-list a { color: var(--accent); text-decoration: none; }
+
+  .block-title { text-align: center; font-size: 16px; font-weight: 700; margin: 40px 0 4px; }
+  .block-sub { text-align: center; font-size: 12px; color: var(--text-secondary); max-width: 620px; margin: 0 auto 20px; line-height: 1.6; }
+  .block-sub b { color: var(--text); }
+
+  .frames-row { display: flex; gap: 26px; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+  .frame-col { text-align: center; width: 250px; }
+  .frame-label { font-size: 11.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; min-height: 32px; display: flex; align-items: center; justify-content: center; }
+  .frame-label b { color: var(--text); }
+  .tag { display: inline-block; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+  .tag.bug { background: color-mix(in srgb, var(--critical) 18%, var(--surface)); color: var(--critical); }
+  .tag.rec { background: color-mix(in srgb, var(--good) 18%, var(--surface)); color: var(--good); }
+
+  /* ===== lock screen ===== */
+  .lock-phone { position: relative; width: 250px; height: 420px; border-radius: 34px; border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: var(--shadow-2); overflow: hidden;
+    background: radial-gradient(120% 90% at 30% 0%, color-mix(in srgb, var(--accent) 45%, #05070a) 0%, #05070a 60%); }
+  .lock-notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 70px; height: 18px; background: #000; border-radius: 999px; z-index: 5; }
+  .lock-clock { text-align: center; color: #fff; margin-top: 42px; }
+  .lock-clock .t { font-size: 40px; font-weight: 600; font-family: var(--num-font); line-height: 1; }
+
+  .live-card { position: absolute; left: 12px; right: 12px; bottom: 90px; background: #14171cf2; backdrop-filter: blur(18px);
+    border-radius: 24px; box-shadow: 0 10px 24px -8px rgba(0,0,0,0.5); overflow: hidden; }
+  .live-card.overflow-visible { overflow: visible; }
+  .live-card-inner { padding: 14px; }
+
+  .clip-flag { position: absolute; width: 15px; height: 15px; border: 2px solid var(--critical); border-radius: 50%; background: color-mix(in srgb, var(--critical) 25%, transparent); animation: flagPulse 1.4s ease-in-out infinite; }
+  @keyframes flagPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+
+  .li-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .li-ic { width: 24px; height: 24px; border-radius: 50%; background: color-mix(in srgb, var(--warning) 25%, transparent); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .li-ic svg { width: 12px; height: 12px; stroke: var(--warning); fill: var(--warning); fill-opacity: 0.3; }
+  .li-head b { color: #fff; font-size: 12px; display: block; }
+  .li-head span.netw { color: rgba(255,255,255,0.5); font-size: 9.5px; }
+
+  .coil-svg { width: 100%; height: 16px; display: block; margin: 2px 0 8px; }
+  .coil-track { fill: none; stroke: rgba(255,255,255,0.16); stroke-width: 6; stroke-linecap: round; }
+  .coil-base { fill: none; stroke: rgba(255,255,255,0.5); stroke-width: 6; stroke-linecap: round; }
+  .coil-fill { fill: none; stroke: var(--warning); stroke-width: 6; stroke-linecap: round; }
+
+  .li-hero { display: flex; align-items: baseline; gap: 5px; }
+  .li-hero .pct { font-size: 22px; font-weight: 700; color: #fff; }
+  .li-hero .sign { font-size: 11px; color: rgba(255,255,255,0.5); }
+  .li-hero .approx { font-size: 9px; color: rgba(255,255,255,0.4); margin-left: 2px; }
+  .li-sub { display: flex; justify-content: space-between; font-size: 9.5px; color: rgba(255,255,255,0.55); margin-top: 3px; }
+  .li-sub b { color: #fff; }
+  .li-target { display: flex; justify-content: space-between; margin-top: 7px; padding-top: 7px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 9.5px; color: rgba(255,255,255,0.5); }
+  .li-target b { color: #fff; }
+
+  /* ===== dynamic island — approximated shape ===== */
+  .island-frame { position: relative; width: 250px; height: 200px; background: #000; border-radius: 40px; overflow: hidden;
+    box-shadow: var(--shadow-2); }
+  .island-context { font-size: 9.5px; color: var(--text-muted); margin-top: 8px; }
+
+  .island-shape { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 226px;
+    background: #000; border-radius: 44px; box-shadow: 0 0 0 1px rgba(255,255,255,0.06); }
+  .island-shape.overflow-visible { overflow: visible; }
+  .island-shape:not(.overflow-visible) { overflow: hidden; }
+  .cam-cutout { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 84px; height: 22px; background: #050505; border-radius: 999px; z-index: 4; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
+
+  .island-top-row { display: flex; align-items: center; padding: 8px 6px 0; min-height: 34px; }
+  .island-top-row .leading { flex: 0 0 auto; }
+  .island-top-row .center { flex: 1; text-align: center; font-size: 9.5px; font-weight: 600; color: #fff; padding-top: 2px; }
+  .island-top-row .trailing { flex: 0 0 auto; text-align: right; }
+  .island-top-row.flush .leading { padding: 0; }
+  .island-top-row.flush .trailing { padding: 0; }
+  .island-top-row.safe .leading { padding: 10px 0 4px 10px; }
+  .island-top-row.safe .trailing { padding: 10px 10px 4px 0; }
+
+  .island-ic svg { width: 15px; height: 15px; stroke: var(--warning); fill: var(--warning); fill-opacity: 0.3; }
+  .island-pct { font-size: 15px; font-weight: 700; color: var(--warning); }
+
+  .island-bottom { padding: 6px 14px 12px; }
+  .island-bottom .coil-svg { margin: 2px 0 6px; }
+  .island-bottom .row2 { display: flex; justify-content: space-between; font-size: 9.5px; color: rgba(255,255,255,0.55); }
+  .island-bottom .row2 b { color: #fff; }
+
+  .island-bottom-hero { padding: 8px 16px 14px; }
+  .island-bottom-hero .hero-line { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+  .island-bottom-hero .pctbig { font-size: 24px; font-weight: 700; color: #fff; }
+  .island-bottom-hero .pctbig .sign { font-size: 11px; color: rgba(255,255,255,0.5); }
+  .island-bottom-hero .kwh { font-size: 10.5px; color: rgba(255,255,255,0.6); }
+  .island-bottom-hero .kwh b { color: #fff; }
+  .island-bottom-hero .cut-line { display: flex; justify-content: space-between; font-size: 9.5px; color: rgba(255,255,255,0.5); margin-top: 6px; }
+  .island-bottom-hero .cut-line b { color: #fff; }
+
+  .verdict { max-width: 250px; margin: 12px auto 0; font-size: 11px; line-height: 1.55; color: var(--text-secondary); text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .verdict b { color: var(--text); }
+
+  .foot-note { max-width: 720px; margin: 40px auto 0; text-align: center; font-size: 11.5px; line-height: 1.7; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; }
+  .foot-note b { color: var(--text); }
+</style>
+
+<div class="page-head">
+  <div class="eyebrow">Wireframe — alcance: solo Live Activity (pantalla bloqueada) + Dynamic Island EXPANDIDA</div>
+  <h1>Rediseño de la Live Activity y la Dynamic Island expandida</h1>
+  <p>La isla <b>compacta/mínima</b> (el chip chico de arriba con ícono + %) no se toca — dijiste que esa
+    te gusta. Esto es sobre las otras dos superficies: la tarjeta de pantalla bloqueada, y lo que se ve
+    al tocar y mantener presionada la isla.</p>
+</div>
+<div class="theme-toggle-row">
+  <button class="theme-btn active" data-theme-btn="light">Claro</button>
+  <button class="theme-btn" data-theme-btn="dark">Oscuro</button>
+</div>
+
+<div class="diag-box">
+  <h3>Diagnóstico real (código + investigación), antes de rediseñar</h3>
+  <p><b>La isla expandida sí tiene un bug real de recorte, confirmado en el código.</b>
+    <code>LiveActivityWidgetBundle.swift</code> arma la isla expandida con
+    <code>DynamicIslandExpandedRegion(.leading)</code>/<code>.trailing</code>/<code>.center</code>/<code>.bottom</code>
+    — es la única forma que permite ActivityKit, no se puede usar una tarjeta libre como en pantalla
+    bloqueada. Hoy el ícono en <code>.leading</code> y el "% " en <code>.trailing</code> no tienen
+    ningún padding — quedan pegados contra el borde curvo de la silueta de la isla, justo donde la
+    curva es más agresiva (cerca del recorte de la cámara). Esto coincide exactamente con lo que
+    describís.</p>
+  <p><b>Segundo punto confirmado, después de tu aviso:</b> la región <code>.bottom</code>
+    también está 100% flush — el <code>VStack</code> con la barra + el <code>HStack</code> de
+    "kWh / hora de corte" no tiene <b>ningún</b> <code>.padding()</code> envolvente en el código
+    actual. Esto explica el segundo síntoma real que describiste (los primeros dígitos del número
+    de kWh cortados) — no era solo el ícono/%, esta franja de abajo tenía exactamente el mismo
+    problema. Ya lo corregí abajo con margen explícito de verdad, no solo "porque se ve bien" en
+    el dibujo.</p>
+  <p><b>La pantalla bloqueada es distinta:</b> ahí sí hay <code>.padding(14)</code> parejo en los
+    cuatro lados sobre un contenedor de esquinas más simples (sin recorte de cámara en el medio), así
+    que no hay evidencia de recorte real en el código — coincide con que preferís dejarla como está.</p>
+  <p><b>Por qué se coló el bug:</b> el mockup original aprobado (<code>mockup-live-activity.html</code>)
+    mostraba la isla expandida como la misma tarjeta vertical de la pantalla bloqueada — pero la API real
+    de ActivityKit obliga a partir el contenido en esas 4 regiones fijas, y ahí nadie volvió a chequear
+    márgenes contra la silueta real. Confirmado recién ahora porque solo se ve instalando en el
+    dispositivo — no hay forma de probarlo en el navegador ni en Codemagic.</p>
+  <p><b>Corrección a mi primera nota:</b> había mencionado <code>contentMargins(_:_:)</code> como
+    fix disponible — investigando más, esa API es de <b>iOS 18</b>, y el target de este proyecto
+    despliega desde <b>iOS 16.2</b> (<code>ChargeActivityAttributes</code> está marcado
+    <code>@available(iOS 16.2, *)</code>). No es una base confiable para tu caso. El fix real que sí
+    funciona en todas las versiones soportadas es <code>.padding()</code> manual explícito en cada
+    región — es lo que aplico abajo, no algo condicionado a versión de iOS.</p>
+  <div class="src-list">
+    Fuentes: <a href="https://developer.apple.com/documentation/widgetkit/dynamicislandexpandedregion/contentmargins(_:_:)">Apple — contentMargins(_:_:), requiere iOS 18</a> ·
+    <a href="https://alexanderlogan.co.uk/blog/wwdc22/09-dynamic-island">Alexander Logan — Dynamic Island (WWDC22), fix de padding documentado por Jordi Bruin</a> ·
+    <a href="https://swiftwithmajid.com/2022/09/28/mastering-dynamic-island-in-swiftui/">Swift with Majid — Mastering Dynamic Island</a>
+  </div>
+</div>
+
+<div class="block-title">Isla expandida — el bug, reproducido</div>
+<p class="block-sub">Silueta aproximada (Apple no publica las medidas exactas, varían por modelo —
+  esto alcanza para decidir composición, pero confirmar que ya no se corta necesita un build real en
+  el dispositivo, igual que ya pasó con Fase C/D). Ícono y "%" flush contra la curva, tal cual hoy:</p>
+<div class="frames-row">
+  <div class="frame-col">
+    <div class="frame-label">Cómo es hoy <span class="tag bug">bug real</span></div>
+    <div class="island-frame">
+      <div class="island-shape">
+        <div class="cam-cutout"></div>
+        <div class="island-top-row flush">
+          <div class="leading island-ic" style="position:relative;">
+            <span class="clip-flag" style="top:-4px; left:-4px;"></span>
+            <svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>
+          </div>
+          <div class="center">Cargando en Casa</div>
+          <div class="trailing island-pct num" style="position:relative;">
+            <span class="clip-flag" style="top:-4px; right:-4px; left:auto;"></span>61%
+          </div>
+        </div>
+        <div class="island-bottom" style="position:relative;">
+          <span class="clip-flag" style="top:2px; left:10px;"></span>
+          <svg class="coil-svg" viewBox="0 0 260 16" preserveAspectRatio="none">
+            <path class="coil-track" d="M4,8 L256,8"/>
+            <path class="coil-base" d="M4,8 L86,8"/>
+            <path class="coil-fill" d="M86,8 L164,8"/>
+          </svg>
+          <div class="row2"><b class="num">36.6/60.0 kWh</b><span class="num">06:40</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="island-context">Ícono y "61%" pegados contra la curva de la cámara — y el "36.6"
+      de abajo también arranca flush contra el borde izquierdo (el <code>VStack</code> de
+      <code>.bottom</code> no tiene padding). 3 puntos de recorte, no 2.</div>
+  </div>
+</div>
+
+<div class="block-title">Isla expandida — la opción elegida, con los márgenes verificados</div>
+<p class="block-sub">Ajusté las 3 zonas de riesgo con padding explícito y generoso (Apple no publica
+  el margen mínimo exacto, así que del lado seguro): ícono y hora arriba, y el bloque entero de abajo
+  con <code>.padding(.horizontal, 20)</code> — antes tenía <b>cero</b>.</p>
+<div class="frames-row">
+  <div class="frame-col">
+    <div class="frame-label">Solo ícono arriba, todo lo demás abajo <span class="tag rec">elegida</span></div>
+    <div class="island-frame">
+      <div class="island-shape">
+        <div class="cam-cutout"></div>
+        <div class="island-top-row safe" style="min-height:26px;">
+          <div class="leading island-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg></div>
+          <div class="center" style="font-size:9px; opacity:0.6;">Casa</div>
+          <div class="trailing" style="padding:10px 12px 4px 0; font-size:9.5px; color:rgba(255,255,255,0.55);" class="num">06:40</div>
+        </div>
+        <div class="island-bottom-hero" style="padding:8px 20px 14px;">
+          <div class="hero-line">
+            <span class="pctbig num">61<span class="sign">%</span></span>
+            <span class="kwh num"><b>36.6</b>/60.0 kWh</span>
+          </div>
+          <svg class="coil-svg" viewBox="0 0 260 16" preserveAspectRatio="none">
+            <path class="coil-track" d="M4,8 L256,8"/>
+            <path class="coil-base" d="M4,8 L86,8"/>
+            <path class="coil-fill" d="M86,8 L164,8"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div class="verdict"><b>Verificado, las 3 zonas:</b> ícono con 10pt de margen (arriba-izq),
+      hora de corte con 12pt (arriba-der), y el bloque de abajo completo —% grande, kWh y barra—
+      con 20pt a cada lado. En Swift esto es un <code>.padding(.horizontal, 20)</code> envolviendo
+      todo el contenido de <code>.bottom</code>, que hoy directamente no existe en el código. Nada
+      queda ya en la zona curva.</div>
+  </div>
+</div>
+<p class="block-sub" style="margin-top:18px; font-size:11px; color:var(--text-muted);">
+  Un margen exacto en píxeles no se puede prometer desde un mockup web — Apple no publica la
+  geometría real y varía por modelo. Este número (20pt) es deliberadamente generoso; la confirmación
+  final es, otra vez, un build real en el iPhone.
+</p>
+
+<div class="block-title">Pantalla bloqueada — cómo es hoy</div>
+<p class="block-sub">Sin evidencia de recorte real, pero 3 filas + header en poco espacio se siente
+  denso — es probable que sea esto lo que no te termina de convencer.</p>
+<div class="frames-row">
+  <div class="frame-col">
+    <div class="frame-label">Estado actual</div>
+    <div class="lock-phone">
+      <div class="lock-notch"></div>
+      <div class="lock-clock"><div class="t">06:12</div></div>
+      <div class="live-card"><div class="live-card-inner">
+        <div class="li-head">
+          <span class="li-ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg></span>
+          <div><b>Cargando en Casa</b><span class="netw">Casa · 24A · 226V</span></div>
+        </div>
+        <svg class="coil-svg" viewBox="0 0 260 16" preserveAspectRatio="none">
+          <path class="coil-track" d="M4,8 L256,8"/><path class="coil-base" d="M4,8 L86,8"/><path class="coil-fill" d="M86,8 L164,8"/>
+        </svg>
+        <div class="li-hero"><span class="pct num">61</span><span class="sign">%</span><span class="approx">estimado</span></div>
+        <div class="li-sub"><b class="num">36.6/60.0 kWh</b><span>desde 32%</span></div>
+        <div class="li-target"><span>Corta a las</span><b class="num">06:40</b></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<p class="block-sub" style="margin-top:0;"><b>Sin cambios</b> — dijiste que preferís la que ya
+  existe hoy, y no hay bug de recorte real que la obligue a cambiar. Queda tal cual está.</p>
+
+<div class="block-title">¿El color puede seguir tu personalización?</div>
+<p class="block-sub">Pregunta nueva, investigada en el código real antes de mockear nada.
+  Respuesta corta: <b>sí, es técnicamente posible</b> — con un límite claro sobre qué color debería
+  y no debería cambiar.</p>
+<div class="diag-box" style="margin-bottom:24px;">
+  <h3>Cómo llegaría el color hasta el widget</h3>
+  <p>No hace falta App Group (bloqueado con Apple ID gratis, ya lo sabíamos). El puente ya existe:
+    <code>nueva-carga.ts</code>/<code>inicio.ts</code> llaman a <code>syncChargeLiveActivity(...)</code>
+    → <code>LiveActivityPlugin.swift</code> → <code>Activity.request(attributes:...)</code>. Ya le
+    pasan <code>networkLabel</code> como texto plano por ese mismo canal — agregar un
+    <code>accentColor: String</code> (hex) es el mismo patrón, un campo más. Como los
+    "attributes" quedan fijos al crear la Activity (no se puede mutar después, solo el
+    <code>ContentState</code>), el color queda "congelado" al valor que tenías guardado cuando
+    empezó ESA carga — si cambiás tu personalización a mitad de una carga en curso, se actualiza
+    recién en la próxima, no al instante. Límite razonable, no un bloqueo real.</p>
+  <p>El hex en sí ya se puede calcular hoy con las funciones que existen en
+    <code>personalizacion.ts</code> (<code>hslToRgb</code> + la calibración de saturación/luminosidad
+    por tema, en <code>accentSL()</code>) — sin escribir matemática nueva, solo exportar el resultado.
+    Como la Live Activity siempre se ve sobre fondo negro
+    (<code>.activityBackgroundTint(Color.black)</code>, fijo en el código), conviene calcular
+    siempre con la calibración de tema <b>oscuro</b>, sin importar qué tema tenga la app en ese
+    momento — si no, un acento pensado para fondo claro se vería apagado ahí.</p>
+  <p><b>Dónde SÍ aplicarlo, y dónde no:</b> hoy el ícono, la barra y el "%" usan
+    <code>bandColor()</code> — rojo/ámbar/verde según cuánto falta, no el acento de marca. Ese es
+    el mismo criterio que ya seguís en el resto de la app ("Valle/Llano/Punta separados del acento
+    de marca", en <code>CLAUDE.md</code>) — no lo tocaría: perder la señal de "batería crítica" por
+    pintar todo de tu color preferido sería peor, no mejor. Donde sí tiene sentido tu acento es en
+    elementos <b>neutros</b>, que hoy no comunican nada por sí mismos: el fondo del círculo del
+    ícono, la hora de corte en negrita, el track vacío detrás de la barra.</p>
+</div>
+<div class="frames-row">
+  <div class="frame-col">
+    <div class="frame-label">Hoy — todo en gris/blanco neutro</div>
+    <div class="lock-phone">
+      <div class="lock-notch"></div>
+      <div class="lock-clock"><div class="t">06:12</div></div>
+      <div class="live-card"><div class="live-card-inner">
+        <div class="li-head">
+          <span class="li-ic" style="background:rgba(255,255,255,0.14);"><svg viewBox="0 0 24 24" style="stroke:var(--warning); fill:var(--warning); fill-opacity:0.3;"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg></span>
+          <div><b>Cargando en Casa</b><span class="netw">Casa · 24A · 226V</span></div>
+        </div>
+        <svg class="coil-svg" viewBox="0 0 260 16" preserveAspectRatio="none">
+          <path class="coil-track" d="M4,8 L256,8"/><path class="coil-base" d="M4,8 L86,8"/><path class="coil-fill" d="M86,8 L164,8"/>
+        </svg>
+        <div class="li-hero"><span class="pct num">61</span><span class="sign">%</span><span class="approx">estimado</span></div>
+        <div class="li-sub"><b class="num">36.6/60.0 kWh</b><span>desde 32%</span></div>
+        <div class="li-target"><span>Corta a las</span><b class="num">06:40</b></div>
+      </div></div>
+    </div>
+  </div>
+  <div class="frame-col">
+    <div class="frame-label">Con tu acento — solo en lo neutro <span class="tag rec">propuesta</span></div>
+    <div class="lock-phone">
+      <div class="lock-notch"></div>
+      <div class="lock-clock"><div class="t">06:12</div></div>
+      <div class="live-card"><div class="live-card-inner">
+        <div class="li-head">
+          <span class="li-ic" style="background:color-mix(in srgb, var(--accent) 30%, transparent);"><svg viewBox="0 0 24 24" style="stroke:var(--warning); fill:var(--warning); fill-opacity:0.3;"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg></span>
+          <div><b>Cargando en Casa</b><span class="netw">Casa · 24A · 226V</span></div>
+        </div>
+        <svg class="coil-svg" viewBox="0 0 260 16" preserveAspectRatio="none">
+          <path class="coil-track" d="M4,8 L256,8" style="stroke:color-mix(in srgb, var(--accent) 30%, transparent);"/><path class="coil-base" d="M4,8 L86,8"/><path class="coil-fill" d="M86,8 L164,8"/>
+        </svg>
+        <div class="li-hero"><span class="pct num">61</span><span class="sign">%</span><span class="approx">estimado</span></div>
+        <div class="li-sub"><b class="num">36.6/60.0 kWh</b><span>desde 32%</span></div>
+        <div class="li-target"><span>Corta a las</span><b class="num" style="color:var(--accent);">06:40</b></div>
+      </div></div>
+    </div>
+    <div class="verdict">Cambian: fondo del círculo del ícono, el track vacío de la barra, y "06:40"
+      en negrita. <b>No cambian:</b> el color del rayo (sigue avisando el estado real de la
+      batería), ni el tramo lleno de la barra, ni el "%" grande.</div>
+  </div>
+</div>
+
+<div class="foot-note">
+  Nada de esto toca <code>src/</code> ni <code>ios/</code> todavía. Si confirmás, el paso siguiente
+  junta 3 cosas: el rediseño de la isla expandida con márgenes reales en
+  <code>LiveActivityWidgetBundle.swift</code>, y si querés el acento también, el nuevo campo
+  <code>accentColor</code> en <code>ChargeActivityAttributes</code> + <code>LiveActivityPlugin.swift</code>
+  + los dos call sites en <code>nueva-carga.ts</code>/<code>inicio.ts</code>. Confirmar que la isla
+  ya no se corta en las 3 zonas de verdad necesita, otra vez, un build de Codemagic + AltStore en el
+  iPhone real.
+</div>
+
+<script>
+  document.querySelectorAll('.theme-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const t = btn.getAttribute('data-theme-btn');
+      document.documentElement.setAttribute('data-theme', t);
+      document.querySelectorAll('.theme-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    });
+  });
+</script>

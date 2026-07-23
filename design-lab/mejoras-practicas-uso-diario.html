@@ -1,0 +1,373 @@
+<title>Wireframe — mejoras prácticas para el uso diario</title>
+<style>
+  :root {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff; --accent-soft: #E3F0FC;
+    --good: #0ca30c; --good-soft: #E4F7E4; --warning: #C77E00; --warning-soft: #FEF3DC;
+    --critical: #d03b3b; --critical-soft: #FBE4E4;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+    --num-font: ui-rounded, -apple-system, "SF Pro Rounded", sans-serif;
+    --r-sm: 10px; --r-md: 14px; --r-pill: 999px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34; --border: #2A2F38;
+      --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+      --accent: #4FB0F5; --accent-ink: #04121C; --accent-soft: #1B2C3B;
+      --good: #21C05E; --good-soft: #0F2A16; --warning: #FAB219; --warning-soft: #3A2C0E;
+      --critical: #FF6259; --critical-soft: #3A1414;
+      --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+      --page-surface: #0B0E13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #06080B; --surface: #14171C; --surface-2: #1E222A; --surface-3: #262B34; --border: #2A2F38;
+    --text: #F4F6F8; --text-secondary: #96A0AC; --text-muted: #798090;
+    --accent: #4FB0F5; --accent-ink: #04121C; --accent-soft: #1B2C3B;
+    --good: #21C05E; --good-soft: #0F2A16; --warning: #FAB219; --warning-soft: #3A2C0E;
+    --critical: #FF6259; --critical-soft: #3A1414;
+    --shadow-1: 0 0 0 1px var(--border); --shadow-2: 0 14px 30px -10px rgba(0,0,0,0.55);
+    --page-surface: #0B0E13;
+  }
+  :root[data-theme="light"] {
+    --bg: #F3F5F8; --surface: #FFFFFF; --surface-2: #EAEEF3; --surface-3: #DEE4EB; --border: #DCE1E8;
+    --text: #0E1116; --text-secondary: #5B6472; --text-muted: #798090;
+    --accent: #1F8FE0; --accent-ink: #ffffff; --accent-soft: #E3F0FC;
+    --good: #0ca30c; --good-soft: #E4F7E4; --warning: #C77E00; --warning-soft: #FEF3DC;
+    --critical: #d03b3b; --critical-soft: #FBE4E4;
+    --shadow-1: 0 1px 2px rgba(14, 17, 22, 0.05);
+    --shadow-2: 0 10px 26px -10px rgba(14, 17, 22, 0.22);
+    --page-surface: #E8EBF0;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page-surface); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; padding: 32px 16px 70px;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .page-head { max-width: 740px; margin: 0 auto 20px; text-align: center; }
+  .eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 8px; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 10px; text-wrap: balance; }
+  .page-head p { font-size: 13px; line-height: 1.6; color: var(--text-secondary); margin: 0; }
+  .page-head b { color: var(--text); }
+
+  .theme-toggle-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 30px; }
+  .theme-btn { font-size: 11.5px; font-weight: 700; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); }
+  .theme-btn.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+  .idea-block { max-width: 900px; margin: 0 auto 54px; }
+  .idea-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+  .idea-num { font-size: 12px; font-weight: 800; color: var(--accent); background: var(--accent-soft); padding: 2px 9px; border-radius: 999px; }
+  .idea-title { font-size: 17px; font-weight: 700; }
+  .idea-why { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; margin: 6px 0 20px; max-width: 640px; }
+  .idea-why b { color: var(--text); }
+  .idea-why code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-size: 11.5px; }
+
+  .frames-row { display: flex; gap: 26px; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+  .frame-col { text-align: center; width: 260px; }
+  .frame-label { font-size: 11.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; min-height: 30px; display: flex; align-items: center; justify-content: center; }
+  .frame-label b { color: var(--text); }
+  .tag { display: inline-block; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+  .tag.new { background: var(--good-soft); color: var(--good); }
+
+  .phone { position: relative; width: 260px; height: 720px; background: var(--bg); border-radius: 34px;
+    border: 1px solid var(--border); box-shadow: var(--shadow-2); overflow: hidden; }
+  .notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 70px; height: 18px; background: #000; border-radius: 999px; z-index: 10; }
+  .screen { position: absolute; inset: 0; padding: 36px 14px 16px; overflow-y: auto; }
+
+  .sheet-overlay { position: absolute; inset: 0; background: rgba(14,17,22,0.45); display: flex; align-items: flex-end; }
+  .sheet { width: 100%; background: var(--surface); border-radius: 20px 20px 0 0; padding: 16px 15px 18px; max-height: 92%; overflow-y: auto; }
+  .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .sheet-title { font-size: 15.5px; font-weight: 700; }
+  .sheet-cancel { background: none; border: none; font-size: 12px; font-weight: 600; color: var(--accent); }
+
+  .segmented { display: flex; background: var(--surface-2); border-radius: var(--r-sm); padding: 3px; margin-bottom: 12px; }
+  .segmented button { flex: 1; border: none; background: none; font-size: 11.5px; font-weight: 600; padding: 7px 3px; border-radius: 7px; color: var(--text-secondary); }
+  .segmented button.sel { background: var(--surface); color: var(--text); box-shadow: var(--shadow-1); }
+  .segmented.sub { margin-bottom: 10px; }
+  .segmented.sub button { font-size: 10.5px; padding: 6px 3px; }
+
+  .field { margin-bottom: 7px; text-align: left; }
+  .field label { font-size: 10.5px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px; }
+  .field .input { background: var(--surface-2); border: 1px solid transparent; border-radius: 9px; padding: 8px 9px; display: flex; align-items: center; gap: 4px; }
+  .field .input input, .field .input span.val { font-size: 12px; font-weight: 600; color: var(--text); flex: 1; background: none; border: none; }
+  .field .input .unit { color: var(--text-muted); font-size: 11px; }
+
+  .suggest-box { background: var(--accent-soft); border-radius: var(--r-sm); padding: 9px 11px; margin-bottom: 10px; text-align: left; }
+  .suggest-box .row1 { display: flex; justify-content: space-between; align-items: center; }
+  .suggest-box .suggest-label { font-size: 9.5px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.03em; }
+  .suggest-box .suggest-use { font-size: 10.5px; font-weight: 700; color: var(--accent-ink); background: var(--accent); border: none; padding: 4px 11px; border-radius: 999px; }
+  .suggest-box .suggest-amount { font-size: 13px; font-weight: 700; margin: 3px 0 1px; }
+  .suggest-box .suggest-sub { font-size: 10px; color: var(--text-secondary); }
+
+  .cost-preview { background: var(--accent-soft); border-radius: var(--r-md); padding: 11px 13px; margin: 12px 0; text-align: left; }
+  .cost-preview .label { font-size: 10.5px; color: var(--accent); font-weight: 700; }
+  .cost-preview .amount { font-size: 19px; font-weight: 700; margin: 2px 0; font-family: var(--num-font); }
+  .cost-preview .sub { font-size: 10px; color: var(--text-secondary); margin-bottom: 5px; }
+  .cost-preview .breakdown { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+
+  .badge { display: inline-flex; align-items: center; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.02em; }
+  .badge-good { background: var(--good-soft); color: var(--good); }
+  .badge-warning { background: var(--warning-soft); color: var(--warning); }
+  .badge-critical { background: var(--critical-soft); color: var(--critical); }
+
+  .nudge-banner { background: var(--warning-soft); border-radius: var(--r-sm); padding: 10px 11px; margin: 2px 0 10px; text-align: left; }
+  .nudge-banner .t1 { font-size: 11.5px; font-weight: 700; color: var(--warning); margin-bottom: 3px; }
+  .nudge-banner .t2 { font-size: 10.5px; color: var(--text-secondary); line-height: 1.5; }
+  .nudge-banner button { margin-top: 8px; font-size: 10.5px; font-weight: 700; color: var(--accent-ink); background: var(--accent); border: none; padding: 6px 13px; border-radius: 999px; }
+
+  .primary-btn { width: 100%; background: var(--accent); color: var(--accent-ink); border: none; border-radius: var(--r-md); padding: 12px; font-size: 13px; font-weight: 700; margin-top: 6px; }
+
+  .settings-row { display: flex; align-items: center; gap: 9px; padding: 10px 13px; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row .lbl { flex: 1; text-align: left; }
+  .settings-row .sub { font-size: 10px; color: var(--text-muted); display: block; margin-top: 1px; }
+  .list-group { background: var(--surface); border-radius: var(--r-md); overflow: hidden; box-shadow: var(--shadow-1); text-align: left; }
+  .section-title { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin: 16px 0 8px 2px; text-align: left; }
+  .switch { width: 38px; height: 22px; border-radius: 14px; background: var(--surface-3); position: relative; flex: 0 0 auto; }
+  .switch.on { background: var(--accent); }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .15s; }
+  .switch.on::after { left: 18px; }
+  .val-input { width: 44px; text-align: right; font-size: 12px; font-weight: 600; background: none; border: none; color: var(--text); }
+
+  .ios-notif { position: absolute; top: 32px; left: 10px; right: 10px; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(14px); border-radius: 16px; padding: 10px 12px; box-shadow: var(--shadow-2); display: flex; gap: 9px; text-align: left; }
+  .ios-notif .ic { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
+  .ios-notif .ic svg { width: 15px; height: 15px; stroke: var(--accent-ink); fill: var(--accent-ink); fill-opacity: 0.25; }
+  .ios-notif .txt .app { font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.02em; }
+  .ios-notif .txt .title { font-size: 12.5px; font-weight: 700; margin: 1px 0; }
+  .ios-notif .txt .body { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+
+  .verdict { max-width: 260px; margin: 12px auto 0; font-size: 11px; line-height: 1.55; color: var(--text-secondary); text-align: left; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .verdict b { color: var(--text); }
+
+  .also-box { max-width: 740px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px 20px; }
+  .also-box h3 { font-size: 13px; margin: 0 0 10px; }
+  .also-item { font-size: 12.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 10px; }
+  .also-item:last-child { margin-bottom: 0; }
+  .also-item b { color: var(--text); }
+
+  .foot-note { max-width: 740px; margin: 40px auto 0; text-align: center; font-size: 11.5px; line-height: 1.7; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; }
+  .foot-note b { color: var(--text); }
+</style>
+
+<div class="page-head">
+  <div class="eyebrow">Wireframe — mejoras prácticas, no visuales — brainstorm sobre la app real</div>
+  <h1>Ideas para facilitar el uso diario</h1>
+  <p>Recorrí el código real (motor de tarifas, notificaciones, flujo de Programar) buscando huecos
+    concretos — no ideas genéricas de "app de carga". Las 3 de acá tienen algo en común: usan datos
+    o infraestructura <b>que ya existe</b>, solo que hoy no se aprovecha del todo.</p>
+</div>
+<div class="theme-toggle-row">
+  <button class="theme-btn active" data-theme-btn="light">Claro</button>
+  <button class="theme-btn" data-theme-btn="dark">Oscuro</button>
+</div>
+
+<!-- ============ IDEA 1 ============ -->
+<div class="idea-block">
+  <div class="idea-head"><span class="idea-num">1</span><span class="idea-title">Costo y aviso de Punta en "Programar carga"</span></div>
+  <p class="idea-why">Encontré esto leyendo <code>nueva-carga.ts</code>: "Modo rápido" (anotar una
+    carga que ya pasó) sí muestra el costo y badges de Valle/Llano/Punta — pero <b>"Programar"</b>,
+    que es el flujo principal para cargar en Casa, no muestra ni un peso ni ningún aviso de Punta.
+    Solo ves "≈78% · 20.0 kWh". Para una app cuya razón de ser es la Triple Horaria, el momento en
+    que más importa saberlo (antes de programar) es justo donde falta.</p>
+  <div class="frames-row">
+    <div class="frame-col">
+      <div class="frame-label">Cómo es hoy</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="sheet-overlay"><div class="sheet">
+          <div class="sheet-head"><span class="sheet-title">Nueva carga</span><button class="sheet-cancel">Cancelar</button></div>
+          <div class="segmented"><button class="sel">Casa</button><button>Público o trabajo</button></div>
+          <div class="segmented sub"><button class="sel">Programar</button><button>Modo rápido</button></div>
+          <div class="field"><label>Cargando a</label><div class="input"><span class="val" style="color:var(--text-secondary);">24A · 226V · ≈5.0 kW</span></div></div>
+          <div class="segmented sub"><button>Ahora</button><button class="sel">Más tarde</button></div>
+          <div class="field"><label>Empieza a las</label><div class="input"><input value="16:00" readonly></div></div>
+          <div class="field"><label>Batería al iniciar</label><div class="input"><input value="32.0" readonly><span class="unit">%</span></div></div>
+          <div class="field"><label>Corta a las</label><div class="input"><input value="20:00" readonly></div></div>
+          <div class="cost-preview">
+            <div class="label">Estimado para las 20:00</div>
+            <div class="amount">≈65% · 20.0 kWh</div>
+            <div class="sub">Calibrado con 6 cargas previas en Casa</div>
+          </div>
+          <button class="primary-btn">Programar carga</button>
+        </div></div>
+      </div>
+    </div>
+    <div class="frame-col">
+      <div class="frame-label">Con costo + aviso de Punta <span class="tag new">nuevo</span></div>
+      <div class="phone"><div class="notch"></div>
+        <div class="sheet-overlay"><div class="sheet">
+          <div class="sheet-head"><span class="sheet-title">Nueva carga</span><button class="sheet-cancel">Cancelar</button></div>
+          <div class="segmented"><button class="sel">Casa</button><button>Público o trabajo</button></div>
+          <div class="segmented sub"><button class="sel">Programar</button><button>Modo rápido</button></div>
+          <div class="field"><label>Cargando a</label><div class="input"><span class="val" style="color:var(--text-secondary);">24A · 226V · ≈5.0 kW</span></div></div>
+          <div class="segmented sub"><button>Ahora</button><button class="sel">Más tarde</button></div>
+          <div class="field"><label>Empieza a las</label><div class="input"><input value="16:00" readonly></div></div>
+          <div class="field"><label>Batería al iniciar</label><div class="input"><input value="32.0" readonly><span class="unit">%</span></div></div>
+          <div class="field"><label>Corta a las</label><div class="input"><input value="20:00" readonly></div></div>
+          <div class="nudge-banner">
+            <div class="t1">⚡ Vas a pagar 1h de Punta</div>
+            <div class="t2">De 19:00 a 20:00 la tarifa sube a $12.03/kWh. Empezando a las <b>15:00</b>
+              en vez de las 16:00 cargás lo mismo (20.0 kWh) sin tocar la Punta.</div>
+            <button>Ajustar a las 15:00</button>
+          </div>
+          <div class="cost-preview">
+            <div class="label">Estimado para las 20:00</div>
+            <div class="amount">$138 · ≈65% · 20.0 kWh</div>
+            <div class="breakdown">
+              <span class="badge badge-warning">15.0 kWh Llano</span>
+              <span class="badge badge-critical">5.0 kWh Punta</span>
+            </div>
+          </div>
+          <button class="primary-btn">Programar carga</button>
+        </div></div>
+      </div>
+    </div>
+  </div>
+  <p style="text-align:center; font-size:11.5px; color:var(--text-muted); max-width:640px; margin:14px auto 0;">
+    Todo esto ya se puede calcular con lo que existe: <code>computeHomeChargeCost()</code> ya
+    devuelve el desglose Valle/Llano/Punta (lo usa Modo rápido) y <code>estimateAtTime()</code> ya
+    da los kWh físicos — es aplicar el mismo cálculo también acá, y comparar corriendo el inicio 1h
+    para armar la sugerencia.
+  </p>
+</div>
+
+<!-- ============ IDEA 2 ============ -->
+<div class="idea-block">
+  <div class="idea-head"><span class="idea-num">2</span><span class="idea-title">"Repetir tu rutina" al abrir Nueva carga</span></div>
+  <p class="idea-why">Si cargás en Casa con el mismo horario casi todas las noches (22:00 → 06:00,
+    por ejemplo), hoy tenés que tocar Más tarde, escribir la hora de inicio y la de corte cada vez —
+    lo único que legítimamente cambia noche a noche es la <b>batería al iniciar</b> (eso no se debería
+    autocompletar nunca, hay que mirar el auto). El horario sí es repetitivo.</p>
+  <div class="frames-row">
+    <div class="frame-col">
+      <div class="frame-label">Cómo es hoy — todo en blanco</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="sheet-overlay"><div class="sheet">
+          <div class="sheet-head"><span class="sheet-title">Nueva carga</span><button class="sheet-cancel">Cancelar</button></div>
+          <div class="segmented"><button class="sel">Casa</button><button>Público o trabajo</button></div>
+          <div class="segmented sub"><button class="sel">Programar</button><button>Modo rápido</button></div>
+          <div class="field"><label>Cargando a</label><div class="input"><span class="val" style="color:var(--text-secondary);">24A · 226V · ≈5.0 kW</span></div></div>
+          <div class="segmented sub"><button class="sel">Ahora</button><button>Más tarde</button></div>
+          <div class="field"><label>Batería al iniciar</label><div class="input"><input placeholder="0.0" style="color:var(--text-muted);"><span class="unit">%</span></div></div>
+          <div class="field"><label>Corta a las</label><div class="input"><input value="07:00" readonly></div></div>
+          <div class="cost-preview"><div class="label">Estimado</div><div class="amount" style="color:var(--text-muted);">—</div></div>
+          <button class="primary-btn">Programar carga</button>
+        </div></div>
+      </div>
+    </div>
+    <div class="frame-col">
+      <div class="frame-label">Con la rutina sugerida arriba <span class="tag new">nuevo</span></div>
+      <div class="phone"><div class="notch"></div>
+        <div class="sheet-overlay"><div class="sheet">
+          <div class="sheet-head"><span class="sheet-title">Nueva carga</span><button class="sheet-cancel">Cancelar</button></div>
+          <div class="segmented"><button class="sel">Casa</button><button>Público o trabajo</button></div>
+          <div class="segmented sub"><button class="sel">Programar</button><button>Modo rápido</button></div>
+          <div class="suggest-box">
+            <div class="row1"><span class="suggest-label">Tu rutina de siempre</span><button class="suggest-use">Usar</button></div>
+            <div class="suggest-amount">22:00 → 06:00</div>
+            <div class="suggest-sub">Mismo horario que tus últimas 6 cargas en Casa</div>
+          </div>
+          <div class="field"><label>Cargando a</label><div class="input"><span class="val" style="color:var(--text-secondary);">24A · 226V · ≈5.0 kW</span></div></div>
+          <div class="segmented sub"><button class="sel">Ahora</button><button>Más tarde</button></div>
+          <div class="field"><label>Batería al iniciar</label><div class="input"><input placeholder="0.0" style="color:var(--text-muted);"><span class="unit">%</span></div></div>
+          <div class="field"><label>Corta a las</label><div class="input"><input value="07:00" readonly></div></div>
+          <div class="cost-preview"><div class="label">Estimado</div><div class="amount" style="color:var(--text-muted);">—</div></div>
+          <button class="primary-btn">Programar carga</button>
+        </div></div>
+      </div>
+      <div class="verdict">Un tap llena <code>Corta a las</code> (y <code>Empieza a las</code> si aplica
+        "Más tarde") con el horario de tu última carga en Casa — la batería queda vacía a propósito,
+        para que la mires y la cargues de verdad. Si nunca hay 2 cargas seguidas con el mismo horario,
+        el cuadro simplemente no aparece.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ IDEA 3 ============ -->
+<div class="idea-block">
+  <div class="idea-head"><span class="idea-num">3</span><span class="idea-title">Recordatorio si pasan varios días sin cargar en Casa</span></div>
+  <p class="idea-why">Ya existe <code>notifications.ts</code> con notificaciones locales
+    (inicio/fin de carga programada) — es la misma infraestructura, un uso más. Sirve para el día
+    que te olvidás por la rutina cambiada, no para reemplazar el criterio de "cargo cuando me
+    conviene".</p>
+  <div class="frames-row">
+    <div class="frame-col">
+      <div class="frame-label">Ajustes → Notificaciones, cómo es hoy</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="screen">
+          <div class="section-title">Notificaciones</div>
+          <div class="list-group">
+            <div class="settings-row"><span class="lbl">Recordatorio de backup</span><div class="switch"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-col">
+      <div class="frame-label">Con el recordatorio nuevo <span class="tag new">nuevo</span></div>
+      <div class="phone"><div class="notch"></div>
+        <div class="screen">
+          <div class="section-title">Notificaciones</div>
+          <div class="list-group">
+            <div class="settings-row"><span class="lbl">Recordatorio de backup</span><div class="switch"></div></div>
+            <div class="settings-row"><span class="lbl">Avisarme si no cargué<span class="sub">En Casa, no cuenta Público</span></span><div class="switch on"></div></div>
+            <div class="settings-row"><span class="lbl">Después de</span><span class="val-input">1 día</span></div>
+            <div class="settings-row"><span class="lbl">A qué hora avisar</span><span class="val-input">22:00</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="frame-col">
+      <div class="frame-label">Lo que verías esa noche</div>
+      <div class="phone"><div class="notch"></div>
+        <div class="screen" style="padding-top:0;">
+          <div class="ios-notif">
+            <div class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg></div>
+            <div class="txt">
+              <div class="app">Carga EV</div>
+              <div class="title">Hace 2 días que no cargás en Casa</div>
+              <div class="body">¿Programamos algo para esta noche?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="verdict">Toca el umbral (días) y la hora — el default (1 día, 22:00) es a propósito
+        conservador para no ser una notificación molesta todas las noches. Se apaga solo si programás
+        o registrás algo antes de que llegue la hora.</div>
+    </div>
+  </div>
+</div>
+
+<div class="also-box">
+  <h3>Otras 2 ideas, más chicas — sin wireframe todavía</h3>
+  <div class="also-item"><b>Comparador rápido "¿conviene cargar afuera ahora?"</b> — un accesito
+    desde Inicio (no hace falta anotar una carga) que cruza la tarifa de Casa a esta hora
+    (<code>classifyHour()</code>) contra el precio en vivo de una red pública
+    (<code>network-prices.ts</code>, ya se trae en la app), mostrando la diferencia en $/kWh antes
+    de decidir enchufar en la calle.</div>
+  <div class="also-item"><b>"Este mes ahorraste $X vs. cargar siempre en Punta"</b> — un dato
+    motivador en el dashboard de Inicio, calculado con los mismos <code>tariffValle/Llano/Punta</code>
+    que ya tenés en Ajustes, comparando tu gasto real contra el hipotético de cargar todo a tarifa
+    Punta.</div>
+</div>
+
+<div class="foot-note">
+  Nada de esto toca <code>src/</code> todavía — son 3 ideas wireframeadas + 2 anotadas. Decime cuál
+  (o cuáles) querés llevar a código real, y seguimos con la implementación uno por uno.
+</div>
+
+<script>
+  document.querySelectorAll('.theme-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const t = btn.getAttribute('data-theme-btn');
+      document.documentElement.setAttribute('data-theme', t);
+      document.querySelectorAll('.theme-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    });
+  });
+</script>
