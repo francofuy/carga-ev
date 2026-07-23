@@ -177,6 +177,60 @@
 }
 @keyframes dcCoilFlow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -215; } }
 
+/* Hero de Inicio: el modelo 3D del auto (car.glb vía <model-viewer>, self-hosted, ver main.ts) —
+   cámara fija, sin controles de órbita del usuario; solo cambia entre 2 encuadres fijos (idle
+   -18°, cargando -100°) según el estado real de active_charge. Los faros están SIEMPRE prendidos
+   (mientras la app está abierta, no solo cargando) — decisión ya validada en el prototipo. */
+.hero-hub { text-align: center; margin-bottom: 4px; }
+.hero-status-line { font-size: calc(13px * var(--font-scale)); font-weight: 600; color: var(--text-secondary); margin-bottom: 2px; min-height: 18px; }
+.hero-status-line b { color: var(--text); font-weight: 700; }
+.hero-status-line.live b { color: var(--good); }
+
+/* Proporción fija 6:5 (el viewBox 240x200 de los overlays de faros/haz/cable) vía el truco
+   clásico de padding-top — NO la propiedad aspect-ratio: combinada con un <model-viewer> hijo al
+   100% de alto genera una referencia circular que algunos motores resuelven mal (probado: 732px
+   de alto real contra ~298px esperados para un ancho de 358px). Con padding-top el ancho real del
+   dispositivo no importa: los overlays se estiran de forma uniforme, nunca se desalinean. */
+.hero-stage { position: relative; width: 100%; margin: 6px 0 18px; overflow: hidden; }
+.hero-stage::before { content: ''; display: block; padding-top: 83.3333%; }
+.hero-stage model-viewer { position: absolute; inset: 0; width: 100%; height: 100%; --poster-color: transparent; }
+.hero-overlay-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.hero-stage .glow {
+  position: absolute; border-radius: 50%; pointer-events: none; opacity: 1;
+  background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.4) 40%, transparent 70%);
+  filter: blur(2px);
+}
+.hero-stage .beam-layer { mix-blend-mode: screen; filter: blur(2.2px); }
+.hero-stage .hot-core { fill: #fff; }
+
+/* Anillo pulsante en el punto de conexión mientras carga — única excepción a "sin loops" fuera
+   del auto: es un estado que se mira, no un botón que se toca seguido (mismo criterio ya usado
+   para el resto de la app). */
+@keyframes heroPortPulseRing { 0% { r: 3; opacity: 0.85; stroke-width: 1.8; } 100% { r: 11; opacity: 0; stroke-width: 0.4; } }
+.hero-stage .port-pulse-ring { fill: none; stroke: #21c05e; animation: heroPortPulseRing 1.6s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .hero-stage .port-pulse-ring { animation: none; } }
+
+.hero-actions-2col { display: flex; gap: 8px; }
+.hero-btn {
+  flex: 1; background: var(--accent); color: var(--accent-ink); border: none; border-radius: var(--r-md);
+  font: inherit; font-size: calc(14px * var(--font-scale)); font-weight: 700; line-height: 1.3;
+  padding: 15px 6px; min-height: 48px;
+}
+.hero-btn.secondary { background: var(--accent-soft); color: var(--accent); }
+
+/* Gasto del mes en Inicio: número + mini gráfica de gasto diario + tendencia vs. mes pasado —
+   el desglose grande mes a mes (tiles, tendencia de 6 meses, franja horaria) vive en Cargas;
+   acá es solo el pulso del mes en curso, sin caja/sombra, para no competir con el hero de arriba. */
+.mini-stat { padding-top: 16px; border-top: 1px solid var(--border); text-align: left; }
+.mini-stat .stat-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+.mini-stat .label { font-size: calc(12px * var(--font-scale)); color: var(--text-secondary); font-weight: 600; text-transform: none; letter-spacing: 0; }
+.mini-stat .big-number { font-size: calc(22px * var(--font-scale)); margin: 2px 0 0; }
+.stat-delta { font-size: calc(11.5px * var(--font-scale)); font-weight: 700; padding: 3px 9px; border-radius: var(--r-pill); flex-shrink: 0; }
+.stat-delta.up { color: var(--critical); background: var(--critical-soft); }
+.stat-delta.down { color: var(--good); background: var(--good-soft); }
+.stat-spark { width: 100%; height: 34px; display: block; margin-top: 4px; }
+.stat-meta { font-size: calc(11px * var(--font-scale)); color: var(--text-muted); margin-top: 4px; }
+
 .section-title {
   font-size: calc(13px * var(--font-scale));
   font-weight: 700;

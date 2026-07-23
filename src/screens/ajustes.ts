@@ -7,6 +7,7 @@ import { applyTheme } from '../lib/theme';
 import { chargerKw } from '../lib/estimation';
 import { Geolocation } from '@capacitor/geolocation';
 import { startHomeGeofence, stopHomeGeofence } from '../lib/geofence';
+import { saveBackupFile } from '../lib/backup-export';
 import {
   applyPersonalizacion,
   reapplyAccentInkForTheme,
@@ -628,16 +629,8 @@ export const ajustesScreen: Screen = {
       void (async () => {
         try {
           const backup = await exportBackup();
-          const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
           const date = new Date().toISOString().slice(0, 10);
-          a.href = url;
-          a.download = `carga-ev-backup-${date}.json`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
+          await saveBackupFile(JSON.stringify(backup, null, 2), `carga-ev-backup-${date}.json`);
           showBanner(dataMsg, 'Backup exportado.', 'success');
         } catch (err) {
           showBanner(dataMsg, 'No se pudo exportar: ' + (err instanceof Error ? err.message : String(err)), 'error');

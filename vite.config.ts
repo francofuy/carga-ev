@@ -21,8 +21,10 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
       workbox: {
-        // SQLite WASM binary must be precached like any other asset for offline use.
-        globPatterns: ['**/*.{js,css,html,wasm,png,svg}'],
+        // SQLite WASM binary y el modelo 3D del auto (car.glb) deben precachearse como cualquier
+        // otro asset para que funcionen offline — sin esto, model-viewer intentaría pedirlo por
+        // red la primera vez que faltara del cache del navegador.
+        globPatterns: ['**/*.{js,css,html,wasm,png,svg,glb}'],
       },
       manifest: {
         id: '/carga-ev/',

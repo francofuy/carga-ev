@@ -1,20 +1,20 @@
 import type { Screen } from './types';
 import {
-  getStatsSince, getMonthlyTotals, listCharges, getVehicle, getRealConsumption,
+  getStatsSince, getMonthlyTotals, getDailyTotalsThisMonth, listCharges, getVehicle, getRealConsumption,
   getActiveCharge, deleteActiveCharge, insertCharge, getSettings,
 } from '../lib/db/api';
 import type { ActiveCharge } from '../lib/db/active-charge';
 import {
   bus, CHARGES_UPDATED, DRAFT_UPDATED, ACTIVE_CHARGE_UPDATED,
-  requestEditCharge, requestResumeDraft, notifyDraftUpdated, notifyChargesUpdated, notifyActiveChargeUpdated,
+  requestResumeDraft, requestOpenModoRapido, requestOpenProgramar, notifyDraftUpdated, notifyChargesUpdated, notifyActiveChargeUpdated,
 } from '../lib/bus';
-import { chargeRowHtml } from '../components/charge-row';
 import { renderOdometer } from '../lib/odometer';
 import { loadDraft, clearDraft, timeAgoLabel } from '../lib/draft';
 import { estimatedAutonomyKm } from '../lib/consumption';
 import { chargerKw, estimateAtTime } from '../lib/estimation';
 import { cancelActiveChargeNotifications } from '../lib/notifications';
 import { syncChargeLiveActivity, endChargeLiveActivity } from '../lib/live-activity';
+import { getAccentHexForDarkChrome } from '../lib/personalizacion';
 
 function isoToTimeLabel(iso: string): string {
   return new Date(iso).toTimeString().slice(0, 5);
@@ -35,6 +35,35 @@ function coilSvg(): string {
   </svg>`;
 }
 
+/** Overlay de faros + haz — calibrado a mano sobre el render real del modelo a -18°, siempre
+ * prendido mientras la app está abierta (independiente de si hay carga en curso). */
+function idleOverlaySvg(): string {
+  return `
+    <div class="glow" style="width:8px;height:6px;left:70.4%;top:52%;"></div>
+    <div class="glow" style="width:8px;height:6px;left:42.1%;top:53%;"></div>
+    <svg class="hero-overlay-svg beam-layer" viewBox="0 0 240 200" preserveAspectRatio="none">
+      <defs>
+        <radialGradient id="heroGR1" cx="173" cy="107" r="45" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#fff" stop-opacity="1"/><stop offset="22%" stop-color="#fff" stop-opacity="0.38"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></radialGradient>
+        <radialGradient id="heroGL1" cx="105" cy="109" r="45" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#fff" stop-opacity="1"/><stop offset="22%" stop-color="#fff" stop-opacity="0.38"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></radialGradient>
+      </defs>
+      <g>
+        <polygon points="173,107 190.7,140.5 183.3,143.5" fill="url(#heroGR1)"/><circle class="hot-core" cx="173" cy="107" r="1.6"/>
+        <polygon points="105,109 122.7,142.5 115.3,145.5" fill="url(#heroGL1)"/><circle class="hot-core" cx="105" cy="109" r="1.6"/>
+      </g>
+    </svg>`;
+}
+
+/** Overlay del cable de carga estilo Tesla (línea + punto, sin ficha física) — calibrado sobre el render real del modelo a -100°, conector arriba de la rueda delantera. */
+function chargingOverlaySvg(): string {
+  return `
+    <svg class="hero-overlay-svg" viewBox="0 0 240 200" preserveAspectRatio="none">
+      <path d="M -10,128 C 15,132 35,124 55,127 C 75,130 92,123 108,125 C 122,127 132,116 140,106 C 145,101 156,96 164,100"
+            stroke="#21c05e" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <circle class="port-pulse-ring" cx="164" cy="100" r="3"/>
+      <circle cx="164" cy="100" r="2.4" fill="#21c05e" opacity="0.95"/>
+    </svg>`;
+}
+
 function startOfMonthIso(): string {
   const d = new Date();
   return new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
@@ -53,48 +82,42 @@ export const inicioScreen: Screen = {
       <div style="position:relative;z-index:1;">
         <div class="nav-title">Inicio</div>
         <div id="draftCard"></div>
-        <div class="split-card">
-          <div class="half">
-            <div class="label">Gasto este mes</div>
-            <div class="big-number" id="homeSpend">—</div>
-            <div class="sub" id="homeCount">Cargando…</div>
+        <div class="hero-hub">
+          <div class="hero-status-line" id="heroStatusLine">Sin carga activa</div>
+          <div class="hero-stage" id="stageIdle">
+            <model-viewer src="car.glb" camera-orbit="-18deg 78deg auto" field-of-view="30deg" exposure="1.1" shadow-intensity="0.8" disable-zoom interaction-prompt="none"></model-viewer>
+            ${idleOverlaySvg()}
           </div>
-          <div class="half accented">
-            <div class="label">Autonomía</div>
-            <div class="big-number" id="homeAutonomy">—</div>
-            <div class="sub">estimada</div>
+          <div class="hero-stage" id="stageCharging" style="display:none;">
+            <model-viewer src="car.glb" camera-orbit="-100deg 78deg auto" field-of-view="30deg" exposure="1.1" shadow-intensity="0.8" disable-zoom interaction-prompt="none"></model-viewer>
+            ${chargingOverlaySvg()}
+          </div>
+          <div class="hero-actions-2col" id="heroActions">
+            <button class="hero-btn" id="heroChargeNow">Cargar ahora</button>
+            <button class="hero-btn secondary" id="heroChargeScheduled">Carga programada</button>
           </div>
         </div>
-        <div class="tile-row">
-          <div class="tile"><div class="label">$/kWh prom.</div><div class="value" id="tileAvgKwh">—</div></div>
-          <div class="tile"><div class="label">% en Valle</div><div class="value" id="tileValle">—</div></div>
-          <div class="tile"><div class="label">$/km</div><div class="value" id="tileKm">—</div></div>
+        <div class="mini-stat">
+          <div class="stat-top">
+            <div><div class="label">Gasto este mes</div><div class="big-number" id="homeSpend">—</div></div>
+            <span class="stat-delta" id="homeDelta" style="display:none;"></span>
+          </div>
+          <svg class="stat-spark" viewBox="0 0 240 32" preserveAspectRatio="none" id="homeSpark"></svg>
+          <div class="stat-meta" id="homeLastCharge">—</div>
         </div>
-        <div class="chart-card">
-          <div class="chead"><span class="t">Tendencia</span><span class="p">últimos 6 meses</span></div>
-          <div class="bar-chart" id="homeChart"></div>
-        </div>
-        <div class="chart-card" id="compCard">
-          <div class="chead"><span class="t">Franja horaria</span><span class="p">este mes</span></div>
-          <div id="compBody"><p style="font-size:12.5px;color:var(--text-muted);margin:0;">Sin cargas en casa todavía.</p></div>
-        </div>
-        <div class="section-title">Últimas cargas <a href="#" id="homeSeeAll">Ver todas →</a></div>
-        <div class="list-group" id="homeList"></div>
       </div>
     `;
   },
   async mount(root) {
     const draftCardEl = root.querySelector<HTMLElement>('#draftCard')!;
+    const heroStatusLine = root.querySelector<HTMLElement>('#heroStatusLine')!;
+    const stageIdle = root.querySelector<HTMLElement>('#stageIdle')!;
+    const stageCharging = root.querySelector<HTMLElement>('#stageCharging')!;
+    const heroActions = root.querySelector<HTMLElement>('#heroActions')!;
     const spendEl = root.querySelector<HTMLElement>('#homeSpend')!;
-    const countEl = root.querySelector<HTMLElement>('#homeCount')!;
-    const tileAvgKwh = root.querySelector<HTMLElement>('#tileAvgKwh')!;
-    const tileValle = root.querySelector<HTMLElement>('#tileValle')!;
-    const tileKm = root.querySelector<HTMLElement>('#tileKm')!;
-    const autonomyEl = root.querySelector<HTMLElement>('#homeAutonomy')!;
-    const chartEl = root.querySelector<HTMLElement>('#homeChart')!;
-    const compBody = root.querySelector<HTMLElement>('#compBody')!;
-    const listEl = root.querySelector<HTMLElement>('#homeList')!;
-    const seeAll = root.querySelector<HTMLAnchorElement>('#homeSeeAll')!;
+    const deltaEl = root.querySelector<HTMLElement>('#homeDelta')!;
+    const sparkEl = root.querySelector<SVGSVGElement>('#homeSpark')!;
+    const lastChargeEl = root.querySelector<HTMLElement>('#homeLastCharge')!;
     const sparkleBg = root.querySelector<HTMLElement>('#sparkleBg')!;
 
     for (let i = 0; i < 10; i++) {
@@ -106,99 +129,90 @@ export const inicioScreen: Screen = {
       sparkleBg.appendChild(dot);
     }
 
-    seeAll.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.querySelector<HTMLButtonElement>('.tab[data-tab="cargas"]')?.click();
-    });
+    root.querySelector<HTMLButtonElement>('#heroChargeNow')!.addEventListener('click', () => requestOpenModoRapido());
+    root.querySelector<HTMLButtonElement>('#heroChargeScheduled')!.addEventListener('click', () => requestOpenProgramar());
 
-    chartEl.addEventListener('click', (e) => {
-      const col = (e.target as HTMLElement).closest<HTMLElement>('.bar-col');
-      if (!col) return;
-      chartEl.querySelectorAll('.bar-col').forEach((c) => c.classList.remove('show'));
-      col.classList.add('show');
-    });
+    /** Autonomía en texto para el estado sin carga activa — recalculada en refresh(), leída acá cuando corresponde. */
+    let idleAutonomyHtml = 'Sin carga activa';
 
-    let recentCharges: Awaited<ReturnType<typeof listCharges>> = [];
-    listEl.addEventListener('click', (e) => {
-      const row = (e.target as HTMLElement).closest<HTMLElement>('.row[data-id]');
-      if (!row) return;
-      const charge = recentCharges.find((c) => c.id === Number(row.dataset.id));
-      if (charge) requestEditCharge(charge);
-    });
+    /** Sincroniza el hero (3D + status line + botones) con el estado real de la tarjeta de arriba. */
+    function setHeroMode(mode: 'idle' | 'waiting' | 'charging' | 'confirm', statusHtml: string): void {
+      const charging = mode === 'charging';
+      stageIdle.style.display = charging ? 'none' : 'block';
+      stageCharging.style.display = charging ? 'block' : 'none';
+      heroActions.style.display = mode === 'idle' ? 'flex' : 'none';
+      heroStatusLine.innerHTML = statusHtml;
+      heroStatusLine.classList.toggle('live', charging);
+    }
+
+    function renderSpark(daily: number[]): void {
+      const w = 240;
+      const h = 32;
+      const pad = 2;
+      const max = Math.max(1, ...daily);
+      const stepX = daily.length > 1 ? w / (daily.length - 1) : w;
+      const pts: [number, number][] = daily.map((v, i) => [i * stepX, h - pad - (v / max) * (h - pad * 2)]);
+      const lineD = 'M ' + pts.map((p) => p.join(',')).join(' L ');
+      const areaD = lineD + ` L ${w},${h} L 0,${h} Z`;
+      const last = pts[pts.length - 1];
+      sparkEl.innerHTML = `
+        <defs><linearGradient id="homeSparkGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" style="stop-color:var(--accent);stop-opacity:0.32"/>
+          <stop offset="100%" style="stop-color:var(--accent);stop-opacity:0"/>
+        </linearGradient></defs>
+        <path d="${areaD}" fill="url(#homeSparkGrad)"/>
+        <path d="${lineD}" fill="none" style="stroke:var(--accent)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+        ${last ? `<circle cx="${last[0]}" cy="${last[1]}" r="2.2" style="fill:var(--accent)"/>` : ''}
+      `;
+    }
 
     async function refresh() {
       try {
-        const [stats, monthly, recent, vehicle, realConsumption] = await Promise.all([
+        const [stats, monthly2, daily, lastCharges, vehicle, realConsumption] = await Promise.all([
           getStatsSince(startOfMonthIso()),
-          getMonthlyTotals(6),
-          listCharges(3),
+          getMonthlyTotals(2),
+          getDailyTotalsThisMonth(),
+          listCharges(1),
           getVehicle(),
           getRealConsumption(),
         ]);
 
         renderOdometer(spendEl, fmtMoney(stats.totalCost));
-        countEl.style.color = '';
-        countEl.textContent =
-          stats.count === 0
-            ? 'Sin cargas todavía este mes'
-            : `${stats.count} carga${stats.count === 1 ? '' : 's'} registrada${stats.count === 1 ? '' : 's'}`;
 
-        tileAvgKwh.textContent = stats.avgCostPerKwh > 0 ? '$' + stats.avgCostPerKwh.toFixed(2) : '—';
-        tileValle.textContent = stats.valleSharePct > 0 || stats.count > 0 ? Math.round(stats.valleSharePct) + '%' : '—';
-        tileKm.textContent = stats.costPerKm != null ? '$' + stats.costPerKm.toFixed(2) : '—';
-        autonomyEl.textContent = vehicle ? estimatedAutonomyKm(vehicle, realConsumption) + ' km' : '—';
-
-        const maxTotal = Math.max(1, ...monthly.map((m) => m.total));
-        chartEl.innerHTML = monthly
-          .map((m) => {
-            const isPeak = m.total === maxTotal && m.total > 0;
-            const heightPct = Math.max(4, Math.round((m.total / maxTotal) * 100));
-            return `<div class="bar-col" data-h="${heightPct}"><div class="bar${isPeak ? ' peak' : ''}"></div><span class="bar-tooltip">${fmtMoney(m.total)}</span><div class="m">${m.monthLabel}</div></div>`;
-          })
-          .join('');
-        requestAnimationFrame(() => {
-          chartEl.querySelectorAll<HTMLElement>('.bar-col').forEach((col) => {
-            col.querySelector<HTMLElement>('.bar')!.style.height = col.dataset.h + '%';
-          });
-        });
-
-        const homeShareTotal = stats.valleSharePct + stats.llanoSharePct + stats.puntaSharePct;
-        if (homeShareTotal > 0) {
-          compBody.innerHTML = `
-            <div class="comp-bar">
-              <span data-w="${stats.valleSharePct}" style="background:var(--good)"></span>
-              <span data-w="${stats.llanoSharePct}" style="background:var(--warning-fill)"></span>
-              <span data-w="${stats.puntaSharePct}" style="background:var(--critical)"></span>
-            </div>
-            <div class="comp-legend">
-              <div class="li"><span class="dot" style="background:var(--good)"></span>Valle <b>${Math.round(stats.valleSharePct)}%</b></div>
-              <div class="li"><span class="dot" style="background:var(--warning-fill)"></span>Llano <b>${Math.round(stats.llanoSharePct)}%</b></div>
-              <div class="li"><span class="dot" style="background:var(--critical)"></span>Punta <b>${Math.round(stats.puntaSharePct)}%</b></div>
-            </div>`;
-          requestAnimationFrame(() => {
-            compBody.querySelectorAll<HTMLElement>('.comp-bar span').forEach((s) => {
-              s.style.width = s.dataset.w + '%';
-            });
-          });
+        const prevTotal = monthly2[0]?.total ?? 0;
+        const thisTotal = monthly2[1]?.total ?? 0;
+        if (prevTotal > 0) {
+          const deltaPct = ((thisTotal - prevTotal) / prevTotal) * 100;
+          deltaEl.style.display = '';
+          deltaEl.classList.toggle('up', deltaPct >= 0);
+          deltaEl.classList.toggle('down', deltaPct < 0);
+          deltaEl.textContent = (deltaPct >= 0 ? '↑ ' : '↓ ') + Math.abs(Math.round(deltaPct)) + '%';
         } else {
-          compBody.innerHTML = '<p style="font-size:12.5px;color:var(--text-muted);margin:0;">Sin cargas en casa todavía.</p>';
+          deltaEl.style.display = 'none';
         }
 
-        recentCharges = recent;
-        listEl.innerHTML = recent.length
-          ? recent.map((c) => chargeRowHtml(c)).join('')
-          : '<div class="list-empty">Sin cargas todavía.</div>';
+        renderSpark(daily);
+
+        const lastCharge = lastCharges[0];
+        lastChargeEl.textContent = lastCharge
+          ? 'Última carga: ' + timeAgoLabel(new Date(lastCharge.startAt ?? lastCharge.createdAt).getTime())
+          : 'Sin cargas todavía';
+
+        idleAutonomyHtml = vehicle
+          ? `Sin carga activa · <b>≈${estimatedAutonomyKm(vehicle, realConsumption)} km</b> de autonomía`
+          : 'Sin carga activa';
       } catch (err) {
         console.error('No se pudo inicializar la base de datos local:', err);
         const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
         spendEl.textContent = '—';
-        countEl.textContent = `Error de base de datos — ${detail}`;
-        countEl.style.color = 'var(--critical)';
+        lastChargeEl.textContent = `Error de base de datos — ${detail}`;
+        lastChargeEl.style.color = 'var(--critical)';
       }
     }
 
     function renderDraftCard() {
       const draft = loadDraft();
+      setHeroMode('idle', idleAutonomyHtml);
       if (!draft) {
         draftCardEl.innerHTML = '';
         return;
@@ -243,6 +257,7 @@ export const inicioScreen: Screen = {
         estPct = est.pct;
         estKwh = est.kwhDelivered;
       }
+      setHeroMode('confirm', 'Carga finalizada · <b>confirmá los datos</b>');
       draftCardEl.innerHTML = `
         <div class="draft-card">
           <div class="tag">Confirmá tu carga</div>
@@ -338,6 +353,7 @@ export const inicioScreen: Screen = {
         if (now < start) {
           const mins = Math.max(0, Math.round((start.getTime() - now.getTime()) / 60000));
           const countdown = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+          setHeroMode('waiting', `Carga programada · <b>arranca en ${countdown}</b>`);
           draftCardEl.innerHTML = `
             <div class="draft-card">
               <div class="tag">Carga programada · En espera</div>
@@ -364,6 +380,12 @@ export const inicioScreen: Screen = {
           // carga ya terminó, solo que no podemos calcular el número (antes esto se confundía
           // y saltaba directo a "confirmar" apenas guardabas sin tener el auto configurado).
           const estimate = batteryKwh ? estimateAtTime(activeCharge.startPct, start, now, nominalKw, batteryKwh, 1) : null;
+          setHeroMode(
+            'charging',
+            estimate
+              ? `Cargando ahora · <b>≈${Math.round(estimate.pct)}%</b> · ${estimate.kwhDelivered.toFixed(1)} kWh · corta ${isoToTimeLabel(activeCharge.targetStopAt)}`
+              : `Cargando ahora · corta ${isoToTimeLabel(activeCharge.targetStopAt)}`,
+          );
           const estimateHtml = estimate
             ? `<div style="margin-top:8px;font-size:26px;font-weight:700;color:${bandColor(estimate.pct)};">${Math.round(estimate.pct)}%<span style="font-size:11px;color:var(--text-muted);font-weight:500;margin-left:6px;">estimado</span></div>
                   <div class="m2" style="margin-top:2px;">${estimate.kwhDelivered.toFixed(1)} kWh entregados</div>`
@@ -393,6 +415,7 @@ export const inicioScreen: Screen = {
               startPct: activeCharge.startPct,
               targetStopAt: stop,
               networkLabel: `Casa · ${settings.homeChargerAmps}A · ${settings.homeChargerVolts}V`,
+              accentColor: getAccentHexForDarkChrome(settings.personalizacion.hue),
               pct: estimate.pct,
               kwhDelivered: estimate.kwhDelivered,
               kwhTotal: batteryKwh,
@@ -417,7 +440,7 @@ export const inicioScreen: Screen = {
     bus.addEventListener(CHARGES_UPDATED, () => void refresh());
     bus.addEventListener(DRAFT_UPDATED, () => void renderTopCard());
     bus.addEventListener(ACTIVE_CHARGE_UPDATED, () => void renderTopCard());
-    void renderTopCard();
     await refresh();
+    void renderTopCard();
   },
 };

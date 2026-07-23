@@ -9,6 +9,7 @@ export const DRAFT_UPDATED = 'draft-updated';
 export const RESUME_DRAFT = 'resume-draft';
 export const ACTIVE_CHARGE_UPDATED = 'active-charge-updated';
 export const OPEN_PROGRAMAR = 'open-programar';
+export const OPEN_MODO_RAPIDO = 'open-modo-rapido';
 
 export function notifyChargesUpdated(): void {
   bus.dispatchEvent(new Event(CHARGES_UPDATED));
@@ -33,4 +34,9 @@ export function notifyActiveChargeUpdated(): void {
 /** Disparado al tocar la notificación nativa de "llegaste a Casa" (ver src/lib/geofence.ts / main.ts). */
 export function requestOpenProgramar(): void {
   bus.dispatchEvent(new Event(OPEN_PROGRAMAR));
+}
+
+/** Botón "Cargar ahora" del hero de Inicio — abre Nueva carga ya en Modo rápido (Casa). */
+export function requestOpenModoRapido(): void {
+  bus.dispatchEvent(new Event(OPEN_MODO_RAPIDO));
 }

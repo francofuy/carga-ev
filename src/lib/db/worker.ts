@@ -12,7 +12,7 @@ import { getVehicle, upsertVehicle, deleteVehicle } from './vehicle';
 import { getActiveCharge, upsertActiveCharge, deleteActiveCharge, type ActiveCharge } from './active-charge';
 import {
   insertCharge, updateCharge, listCharges, deleteCharge, deleteAllCharges, restoreCharge, getStatsSince,
-  getMonthlyTotals, getRealConsumption,
+  getMonthlyTotals, getDailyTotalsThisMonth, getRealConsumption,
   type NewCharge, type Charge,
 } from './charges';
 import { getSettings, getTariffRates, setSetting } from './settings';
@@ -87,6 +87,10 @@ const handlers: Record<string, (args: never) => Promise<unknown>> = {
   async getMonthlyTotals(args: { monthsBack: number }) {
     const db = await getDb();
     return getMonthlyTotals(db, args.monthsBack);
+  },
+  async getDailyTotalsThisMonth() {
+    const db = await getDb();
+    return getDailyTotalsThisMonth(db);
   },
   async insertCharge(args: { input: NewCharge }) {
     const db = await getDb();

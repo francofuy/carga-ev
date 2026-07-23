@@ -18,6 +18,10 @@ export function getMonthlyTotals(monthsBack: number): Promise<MonthlyTotal[]> {
   return callDb('getMonthlyTotals', { monthsBack });
 }
 
+export function getDailyTotalsThisMonth(): Promise<number[]> {
+  return callDb('getDailyTotalsThisMonth');
+}
+
 export function insertCharge(input: NewCharge): Promise<Charge> {
   return callDb('insertCharge', { input });
 }

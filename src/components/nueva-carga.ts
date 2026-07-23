@@ -1,7 +1,7 @@
 import { computeHomeChargeCost, computePublicChargeCost, type TariffRates } from '../lib/tariff';
 import { getSettings, insertCharge, updateCharge, deleteCharge, getVehicle } from '../lib/db/api';
 import type { Charge, NewCharge } from '../lib/db/charges';
-import { bus, OPEN_EDIT_CHARGE, RESUME_DRAFT, OPEN_PROGRAMAR, notifyChargesUpdated, notifyDraftUpdated } from '../lib/bus';
+import { bus, OPEN_EDIT_CHARGE, RESUME_DRAFT, OPEN_PROGRAMAR, OPEN_MODO_RAPIDO, notifyChargesUpdated, notifyDraftUpdated } from '../lib/bus';
 import { sparkBurst } from '../lib/spark-burst';
 import { saveDraft, clearDraft, timeAgoLabel, type ChargeDraft } from '../lib/draft';
 import { getNetworkPrices, groupNetworkRows, pickDefaultVariant, type NetworkGroup, type NetworkVariant, type NetworkPriceSource } from '../lib/network-prices';
@@ -10,6 +10,7 @@ import { notifyActiveChargeUpdated } from '../lib/bus';
 import { chargerKw, estimateAtTime, computeCalibrationFactor } from '../lib/estimation';
 import { scheduleActiveChargeNotifications } from '../lib/notifications';
 import { syncChargeLiveActivity } from '../lib/live-activity';
+import { getAccentHexForDarkChrome } from '../lib/personalizacion';
 
 type ChargeMode = 'kwh' | 'pct';
 type HomeFlow = 'programar' | 'rapido';
@@ -260,6 +261,7 @@ export function mountNuevaCarga(root: ParentNode): void {
   let homeFlow: HomeFlow = 'programar';
   let homeChargerAmps = 0;
   let homeChargerVolts = 0;
+  let accentHue = 205;
   let calibrationFactor = 1;
   let calibrationSampleCount = 0;
   let editingId: number | null = null;
@@ -634,6 +636,7 @@ export function mountNuevaCarga(root: ParentNode): void {
       batteryKwh = vehicle?.batteryKwh ?? null;
       homeChargerAmps = settings.homeChargerAmps;
       homeChargerVolts = settings.homeChargerVolts;
+      accentHue = settings.personalizacion.hue;
       const nominalKw = chargerKw(homeChargerAmps, homeChargerVolts);
       powerRefEl.textContent = homeChargerAmps > 0 && homeChargerVolts > 0
         ? `${homeChargerAmps}A · ${homeChargerVolts}V · ≈${nominalKw.toFixed(1)} kW`
@@ -840,6 +843,14 @@ export function mountNuevaCarga(root: ParentNode): void {
   bus.addEventListener(RESUME_DRAFT, (e) => void openDraft((e as CustomEvent<ChargeDraft>).detail));
   // "Llegaste a Casa" (geofencing, ver src/lib/geofence.ts) — open() ya resetea a Casa/Programar/Ahora por defecto.
   bus.addEventListener(OPEN_PROGRAMAR, () => void open());
+  // Botón "Cargar ahora" del hero de Inicio — mismo sheet, pero arranca en Modo rápido en vez de Programar.
+  bus.addEventListener(OPEN_MODO_RAPIDO, () => {
+    void open().then(() => {
+      homeFlow = 'rapido';
+      homeFlowSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('sel', b.getAttribute('data-flow') === 'rapido'));
+      syncVisibility();
+    });
+  });
 
   deleteBtn.addEventListener('click', () => {
     void (async () => {
@@ -970,6 +981,7 @@ export function mountNuevaCarga(root: ParentNode): void {
           startPct: startPctVal,
           targetStopAt: stop,
           networkLabel: `Casa · ${homeChargerAmps}A · ${homeChargerVolts}V`,
+          accentColor: getAccentHexForDarkChrome(accentHue),
           pct: startPctVal,
           kwhDelivered: 0,
           kwhTotal: batteryKwh,

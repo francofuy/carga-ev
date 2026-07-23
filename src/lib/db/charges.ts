@@ -289,6 +289,23 @@ export function getMonthlyTotals(db: OpfsSAHPoolDatabase, monthsBack: number): M
   return out;
 }
 
+/** Gasto por día del mes en curso (1..hoy), para la mini-gráfica del hero de Inicio — 0 en los días sin carga. */
+export function getDailyTotalsThisMonth(db: OpfsSAHPoolDatabase): number[] {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const today = now.getDate();
+  const rows = queryRows<{ day: number; total: number | null }>(
+    db,
+    `SELECT CAST(strftime('%d', COALESCE(start_at, created_at)) AS INTEGER) AS day, SUM(cost) AS total
+     FROM charges
+     WHERE COALESCE(start_at, created_at) >= ?
+     GROUP BY day`,
+    [monthStart.toISOString()],
+  );
+  const byDay = new Map(rows.map((r) => [r.day, r.total ?? 0]));
+  return Array.from({ length: today }, (_, i) => byDay.get(i + 1) ?? 0);
+}
+
 export interface RealConsumption {
   whKm: number;
   sampleCount: number;

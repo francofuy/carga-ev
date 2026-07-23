@@ -1,5 +1,8 @@
 import './styles/tokens.css';
 import './styles/shell.css';
+// Self-hosted (no CDN) — registra <model-viewer>, usado por el hero 3D de Inicio. Bundleado por
+// Vite y precacheado por la PWA (ver vite.config.ts) para que funcione 100% offline.
+import '@google/model-viewer';
 import { injectIconSprite } from './components/icons';
 import { mountShell } from './components/shell';
 import { inicioScreen } from './screens/inicio';
