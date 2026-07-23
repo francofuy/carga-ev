@@ -183,6 +183,10 @@
    borde, para leerse tan liviano como el texto del status-line que tiene justo debajo. */
 .charge-live-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .charge-live-row .coil-svg { flex: 1; height: 14px; margin: 0; min-width: 0; }
+.charge-live-info {
+  flex: 1; min-width: 0; font-size: calc(12.5px * var(--font-scale)); color: var(--text-secondary);
+  font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .charge-live-stop {
   flex-shrink: 0; background: var(--critical-soft); color: var(--critical); border: none;
   font: inherit; font-size: calc(12.5px * var(--font-scale)); font-weight: 700;

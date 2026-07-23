@@ -402,15 +402,12 @@ export const inicioScreen: Screen = {
           const mins = Math.max(0, Math.round((start.getTime() - now.getTime()) / 60000));
           const countdown = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
           setHeroMode('waiting', `Carga programada · <b>arranca en ${countdown}</b>`);
+          // "Arranca en Xh Ym" ya está en hero-status-line — acá solo lo que ese texto no
+          // puede dar: el horario programado y la batería de inicio.
           draftCardEl.innerHTML = `
-            <div class="draft-card">
-              <div class="tag">Carga programada · En espera</div>
-              <div class="row1">
-                <span class="ic"><svg><use href="#i-bolt"/></svg></span>
-                <span class="meta"><div class="m1">Casa · ${isoToTimeLabel(activeCharge.startAt)} → ${isoToTimeLabel(activeCharge.targetStopAt)}</div><div class="m2">Batería al iniciar: ${activeCharge.startPct}%</div></span>
-              </div>
-              <div class="m2" style="margin-top:8px;color:var(--accent);font-weight:600;">Arranca en ${countdown}</div>
-              <div class="btnrow"><button class="del" id="activeCancel">Cancelar carga programada</button></div>
+            <div class="charge-live-row">
+              <span class="charge-live-info">Casa · ${isoToTimeLabel(activeCharge.startAt)} → ${isoToTimeLabel(activeCharge.targetStopAt)} · desde ${activeCharge.startPct}%</span>
+              <button class="charge-live-stop" id="activeCancel">Cancelar</button>
             </div>`;
           draftCardEl.querySelector<HTMLButtonElement>('#activeCancel')!.addEventListener('click', () => {
             void (async () => {
