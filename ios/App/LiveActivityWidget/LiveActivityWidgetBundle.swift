@@ -21,6 +21,17 @@
 // que crece por un Shape/estilo propio arriesgaba perder la animación que el sistema hace solo,
 // sin la app corriendo (no hay forma de confirmar eso sin gastar otro ciclo de build). El tramo
 // animado se queda como barra recta.
+//
+// Rediseño de la isla expandida + acento personalizable (design-lab/rediseno-live-activity-y-
+// dynamic-island.html, aprobado): la isla expandida tenía 3 puntos de recorte real contra la
+// silueta curva (ícono/leading, "%"/trailing, y el VStack entero de .bottom — los 3 sin ningún
+// padding). Se resolvió sacando el "%" grande de la zona curva (.trailing solo tiene la hora de
+// corte) y llevándolo a .bottom, que es ancho de verdad, con .padding(.horizontal, 20) — antes
+// esa región no tenía padding alguno. El acento de personalización (accentColor, calibrado para
+// fondo oscuro en personalizacion.ts) pinta solo elementos NEUTROS que hoy no comunican nada por
+// sí mismos (fondo del círculo del ícono, track vacío de la barra, hora de corte) — el color de
+// batería (bandColor: rojo/ámbar/verde) sigue intacto en el rayo y en el tramo lleno de la barra,
+// mismo criterio que ya separa acento de marca de color semántico en el resto de la app.
 
 import ActivityKit
 import Foundation
@@ -31,6 +42,21 @@ private func bandColor(_ pct: Double) -> Color {
     if pct < 20 { return Color(red: 0.816, green: 0.231, blue: 0.231) } // --critical
     if pct < 80 { return Color(red: 0.980, green: 0.698, blue: 0.098) } // --warning-fill
     return Color(red: 0.129, green: 0.639, blue: 0.373) // --good
+}
+
+/** Celeste histórico (#4FB0F5, calibración oscura del hue=205 default) — fallback si el hex que
+    llega desde JS viniera vacío o corrupto. */
+private let fallbackAccent = Color(red: 0.310, green: 0.690, blue: 0.961)
+
+private func accentColor(from hex: String) -> Color {
+    var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+    s.removeAll { $0 == "#" }
+    guard s.count == 6, let rgb = UInt64(s, radix: 16) else { return fallbackAccent }
+    return Color(
+        red: Double((rgb >> 16) & 0xFF) / 255,
+        green: Double((rgb >> 8) & 0xFF) / 255,
+        blue: Double(rgb & 0xFF) / 255
+    )
 }
 
 private struct ChargeIcon: View {
@@ -75,12 +101,17 @@ private struct WaveShape: Shape {
  * solo por tiempo transcurrido entre startAt y targetStopAt (sin que la app tenga que estar
  * corriendo), como barra recta. Antes la barra arrancaba siempre vacía, como si la batería
  * estuviera en 0%.
+ *
+ * El relleno (`color`) sigue siendo bandColor() — señal real de cuánta batería falta, no se toca.
+ * El track vacío (`trackColor`) es el único elemento de esta barra que sigue el acento de
+ * personalización en vez del color de batería — es decorativo, no comunica estado por sí mismo.
  */
 private struct BatteryProgressBar: View {
     var startPct: Double
     var startAt: Date
     var targetStopAt: Date
     var color: Color
+    var trackColor: Color
 
     var body: some View {
         GeometryReader { geo in
@@ -98,7 +129,7 @@ private struct BatteryProgressBar: View {
                 }
             }
             .frame(height: 10)
-            .background(Capsule().fill(color.opacity(0.15)))
+            .background(Capsule().fill(trackColor.opacity(0.2)))
         }
         .frame(height: 10)
     }
@@ -109,10 +140,11 @@ private struct LockScreenView: View {
 
     var body: some View {
         let color = bandColor(context.state.pct)
+        let accent = accentColor(from: context.attributes.accentColor)
         VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 9) {
                 ZStack {
-                    Circle().fill(color.opacity(0.22))
+                    Circle().fill(accent.opacity(0.3))
                     ChargeIcon(color: color)
                 }
                 .frame(width: 26, height: 26)
@@ -122,7 +154,7 @@ private struct LockScreenView: View {
                 }
                 Spacer()
             }
-            BatteryProgressBar(startPct: context.attributes.startPct, startAt: context.attributes.startAt, targetStopAt: context.attributes.targetStopAt, color: color)
+            BatteryProgressBar(startPct: context.attributes.startPct, startAt: context.attributes.startAt, targetStopAt: context.attributes.targetStopAt, color: color, trackColor: accent)
             HStack(alignment: .lastTextBaseline) {
                 HStack(alignment: .lastTextBaseline, spacing: 4) {
                     Text("\(Int(context.state.pct.rounded()))").font(.system(size: 25, weight: .bold))
@@ -145,6 +177,7 @@ private struct LockScreenView: View {
                     .foregroundStyle(.secondary)
                 Text(context.attributes.targetStopAt, style: .time)
                     .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(accent)
             }
             .lineLimit(1)
             .minimumScaleFactor(0.85)
@@ -161,31 +194,50 @@ struct ChargeLiveActivityWidget: Widget {
             LockScreenView(context: context)
         } dynamicIsland: { context in
             let color = bandColor(context.state.pct)
+            let accent = accentColor(from: context.attributes.accentColor)
             return DynamicIsland {
+                // Antes el ícono (.leading) y el "%" grande (.trailing) quedaban pegados contra la
+                // curva de la isla, sin ningún padding — se recortaban ahí. Ahora .trailing solo
+                // tiene la hora de corte (texto corto, con margen real) y el "%" se movió a
+                // .bottom, la única región que de verdad es ancha.
                 DynamicIslandExpandedRegion(.leading) {
                     ChargeIcon(color: color)
+                        .padding(.leading, 10)
+                        .padding(.top, 6)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text("\(Int(context.state.pct.rounded()))%")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(color)
+                    Text(context.attributes.targetStopAt, style: .time)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(accent)
+                        .padding(.trailing, 12)
+                        .padding(.top, 6)
                 }
                 DynamicIslandExpandedRegion(.center) {
-                    Text("Cargando en Casa").font(.system(size: 11, weight: .semibold))
+                    Text("Casa")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.secondary)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        BatteryProgressBar(startPct: context.attributes.startPct, startAt: context.attributes.startAt, targetStopAt: context.attributes.targetStopAt, color: color)
-                        HStack {
-                            Text(String(format: "%.1f/%.1f kWh", totalKwhSoFar(startPct: context.attributes.startPct, kwhTotal: context.state.kwhTotal, kwhDelivered: context.state.kwhDelivered), context.state.kwhTotal))
+                    // .padding(.horizontal, 20) acá es el fix real: esta región no tenía NINGÚN
+                    // padding antes, y el "kWh" quedaba flush contra el borde izquierdo — el
+                    // segundo punto de recorte que reportaste, además del ícono/%.
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(alignment: .lastTextBaseline) {
+                            HStack(alignment: .lastTextBaseline, spacing: 3) {
+                                Text("\(Int(context.state.pct.rounded()))").font(.system(size: 24, weight: .bold))
+                                Text("%").font(.system(size: 11)).foregroundStyle(.secondary)
+                            }
                             Spacer()
-                            Text(context.attributes.targetStopAt, style: .time)
+                            Text(String(format: "%.1f/%.1f kWh", totalKwhSoFar(startPct: context.attributes.startPct, kwhTotal: context.state.kwhTotal, kwhDelivered: context.state.kwhDelivered), context.state.kwhTotal))
+                                .font(.system(size: 10.5))
+                                .foregroundStyle(.secondary)
                         }
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
+                        BatteryProgressBar(startPct: context.attributes.startPct, startAt: context.attributes.startAt, targetStopAt: context.attributes.targetStopAt, color: color, trackColor: accent)
                     }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
                 }
             } compactLeading: {
                 ChargeIcon(color: color)

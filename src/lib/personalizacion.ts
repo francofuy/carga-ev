@@ -122,6 +122,22 @@ function isDarkActive(): boolean {
   return window.matchMedia('(prefers-color-scheme: dark)').matches;
 }
 
+function rgbToHex([r, g, b]: [number, number, number]): string {
+  const c = (v: number) => Math.round(v).toString(16).padStart(2, '0');
+  return `#${c(r)}${c(g)}${c(b)}`.toUpperCase();
+}
+
+/**
+ * Hex del acento para la Live Activity/Dynamic Island — siempre calibrado con la saturación/
+ * luminosidad del tema OSCURO, sin importar el tema real de la app: esas superficies nativas
+ * siempre corren sobre fondo negro (`activityBackgroundTint(Color.black)`, fijo en
+ * LiveActivityWidgetBundle.swift), así que un acento pensado para fondo claro se vería apagado ahí.
+ */
+export function getAccentHexForDarkChrome(hue: number): string {
+  const { s, l } = accentSL(true);
+  return rgbToHex(hslToRgb(hue, s, l));
+}
+
 /** S/L del acento para el tema REALMENTE activo ahora mismo — para que el badge de contraste en Ajustes no describa siempre el tema claro. */
 export function getCurrentAccentSL(): { s: number; l: number } {
   return accentSL(isDarkActive());

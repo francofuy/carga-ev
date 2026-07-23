@@ -12,6 +12,7 @@ interface LiveActivityPlugin {
     startPct: number;
     targetStopAtMs: number;
     networkLabel: string;
+    accentColor: string;
     pct: number;
     kwhDelivered: number;
     kwhTotal: number;
@@ -26,6 +27,9 @@ export interface ChargeLiveActivityState {
   startPct: number;
   targetStopAt: Date;
   networkLabel: string;
+  /** Hex calibrado para fondo oscuro — ver getAccentHexForDarkChrome() en personalizacion.ts. Fijo
+      para toda la Activity una vez creada (los "attributes" de ActivityKit son inmutables). */
+  accentColor: string;
   pct: number;
   kwhDelivered: number;
   kwhTotal: number;
@@ -50,6 +54,7 @@ export async function syncChargeLiveActivity(state: ChargeLiveActivityState): Pr
       startPct: state.startPct,
       targetStopAtMs: state.targetStopAt.getTime(),
       networkLabel: state.networkLabel,
+      accentColor: state.accentColor,
       pct: state.pct,
       kwhDelivered: state.kwhDelivered,
       kwhTotal: state.kwhTotal,

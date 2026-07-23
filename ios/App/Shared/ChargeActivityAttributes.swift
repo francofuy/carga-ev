@@ -14,6 +14,10 @@ struct ChargeActivityAttributes: ActivityAttributes {
     var startPct: Double
     var targetStopAt: Date
     var networkLabel: String
+    /** Hex ("#RRGGBB") calibrado para fondo oscuro — ver getAccentHexForDarkChrome() en
+        personalizacion.ts. Fijo para toda la Activity (no se puede mutar un "attribute" después de
+        crearla) — si el usuario cambia su acento a mitad de una carga, se ve recién en la próxima. */
+    var accentColor: String
 
     public struct ContentState: Codable, Hashable {
         // Lo único que cambia mientras la carga está en curso.

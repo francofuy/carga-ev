@@ -43,6 +43,7 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
             let startPct = call.getDouble("startPct"),
             let targetStopAtMs = call.getDouble("targetStopAtMs"),
             let networkLabel = call.getString("networkLabel"),
+            let accentColor = call.getString("accentColor"),
             let pct = call.getDouble("pct"),
             let kwhDelivered = call.getDouble("kwhDelivered"),
             let kwhTotal = call.getDouble("kwhTotal")
@@ -65,7 +66,8 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
             startAt: Date(timeIntervalSince1970: startAtMs / 1000),
             startPct: startPct,
             targetStopAt: Date(timeIntervalSince1970: targetStopAtMs / 1000),
-            networkLabel: networkLabel
+            networkLabel: networkLabel,
+            accentColor: accentColor
         )
         do {
             let activity = try Activity<ChargeActivityAttributes>.request(
