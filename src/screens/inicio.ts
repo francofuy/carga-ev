@@ -80,7 +80,7 @@ export const inicioScreen: Screen = {
           <div class="hero-status-line" id="heroStatusLine">Sin carga activa</div>
           <div class="hero-stage" id="stageHero">
             <model-viewer id="heroModel" src="car.glb" camera-orbit="-18deg 78deg auto" field-of-view="30deg" exposure="1.1" shadow-intensity="0.8" disable-zoom interaction-prompt="none"></model-viewer>
-            <div class="overlay-layer visible" id="overlayIdle">${idleOverlaySvg()}</div>
+            <div class="overlay-layer" id="overlayIdle">${idleOverlaySvg()}</div>
             <div class="overlay-layer" id="overlayCharging">${chargingOverlaySvg()}</div>
           </div>
           <div class="hero-actions-2col" id="heroActions">
@@ -169,13 +169,15 @@ export const inicioScreen: Screen = {
 
     /** Cruza los overlays (faros del frente ↔ cable de carga de perfil) en vez de cortarlos de
      * golpe — el que se apaga lo hace ya (no tiene sentido en cuanto el auto empieza a girar),
-     * el que se prende espera a que la rotación esté casi terminada. */
-    function crossfadeOverlay(showCharging: boolean): void {
+     * el que se prende espera a que la rotación esté casi terminada. `delayMs` es más largo la
+     * primera vez (ver más abajo): recién al abrir la app el modelo todavía puede estar
+     * cargando/asentándose, y los faros prendiéndose de entrada quedaban desfasados de eso. */
+    function crossfadeOverlay(showCharging: boolean, delayMs = 550): void {
       const hide = showCharging ? overlayIdle : overlayCharging;
       const show = showCharging ? overlayCharging : overlayIdle;
       hide.classList.remove('visible');
       clearTimeout(overlayFadeInTimer);
-      overlayFadeInTimer = setTimeout(() => show.classList.add('visible'), 550);
+      overlayFadeInTimer = setTimeout(() => show.classList.add('visible'), delayMs);
     }
 
     let lastHeroMode: 'idle' | 'waiting' | 'charging' | 'confirm' | undefined;
@@ -184,8 +186,9 @@ export const inicioScreen: Screen = {
     function setHeroMode(mode: 'idle' | 'waiting' | 'charging' | 'confirm', statusHtml: string): void {
       const charging = mode === 'charging';
       if (mode !== lastHeroMode) {
+        const isFirstRender = lastHeroMode === undefined;
         animateCameraTo(charging ? CHARGING_THETA : IDLE_THETA);
-        crossfadeOverlay(charging);
+        crossfadeOverlay(charging, isFirstRender ? 2000 : 550);
         lastHeroMode = mode;
       }
       heroActions.style.display = mode === 'idle' ? 'flex' : 'none';
