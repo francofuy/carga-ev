@@ -48,7 +48,12 @@ private func bandColor(_ pct: Double) -> Color {
     llega desde JS viniera vacío o corrupto. */
 private let fallbackAccent = Color(red: 0.310, green: 0.690, blue: 0.961)
 
-private func accentColor(from hex: String) -> Color {
+// Nombrada distinto de "accentColor" a propósito: SwiftUI ya tiene un modificador de View
+// llamado igual (`View.accentColor(_:)`, deprecado pero todavía presente) — Swift resuelve por
+// nombre antes de mirar el tipo del argumento, así que un free function homónimo dentro de un
+// `body` de View rompe con "refers to instance method rather than global function" (encontrado
+// recién en un build real de Codemagic, no se puede ver este error sin compilar en Xcode).
+private func resolveAccentColor(fromHex hex: String) -> Color {
     var s = hex.trimmingCharacters(in: .whitespacesAndNewlines)
     s.removeAll { $0 == "#" }
     guard s.count == 6, let rgb = UInt64(s, radix: 16) else { return fallbackAccent }
@@ -140,7 +145,7 @@ private struct LockScreenView: View {
 
     var body: some View {
         let color = bandColor(context.state.pct)
-        let accent = accentColor(from: context.attributes.accentColor)
+        let accent = resolveAccentColor(fromHex: context.attributes.accentColor)
         VStack(alignment: .leading, spacing: 9) {
             HStack(spacing: 9) {
                 ZStack {
@@ -194,7 +199,7 @@ struct ChargeLiveActivityWidget: Widget {
             LockScreenView(context: context)
         } dynamicIsland: { context in
             let color = bandColor(context.state.pct)
-            let accent = accentColor(from: context.attributes.accentColor)
+            let accent = resolveAccentColor(fromHex: context.attributes.accentColor)
             return DynamicIsland {
                 // Antes el ícono (.leading) y el "%" grande (.trailing) quedaban pegados contra la
                 // curva de la isla, sin ningún padding — se recortaban ahí. Ahora .trailing solo
