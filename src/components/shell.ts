@@ -39,6 +39,7 @@ export function mountShell(root: HTMLElement, screens: Screen[]): void {
   const tabEls = root.querySelectorAll<HTMLButtonElement>('.tab');
   const tabbarEl = root.querySelector<HTMLElement>('.tabbar')!;
   const tabSlider = root.querySelector<HTMLElement>('#tabSlider')!;
+  const fabEl = root.querySelector<HTMLElement>('#fab')!;
 
   /**
    * Posición en píxeles reales, no en porcentaje: `translateX(N%)` se resuelve contra el ancho
@@ -55,6 +56,10 @@ export function mountShell(root: HTMLElement, screens: Screen[]): void {
   function activate(id: ScreenId) {
     screenEls.forEach((el) => el.classList.toggle('active', el.dataset.screen === id));
     tabEls.forEach((el) => el.classList.toggle('active', el.dataset.tab === id));
+    // Inicio ya tiene sus propios botones "Cargar ahora" / "Carga programada" en el hero —
+    // el FAB global queda de más ahí (redundante) y solo hace falta en el resto de las
+    // pestañas, donde sigue siendo la única forma de agregar una carga.
+    fabEl.style.display = id === 'inicio' ? 'none' : '';
     const activeTab = [...tabEls].find((el) => el.dataset.tab === id);
     if (activeTab) positionSlider(activeTab);
   }
