@@ -183,16 +183,25 @@
    borde, para leerse tan liviano como el texto del status-line que tiene justo debajo. */
 .charge-live-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .charge-live-row .coil-svg { flex: 1; height: 14px; margin: 0; min-width: 0; }
-.charge-live-info {
-  flex: 1; min-width: 0; font-size: calc(12.5px * var(--font-scale)); color: var(--text-secondary);
-  font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
 .charge-live-stop {
   flex-shrink: 0; background: var(--critical-soft); color: var(--critical); border: none;
   font: inherit; font-size: calc(12.5px * var(--font-scale)); font-weight: 700;
   padding: 9px 16px; border-radius: var(--r-pill); min-height: 38px;
 }
 .charge-live-note { font-size: calc(11px * var(--font-scale)); color: var(--text-muted); margin: -6px 0 14px; }
+
+/* "En espera": banner con tinte de acento — variante 5 de waiting-variants.html, elegida por el
+   usuario entre 5 opciones comparadas lado a lado. Distinto de charge-live-row (que no lleva
+   fondo): acá SÍ hay un bloque de color, porque el texto (horario + batería inicial) es
+   información real que no está en ningún otro lado, y necesitaba más ancla visual que quedar
+   flotando junto al botón. */
+.charge-waiting-banner { background: var(--accent-soft); border-radius: var(--r-md); padding: 12px 14px; display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.charge-waiting-ic { width: 28px; height: 28px; border-radius: 50%; background: var(--surface); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.charge-waiting-ic svg { width: 14px; height: 14px; stroke: var(--accent); fill: var(--accent); fill-opacity: 0.2; }
+.charge-waiting-info {
+  flex: 1; min-width: 0; font-size: calc(12.5px * var(--font-scale)); color: var(--text);
+  font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 /* Hero de Inicio: el modelo 3D del auto (car.glb vía <model-viewer>, self-hosted, ver main.ts) —
    cámara fija, sin controles de órbita del usuario; solo cambia entre 2 encuadres fijos (idle
