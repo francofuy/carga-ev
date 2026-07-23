@@ -164,18 +164,31 @@
   font: inherit; font-size: calc(13.5px * var(--font-scale)); font-weight: 600; padding: 10px 12px; min-height: 40px;
 }
 
-/* Carga en curso ("Cargando ahora"): led pulsante junto al tag + línea de corriente circulando
-   debajo del encabezado. Respeta Reducir movimiento vía la regla global en tokens.css. */
+/* Carga en curso ("Cargando ahora"): led pulsante + línea de corriente circulando — no escopeadas
+   a .draft-card porque las reutiliza también .charge-live-row (ver más abajo). Respeta Reducir
+   movimiento vía la regla global en tokens.css. */
 .draft-card .tag.live { display: flex; align-items: center; gap: 6px; }
-.draft-card .live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: dcPulseLed 1.3s ease-in-out infinite; }
+.live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: dcPulseLed 1.3s ease-in-out infinite; flex-shrink: 0; }
 @keyframes dcPulseLed { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-.draft-card .coil-svg { width: 100%; height: 22px; display: block; margin: 9px 0 5px; }
-.draft-card .coil-base { fill: none; stroke: color-mix(in srgb, var(--accent) 30%, transparent); stroke-width: 3; stroke-linecap: round; }
-.draft-card .coil-pulse {
+.coil-svg { width: 100%; height: 22px; display: block; margin: 9px 0 5px; }
+.coil-base { fill: none; stroke: color-mix(in srgb, var(--accent) 30%, transparent); stroke-width: 3; stroke-linecap: round; }
+.coil-pulse {
   fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 15 200;
   animation: dcCoilFlow 2s linear infinite; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--accent) 60%, transparent));
 }
 @keyframes dcCoilFlow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -215; } }
+
+/* Versión minimalista de la tarjeta de "cargando ahora" — el % / kWh / hora de corte ya viven en
+   hero-status-line, así que acá solo queda la señal animada de "en vivo" + terminar. Sin caja ni
+   borde, para leerse tan liviano como el texto del status-line que tiene justo debajo. */
+.charge-live-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.charge-live-row .coil-svg { flex: 1; height: 14px; margin: 0; min-width: 0; }
+.charge-live-stop {
+  flex-shrink: 0; background: var(--critical-soft); color: var(--critical); border: none;
+  font: inherit; font-size: calc(12.5px * var(--font-scale)); font-weight: 700;
+  padding: 9px 16px; border-radius: var(--r-pill); min-height: 38px;
+}
+.charge-live-note { font-size: calc(11px * var(--font-scale)); color: var(--text-muted); margin: -6px 0 14px; }
 
 /* Hero de Inicio: el modelo 3D del auto (car.glb vía <model-viewer>, self-hosted, ver main.ts) —
    cámara fija, sin controles de órbita del usuario; solo cambia entre 2 encuadres fijos (idle

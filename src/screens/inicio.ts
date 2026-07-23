@@ -20,12 +20,6 @@ function isoToTimeLabel(iso: string): string {
   return new Date(iso).toTimeString().slice(0, 5);
 }
 
-function bandColor(pct: number): string {
-  if (pct < 20) return 'var(--critical)';
-  if (pct < 80) return 'var(--warning-fill)';
-  return 'var(--good)';
-}
-
 /** Línea de corriente circulando ("bobina") para la tarjeta de carga en curso — wireframe aprobado en design-lab/animacion-carga-en-casa.html. */
 function coilSvg(): string {
   const d = 'M4,11 Q 14,2 24,11 T 44,11 T 64,11 T 84,11 T 104,11 T 124,11 T 144,11 T 164,11 T 184,11 T 204,11 T 224,11 T 244,11';
@@ -440,25 +434,24 @@ export const inicioScreen: Screen = {
               ? `Cargando ahora · <b>≈${Math.round(estimate.pct)}%</b> · ${estimate.kwhDelivered.toFixed(1)} kWh · corta ${isoToTimeLabel(activeCharge.targetStopAt)}`
               : `Cargando ahora · corta ${isoToTimeLabel(activeCharge.targetStopAt)}`,
           );
-          const estimateHtml = estimate
-            ? `<div style="margin-top:8px;font-size:26px;font-weight:700;color:${bandColor(estimate.pct)};">${Math.round(estimate.pct)}%<span style="font-size:11px;color:var(--text-muted);font-weight:500;margin-left:6px;">estimado</span></div>
-                  <div class="m2" style="margin-top:2px;">${estimate.kwhDelivered.toFixed(1)} kWh entregados</div>`
-            : `<div class="m2" style="margin-top:8px;color:var(--text-muted);">Configurá tu vehículo en Ajustes para ver el % estimado.</div>`;
+          // El % / kWh / hora de corte ya se muestran en hero-status-line, justo debajo del
+          // hero — repetirlos acá en un cuadro grande era información duplicada (detectado en
+          // uso real). Esta fila se queda solo con lo que el status-line NO puede dar: la señal
+          // animada de "en vivo" y la acción de terminar.
+          const noVehicleHtml = !estimate
+            ? `<div class="charge-live-note">Configurá tu vehículo en Ajustes para ver el % estimado.</div>`
+            : '';
           const liveActivityWarnHtml = lastLiveActivityError
-            ? `<div class="m2" style="margin-top:6px;color:var(--critical);">Live Activity: ${lastLiveActivityError}</div>`
+            ? `<div class="charge-live-note" style="color:var(--critical);">Live Activity: ${lastLiveActivityError}</div>`
             : '';
           draftCardEl.innerHTML = `
-            <div class="draft-card">
-              <div class="tag live">Cargando ahora<span class="live-dot"></span>En vivo</div>
-              <div class="row1">
-                <span class="ic"><svg><use href="#i-bolt"/></svg></span>
-                <span class="meta"><div class="m1">Casa · corta a las ${isoToTimeLabel(activeCharge.targetStopAt)}</div></span>
-              </div>
+            <div class="charge-live-row">
+              <span class="live-dot"></span>
               ${coilSvg()}
-              ${estimateHtml}
-              ${liveActivityWarnHtml}
-              <div class="btnrow"><button class="del" id="activeFinishNow">Terminar ahora</button></div>
-            </div>`;
+              <button class="charge-live-stop" id="activeFinishNow">Terminar ahora</button>
+            </div>
+            ${noVehicleHtml}
+            ${liveActivityWarnHtml}`;
           draftCardEl.querySelector<HTMLButtonElement>('#activeFinishNow')!.addEventListener('click', () => {
             void renderConfirmCard(activeCharge, new Date());
           });
